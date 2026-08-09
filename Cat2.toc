@@ -1,13 +1,16 @@
 ## Interface: 11200
-## Title: |cff00aaff[辅助]|r Cat|cffff00002|r 喵！一键宏
-## Notes: 全职业一键宏
+## Title: |cff00aaff[Utility]|r Cat|cffff00002|r Macro
+## Notes: All-class card-based macro addon
 ## Title-zhCN: |cff00aaff[辅助]|r Cat|cffff00002|r 喵！一键宏
 ## Notes-zhCN: 卡式全职业一键宏，提供自由的搭配选择
+## Title-enUS: |cff00aaff[Utility]|r Cat|cffff00002|r Macro
+## Notes-enUS: All-class card-based macro addon with flexible combinations
 ## Author: 妖姬变
 ## Version: 2.0.0
 ## SavedVariablesPerCharacter: Cat2CharacterDB
 
 Cat2.lua
+Core\Localization.lua
 Core\ClassSpecializations.lua
 Core\CatLib.lua
 Core\CatImmuneLib.lua

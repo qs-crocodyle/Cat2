@@ -23,7 +23,7 @@ local function CreateDefaultRepository()
         profiles = {
             [1] = {
                 id = 1,
-                name = "配置1",
+                name = "Profile1",
                 steps = {}
             }
         }
@@ -69,7 +69,7 @@ local function RestoreStep(savedStep)
         -- 占位卡强制暂停并从最小化栏隐藏；卡片恢复注册后，下次登录会自动还原。
         return {
             id = cardId,
-            name = "未识别卡片",
+            name = Cat2.L("未识别卡片"),
             description = "ID：" .. cardId,
             icons = { "Interface\\Icons\\INV_Misc_QuestionMark" },
             enabled = 0,
@@ -80,26 +80,14 @@ local function RestoreStep(savedStep)
     if Cat2.ResolveCardIcon then
         Cat2.ResolveCardIcon(card)
     end
-    return {
-        id = card.id,
-        name = card.name,
-        description = card.description,
-        details = card.details,
-        icons = card.icons,
-        category = card.category,
-        classes = card.classes,
-        sort = card.sort,
-        behavior = card.behavior,
-        unique = card.unique,
-        exclusiveGroup = card.exclusiveGroup,
-        canStopSequence = card.canStopSequence,
-        Apply = card.Apply,
-        Validate = card.Validate,
-        RefreshRuntimeData = card.RefreshRuntimeData,
-        Execute = card.Execute,
+    local step = {
         enabled = savedStep.enabled == 0 and 0 or 1,
         minimizedVisible = savedStep.minimizedVisible == 0 and 0 or 1
     }
+    setmetatable(step, {
+        __index = card
+    })
+    return step
 end
 
 -- 导入配置与登录恢复共用同一套卡片还原规则，未知 ID 也会保留原位置。

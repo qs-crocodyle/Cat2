@@ -195,7 +195,7 @@ local function OnEvent()
         if arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
             -- 扫击
-            if string.find( arg2, "你的扫击.*招架.*" ) or string.find( arg2, "你的扫击.*躲闪.*" ) or string.find( arg2, "你的扫击.*格挡.*" ) or string.find( arg2, "你的扫击.*没有击中.*" ) then
+            if string.find( arg2, "你的扫击.*招架.*" ) or string.find( arg2, "你的扫击.*躲闪.*" ) or string.find( arg2, "你的扫击.*格挡.*" ) or string.find( arg2, "你的扫击.*没有击中.*" ) or ( string.find(arg2 or "", "Your Rake") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and RateDelayTime[targetGUID] then 
                     local timer = GetTime() - RateDelayTime[targetGUID]
@@ -205,7 +205,7 @@ local function OnEvent()
                 end
 
             -- 撕扯
-            elseif string.find( arg2, "你的撕扯.*招架.*" ) or string.find( arg2, "你的撕扯.*躲闪.*" ) or string.find( arg2, "你的撕扯.*格挡.*" ) or string.find( arg2, "你的撕扯.*没有击中.*" ) then
+            elseif string.find( arg2, "你的撕扯.*招架.*" ) or string.find( arg2, "你的撕扯.*躲闪.*" ) or string.find( arg2, "你的撕扯.*格挡.*" ) or string.find( arg2, "你的撕扯.*没有击中.*" ) or ( string.find(arg2 or "", "Your Rip") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and RipDelayTime[targetGUID] then 
                     local timer = GetTime() - RipDelayTime[targetGUID]
@@ -214,13 +214,13 @@ local function OnEvent()
                     end
                 end
 
-            elseif string.find( arg2, "你的凶猛撕咬.*招架.*" ) or string.find( arg2, "你的凶猛撕咬.*躲闪.*" ) or string.find( arg2, "你的凶猛撕咬.*格挡.*" ) or string.find( arg2, "你的凶猛撕咬.*没有击中.*" ) then
+            elseif string.find( arg2, "你的凶猛撕咬.*招架.*" ) or string.find( arg2, "你的凶猛撕咬.*躲闪.*" ) or string.find( arg2, "你的凶猛撕咬.*格挡.*" ) or string.find( arg2, "你的凶猛撕咬.*没有击中.*" ) or ( string.find(arg2 or "", "Your Ferocious Bite") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 Refill = false
                 RefillGUID = 0
                 RefillTimer = 0
 
             -- 月火术
-            elseif string.find( arg2, "你的月火术被.*抵抗.*" ) then
+            elseif string.find( arg2, "你的月火术被.*抵抗.*" ) or string.find( arg2 or "", "Your Moonfire was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and MoonfireDelayTime[targetGUID] then 
                     local timer = GetTime() - MoonfireDelayTime[targetGUID]
@@ -230,7 +230,7 @@ local function OnEvent()
                 end
 
             -- 虫群
-            elseif string.find( arg2, "你的虫群被.*抵抗.*" ) then
+            elseif string.find( arg2, "你的虫群被.*抵抗.*" ) or string.find( arg2 or "", "Your Insect Swarm was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and InsectSwarmDelayTime[targetGUID] then 
                     local timer = GetTime() - InsectSwarmDelayTime[targetGUID]

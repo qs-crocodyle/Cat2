@@ -230,7 +230,7 @@ local function CreateShortcutWindow(profileId)
         openButton:SetBackdropBorderColor(0.45, 0.82, 1, 1)
         openText:SetTextColor(1, 0.84, 0.28)
         GameTooltip:SetOwner(openButton, "ANCHOR_LEFT")
-        GameTooltip:SetText("打开主界面")
+        GameTooltip:SetText(Cat2.L("打开主界面"))
         GameTooltip:Show()
     end)
     openButton:SetScript("OnLeave", function()
@@ -280,7 +280,7 @@ local function CreateShortcutWindow(profileId)
         closeButton:SetBackdropBorderColor(1, 0.5, 0.5, 1)
         closeText:SetTextColor(1, 0.92, 0.92)
         GameTooltip:SetOwner(closeButton, "ANCHOR_LEFT")
-        GameTooltip:SetText("关闭此快捷窗")
+        GameTooltip:SetText(Cat2.L("关闭此快捷窗"))
         GameTooltip:Show()
     end)
     closeButton:SetScript("OnLeave", function()
@@ -479,7 +479,7 @@ local function RedrawShortcutWindow(profileId)
             GameTooltip:SetOwner(iconButton, "ANCHOR_LEFT")
             -- 快捷窗归属已由窗口标题表达，卡片提示仅描述卡片本身，避免重复冗长。
             GameTooltip:SetText(step.name)
-            GameTooltip:AddLine(step.enabled == 0 and "点击恢复步骤" or "点击暂停步骤", 0.72, 0.84, 0.96)
+            GameTooltip:AddLine(step.enabled == 0 and Cat2.L("点击恢复步骤") or Cat2.L("点击暂停步骤"), 0.72, 0.84, 0.96)
             GameTooltip:Show()
         end)
         iconButton:SetScript("OnLeave", function()
@@ -547,7 +547,7 @@ end
 function ui.RedrawMinimizedShortcuts()
     local succeeded, errorMessage = pcall(RedrawAllShortcutWindows)
     if not succeeded then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2 快捷窗错误：|r" .. tostring(errorMessage))
+        DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2 快捷窗错误：") .. "|r" .. tostring(errorMessage))
     end
 end
 
@@ -575,7 +575,7 @@ function ui.SetShortcutWindowVisible(visible)
     local wasVisible, iconLimit, direction, left, top, scale = Cat2.GetProfileShortcutWindowSettings(profileId)
     if visible and not wasVisible and CountVisibleShortcutWindows(profileId) >= maximumShortcutWindows then
         if ui.ShowNotice then
-            ui.ShowNotice("快捷窗已达上限，请先关闭其他配置的快捷窗。")
+            ui.ShowNotice(Cat2.L("快捷窗已达上限，请先关闭其他配置的快捷窗。"))
         end
         return false
     end
@@ -593,7 +593,7 @@ function ui.CreateShortcutWindow()
         RefreshWindowAlias()
     end)
     if not succeeded then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2 快捷窗初始化失败：|r" .. tostring(errorMessage))
+        DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2 快捷窗初始化失败：") .. "|r" .. tostring(errorMessage))
     end
 end
 

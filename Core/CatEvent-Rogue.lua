@@ -82,16 +82,16 @@ local function OnEvent()
 
     elseif event == "CHAT_MSG_COMBAT_SELF_MISSES" then
         if not Cat2.SuperWoW then
-            if string.find( arg1, "你发起了攻击.*闪开了.*" ) then
+            if string.find( arg1, "你发起了攻击.*闪开了.*" ) or string.find( arg1 or "", "Your attack.*dodg" ) then
                 RogueSurpriseStrikeTimerNoSW = GetTime()
             end
         end
 
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
         if not Cat2.SuperWoW then
-            if string.find( arg1, "你的.*躲闪.*" ) then
+            if string.find( arg1, "你的.*躲闪.*" ) or string.find( arg1 or "", "dodg" ) then
                 RogueSurpriseStrikeTimerNoSW = GetTime()
-            elseif string.find( arg1, ".*突袭.*" ) then
+            elseif string.find( arg1, ".*突袭.*" ) or string.find( arg1 or "", "Surprise" ) then
                 RogueSurpriseStrikeTimerNoSW = 0
             end
         end
@@ -164,7 +164,7 @@ local function OnEvent()
         -- 自己的攻击
         if arg1 == "CHAT_MSG_COMBAT_SELF_MISSES" then
             --print(arg2)
-            if string.find( arg2, "你发起了攻击.*闪开了.*" ) then
+            if string.find( arg2, "你发起了攻击.*闪开了.*" ) or string.find( arg2 or "", "Your attack.*dodg" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     RogueSurpriseStrikeTimer = GetTime()
@@ -175,7 +175,7 @@ local function OnEvent()
         elseif arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
             --print(arg2)
 
-            if string.find( arg2, "你的.*躲闪.*" ) then
+            if string.find( arg2, "你的.*躲闪.*" ) or string.find( arg2 or "", "dodg" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     RogueSurpriseStrikeTimer = GetTime()
@@ -183,7 +183,7 @@ local function OnEvent()
                 end
             
             -- 破甲
-            elseif string.find( arg2, "你的破甲.*招架.*" ) or string.find( arg2, "你的破甲.*躲闪.*" ) or string.find( arg2, "你的破甲.*格挡.*" ) or string.find( arg2, "你的破甲.*没有击中.*" ) then
+            elseif string.find( arg2, "你的破甲.*招架.*" ) or string.find( arg2, "你的破甲.*躲闪.*" ) or string.find( arg2, "你的破甲.*格挡.*" ) or string.find( arg2, "你的破甲.*没有击中.*" ) or ( string.find(arg2 or "", "Your Expose Armor") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and ExposeArmorDelayTime[targetGUID] then 
                     local timer = GetTime() - ExposeArmorDelayTime[targetGUID]

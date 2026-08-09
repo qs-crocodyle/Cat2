@@ -24,28 +24,28 @@ end
 local function FinishImport(importedProfile, overwriteProfileId)
     local success, errorMessage = ui.ApplyImportedConfiguration(importedProfile, overwriteProfileId)
     if not success then
-        ui.ShowNotice("导入失败：" .. (errorMessage or "未知错误") .. "。")
+        ui.ShowNotice(Cat2.L("导入失败：") .. (errorMessage and Cat2.L(errorMessage) or Cat2.L("未知错误")) .. "。")
         return
     end
     if overwriteProfileId then
-        ui.ShowNotice("配置「" .. importedProfile.name .. "」已覆盖，并已切换为当前配置。")
+        ui.ShowNotice(Cat2.L("配置「") .. importedProfile.name .. Cat2.L("」已覆盖，并已切换为当前配置。"))
     else
-        ui.ShowNotice("配置「" .. importedProfile.name .. "」导入成功，并已切换为当前配置。")
+        ui.ShowNotice(Cat2.L("配置「") .. importedProfile.name .. Cat2.L("」导入成功，并已切换为当前配置。"))
     end
 end
 
 local function ImportPastedText(text)
     local importedProfile, errorMessage = Cat2.ImportConfigurationText(text)
     if not importedProfile then
-        ui.ShowNotice("导入失败：" .. (errorMessage or "无法识别配置文本") .. "。")
+        ui.ShowNotice(Cat2.L("导入失败：") .. (errorMessage and Cat2.L(errorMessage) or Cat2.L("无法识别配置文本")) .. "。")
         return
     end
 
     local localizedClass, currentClassFile = UnitClass("player")
     if importedProfile.classFile ~= currentClassFile then
         ui.ShowNotice(
-            "职业不匹配，不能导入。\n配置职业：" .. importedProfile.classFile ..
-            "\n当前职业：" .. (currentClassFile or localizedClass or "未知")
+            Cat2.L("职业不匹配，不能导入。\n配置职业：") .. importedProfile.classFile ..
+            Cat2.L("\n当前职业：") .. (currentClassFile or localizedClass or Cat2.L("未知"))
         )
         return
     end
@@ -53,12 +53,12 @@ local function ImportPastedText(text)
     local conflictingProfileId = ui.FindConfigurationByName(importedProfile.name)
     if conflictingProfileId then
         ui.ShowConfirm(
-            "已经存在同名配置「" .. importedProfile.name .. "」。\n" ..
-            "覆盖后，原配置的卡片及顺序将被替换。",
+            Cat2.L("已经存在同名配置「") .. importedProfile.name .. Cat2.L("」。\n" ..
+            Cat2.L("覆盖后，原配置的卡片及顺序将被替换。")),
             function()
                 FinishImport(importedProfile, conflictingProfileId)
             end,
-            "覆盖"
+            Cat2.L("覆盖")
         )
         return
     end
@@ -241,7 +241,7 @@ local function CreateTransferWindow()
         transferScrollFrame:UpdateScrollChildRect()
     end)
 
-    primaryButton = CreateActionButton(transferWindow, "全选", 92)
+    primaryButton = CreateActionButton(transferWindow, Cat2.L("全选"), 92)
     primaryButton:SetPoint("BOTTOMRIGHT", transferWindow, "BOTTOM", -7, 12)
     primaryText = primaryButton.text
     primaryButton:SetScript("OnClick", function()
@@ -251,13 +251,13 @@ local function CreateTransferWindow()
         end
         local pastedText = transferEditBox:GetText()
         if pastedText == "" then
-            ui.ShowNotice("请先粘贴需要导入的配置文本。")
+            ui.ShowNotice(Cat2.L("请先粘贴需要导入的配置文本。"))
         else
             ImportPastedText(pastedText)
         end
     end)
 
-    local cancelButton = CreateActionButton(transferWindow, "关闭", 92)
+    local cancelButton = CreateActionButton(transferWindow, Cat2.L("关闭"), 92)
     cancelButton:SetPoint("BOTTOMLEFT", transferWindow, "BOTTOM", 7, 12)
     cancelButton:SetScript("OnClick", HideTransferWindow)
     transferWindow.cancelButton = cancelButton
@@ -272,7 +272,7 @@ function ui.ShowExportWindow()
         ui.HideSettingsWindow()
     end
     transferMode = "export"
-    local profileName = "当前配置"
+    local profileName = Cat2.L("当前配置")
     local activeProfile = nil
     local repository = Cat2.RuntimeConfigurations
     if repository and repository.profiles and repository.profiles[repository.activeProfileId] then
@@ -282,17 +282,17 @@ function ui.ShowExportWindow()
     local localizedClass, classFile = UnitClass("player")
     local exportText, errorMessage = Cat2.ExportConfigurationText(activeProfile, classFile)
     if not exportText then
-        ui.ShowNotice("无法导出配置：「" .. (errorMessage or "未知错误") .. "」。")
+        ui.ShowNotice(Cat2.L("无法导出配置：「") .. (errorMessage and Cat2.L(errorMessage) or Cat2.L("未知错误")) .. Cat2.L("」。"))
         return
     end
     protectedExportText = exportText
     updatingText = true
     transferEditBox:SetText(protectedExportText)
     updatingText = false
-    transferTitle:SetText("配置导出")
-    transferHint:SetText("正在导出「" .. profileName .. "」。文本已压缩转档，点击“全选”后按 Ctrl+C 复制。")
-    primaryText:SetText("全选")
-    transferWindow.cancelButton.text:SetText("关闭")
+    transferTitle:SetText(Cat2.L("配置导出"))
+    transferHint:SetText(Cat2.L("正在导出「") .. profileName .. Cat2.L("」。文本已压缩转档，点击“全选”后按 Ctrl+C 复制。"))
+    primaryText:SetText(Cat2.L("全选"))
+    transferWindow.cancelButton.text:SetText(Cat2.L("关闭"))
     transferBlocker:Show()
     ui.ShowMainWindowDim()
     transferWindow:Show()
@@ -310,10 +310,10 @@ function ui.ShowImportWindow()
     updatingText = true
     transferEditBox:SetText("")
     updatingText = false
-    transferTitle:SetText("配置导入")
-    transferHint:SetText("将其他用户提供的完整配置文本粘贴到下方，然后点击“导入”。")
-    primaryText:SetText("导入")
-    transferWindow.cancelButton.text:SetText("取消")
+    transferTitle:SetText(Cat2.L("配置导入"))
+    transferHint:SetText(Cat2.L("将其他用户提供的完整配置文本粘贴到下方，然后点击“导入”。"))
+    primaryText:SetText(Cat2.L("导入"))
+    transferWindow.cancelButton.text:SetText(Cat2.L("取消"))
     transferBlocker:Show()
     ui.ShowMainWindowDim()
     transferWindow:Show()

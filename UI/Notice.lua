@@ -58,7 +58,7 @@ function ui.ShowNotice(message)
         confirmText:SetPoint("CENTER", confirmButton, "CENTER", 0, 0)
         confirmText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
         confirmText:SetTextColor(0.8, 0.9, 1)
-        confirmText:SetText("确定")
+        confirmText:SetText(Cat2.L("确定"))
         confirmButton:SetScript("OnEnter", function()
             confirmButton:SetBackdropColor(0.12, 0.4, 0.58, 1)
             confirmButton:SetBackdropBorderColor(0.45, 0.82, 1, 1)
@@ -150,7 +150,7 @@ function ui.ShowConfirm(message, onConfirm, confirmLabel)
         confirmButtonText:SetPoint("CENTER", confirmButton, "CENTER", 0, 0)
         confirmButtonText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
         confirmButtonText:SetTextColor(1, 0.7, 0.7)
-        confirmButtonText:SetText("确认删除")
+        confirmButtonText:SetText(Cat2.L("确认删除"))
 
         local cancelButton = CreateFrame("Button", nil, confirmWindow)
         cancelButton:SetFrameLevel(confirmWindow:GetFrameLevel() + 20)
@@ -164,7 +164,7 @@ function ui.ShowConfirm(message, onConfirm, confirmLabel)
         cancelButtonText:SetPoint("CENTER", cancelButton, "CENTER", 0, 0)
         cancelButtonText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
         cancelButtonText:SetTextColor(0.72, 0.9, 1)
-        cancelButtonText:SetText("取消")
+        cancelButtonText:SetText(Cat2.L("取消"))
 
         confirmButton:SetScript("OnEnter", function()
             confirmButton:SetBackdropColor(0.62, 0.1, 0.12, 1)
@@ -234,7 +234,7 @@ function ui.ShowConfirm(message, onConfirm, confirmLabel)
 
     pendingConfirm = onConfirm
     confirmText:SetText(message)
-    confirmButtonText:SetText(confirmLabel or "确认删除")
+    confirmButtonText:SetText(confirmLabel or Cat2.L("确认删除"))
     ui.ShowMainWindowDim()
     confirmWindow:Show()
 end
@@ -306,7 +306,7 @@ function ui.ShowTextInput(titleText, initialText, validator, onSubmit, submitLab
         cancelText:SetPoint("CENTER", cancelButton, "CENTER", 0, 0)
         cancelText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
         cancelText:SetTextColor(0.72, 0.9, 1)
-        cancelText:SetText("取消")
+        cancelText:SetText(Cat2.L("取消"))
 
         submitButton:SetScript("OnEnter", function()
             submitButton:SetBackdropColor(0.1, 0.46, 0.24, 1)
@@ -354,7 +354,7 @@ function ui.ShowTextInput(titleText, initialText, validator, onSubmit, submitLab
                 valid, errorMessage = pendingInputValidator(value)
             end
             if not valid then
-                inputError:SetText(errorMessage or "输入内容无效。")
+                inputError:SetText(errorMessage or Cat2.L("输入内容无效。"))
                 return
             end
             local callback = pendingInputSubmit
@@ -390,7 +390,7 @@ function ui.ShowTextInput(titleText, initialText, validator, onSubmit, submitLab
     pendingInputValidator = validator
     pendingInputSubmit = onSubmit
     inputTitle:SetText(titleText)
-    inputSubmitText:SetText(submitLabel or "创建")
+    inputSubmitText:SetText(submitLabel or Cat2.L("创建"))
     inputError:SetText("")
     inputBox:SetText(initialText or "")
     ui.ShowMainWindowDim()

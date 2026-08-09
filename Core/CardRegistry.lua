@@ -176,6 +176,26 @@ function Cat2.RegisterCard(card)
         return
     end
 
+    card.name_zh = card.name
+    card.description_zh = card.description
+    card.details_zh = card.details
+    -- 原始中文字段交给元表 __index 接管，否则 __index 永不触发，英文翻译无法生效。
+    card.name = nil
+    card.description = nil
+    card.details = nil
+    setmetatable(card, {
+        __index = function(t, k)
+            if k == "name" then
+                return Cat2.GetLocalizedCardText(t, "name")
+            elseif k == "description" then
+                return Cat2.GetLocalizedCardText(t, "description")
+            elseif k == "details" then
+                return Cat2.GetLocalizedCardText(t, "details")
+            end
+            return rawget(t, k)
+        end
+    })
+
     -- icons 同时保存主图标和辅助图标，最多保留三枚；第一枚用于快捷小窗。
     if type(card.icons) == "table" then
         local normalizedIcons = {}

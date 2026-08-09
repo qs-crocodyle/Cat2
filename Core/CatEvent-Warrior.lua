@@ -74,7 +74,7 @@ local function OnEvent()
     -- 施法事件处理，读条类，读条也要处理GCD
     elseif event == "SPELLCAST_START" then
 
-        if arg1=="猛击" then
+        if arg1=="猛击" or arg1=="Slam" then
             WarriorSlamCast=1
             WarriorSlamCastTimer = GetTime()+(arg2/1000)
         end
@@ -97,38 +97,38 @@ local function OnEvent()
         WarriorSlamCast = 0
 
     elseif event == "CHAT_MSG_COMBAT_SELF_MISSES" then
-        if string.find( arg1, "你发起了攻击.*闪开了.*" ) then
+        if string.find( arg1, "你发起了攻击.*闪开了.*" ) or string.find( arg1 or "", "Your attack.*dodg" ) then
             OverpowerTimerNoSW = GetTime()
         end
 
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
         --print(arg1)
-        if string.find( arg1, ".*躲闪.*" ) then
+        if string.find( arg1, ".*躲闪.*" ) or string.find( arg1 or "", "dodg" ) then
             OverpowerTimerNoSW = GetTime()
-        elseif string.find( arg1, ".*压制.*" ) then
+        elseif string.find( arg1, ".*压制.*" ) or string.find( arg1 or "", "Overpower" ) then
             OverpowerTimerNoSW = 0
-        elseif string.find( arg1, ".*你的反击对.*" ) then        --这里要完整，反击有个同名反击风暴
+        elseif string.find( arg1, ".*你的反击对.*" ) or string.find( arg1 or "", "Your Revenge" ) then        --这里要完整，反击有个同名反击风暴
             CounterTimerNoSW = 0
         end
 
     elseif event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES" then
         --MPMsg("SELF_MISSES - "..arg1)
-        if string.find( arg1, ".*你招架住了.*" ) then
+        if string.find( arg1, ".*你招架住了.*" ) or string.find( arg1 or "", "You parry" ) then
             CounterTimerNoSW = GetTime()
-        elseif string.find( arg1, ".*你闪躲开了.*" ) then
+        elseif string.find( arg1, ".*你闪躲开了.*" ) or string.find( arg1 or "", "You dodge" ) then
             CounterTimerNoSW = GetTime()
-        elseif string.find( arg1, ".*你格挡开了.*" ) then
+        elseif string.find( arg1, ".*你格挡开了.*" ) or string.find( arg1 or "", "You block" ) then
             CounterTimerNoSW = GetTime()
         end
 
     elseif event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS" then
         --MPMsg("SELF_HITS - "..arg1)
-        if string.find( arg1, ".*被格挡.*" ) then
+        if string.find( arg1, ".*被格挡.*" ) or string.find( arg1 or "", "blocked" ) then
             CounterTimerNoSW = GetTime()
         end
 
     elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
-        if string.find( arg1, "你获得了战斗怒吼的效果.*" ) then
+        if string.find( arg1, "你获得了战斗怒吼的效果.*" ) or string.find( arg1 or "", "You gain the effect of Battle Shout" ) then
             BattleShoutTimer = GetTime()
         end
 
@@ -176,7 +176,7 @@ local function OnEvent()
     elseif event == "RAW_COMBATLOG" then
 
         if arg1 == "CHAT_MSG_COMBAT_SELF_MISSES" then
-            if string.find( arg2, "你发起了攻击.*闪开了.*" ) then
+            if string.find( arg2, "你发起了攻击.*闪开了.*" ) or string.find( arg2 or "", "Your attack.*dodg" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     OverpowerTimer = GetTime()
@@ -185,19 +185,19 @@ local function OnEvent()
             end
 
         elseif arg1 == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES" then
-            if string.find( arg2, ".*你招架住了.*" ) then
+            if string.find( arg2, ".*你招架住了.*" ) or string.find( arg2 or "", "You parry" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     CounterTimer = GetTime()
                     CounterTargetGUID = guid
                 end
-            elseif string.find( arg2, ".*你闪躲开了.*" ) then
+            elseif string.find( arg2, ".*你闪躲开了.*" ) or string.find( arg2 or "", "You dodge" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     CounterTimer = GetTime()
                     CounterTargetGUID = guid
                 end
-            elseif string.find( arg1, ".*你格挡开了.*" ) then
+            elseif string.find( arg1, ".*你格挡开了.*" ) or string.find( arg2 or "", "You block" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     CounterTimer = GetTime()
@@ -206,7 +206,7 @@ local function OnEvent()
             end
 
         elseif arg1 == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS" then
-            if string.find( arg2, ".*被格挡.*" ) then
+            if string.find( arg2, ".*被格挡.*" ) or string.find( arg2 or "", "blocked" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     CounterTimer = GetTime()
@@ -217,7 +217,7 @@ local function OnEvent()
         -- 自己的攻击
         elseif arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
-            if string.find( arg2, ".*躲闪.*" ) then
+            if string.find( arg2, ".*躲闪.*" ) or string.find( arg2 or "", "dodg" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     OverpowerTimer = GetTime()
@@ -226,7 +226,7 @@ local function OnEvent()
             end
 
         elseif arg1 == "CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE" then
-            if string.find( arg2, "你的撕裂.*" ) or string.find( arg2, ".*your 撕裂.*" ) then
+            if string.find( arg2, "你的撕裂.*" ) or string.find( arg2, ".*your 撕裂.*" ) or string.find( arg2 or "", "Your Rend" ) then
                 local targetGUID = Cat2.MatchGUID(arg2) 
                 if targetGUID then
                     RendCheck[targetGUID] = GetTime()

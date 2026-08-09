@@ -86,7 +86,7 @@ local function OnEvent()
     elseif event == "SPELLCAST_START" then
 
         -- 读条处理
-        if arg1 == "炎爆术" then MageCastPyroblastTimer=GetTime()+(arg2/1000)+0.5 end
+        if arg1 == "炎爆术" or arg1 == "Pyroblast" then MageCastPyroblastTimer=GetTime()+(arg2/1000)+0.5 end
 
     elseif event == "SPELLCAST_CHANNEL_START" then
         MageArcaneMissilesDuration = arg1
@@ -102,15 +102,15 @@ local function OnEvent()
 
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
-        if string.find( arg1, ".*抵抗.*" ) then
+        if string.find( arg1, ".*抵抗.*" ) or string.find( arg1 or "", "resisted" ) then
             MageArcaneSurgeNoSW = GetTime()
-        elseif string.find( arg1, ".*炎爆术.*" ) then
+        elseif string.find( arg1, ".*炎爆术.*" ) or string.find( arg1 or "", "Pyroblast" ) then
             MagePyromaniac = 0
         end
 
     elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
 
-        if string.find( arg1, "你获得了法术连击的效果.*" ) then
+        if string.find( arg1, "你获得了法术连击的效果.*" ) or string.find( arg1 or "", "You gain the effect of Hot Streak" ) then
             local number = Cat2.ExtractNumber(arg1) 
             if number then
                 MagePyromaniac = Cat2.ToNumber(number)
@@ -158,7 +158,7 @@ local function OnEvent()
         -- 自己的攻击
         if arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
-            if string.find( arg2, ".*抵抗.*" ) then
+            if string.find( arg2, ".*抵抗.*" ) or string.find( arg2 or "", "resisted" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     MageArcaneSurge = GetTime()
@@ -167,7 +167,7 @@ local function OnEvent()
             end
 
             -- 灼烧
-            if string.find( arg2, "你的灼烧被.*抵抗.*" ) then
+            if string.find( arg2, "你的灼烧被.*抵抗.*" ) or string.find( arg2 or "", "Your Scorch was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and ScorchDelayTime[targetGUID] then 
                     local timer = GetTime() - ScorchDelayTime[targetGUID]
@@ -178,7 +178,7 @@ local function OnEvent()
             end
 
             -- 火焰冲击
-            if string.find( arg2, "你的火焰冲击被.*抵抗.*" ) then
+            if string.find( arg2, "你的火焰冲击被.*抵抗.*" ) or string.find( arg2 or "", "Your Fire Blast was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and FireBlastDelayTime[targetGUID] then 
                     local timer = GetTime() - FireBlastDelayTime[targetGUID]

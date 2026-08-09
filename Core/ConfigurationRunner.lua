@@ -76,9 +76,9 @@ local function PrintDebugStep(phase, stepIndex, stepTotal, step)
     if not Cat2.UI.IsPlayerDebugWindowVisible() then
         return
     end
-    local stepName = step and (step.name or step.id) or "未命名卡片"
-    local stepId = step and step.id or "未知ID"
-    DEFAULT_CHAT_FRAME:AddMessage("|cff6fc7ffCat2 调试|r " .. phase .. " " .. stepIndex .. "/" .. stepTotal .. "：|cffffff66" .. stepName .. "|r |cff8e9baa[" .. stepId .. "]|r")
+    local stepName = step and (step.name or step.id) or Cat2.L("未命名卡片")
+    local stepId = step and step.id or Cat2.L("未知ID")
+    DEFAULT_CHAT_FRAME:AddMessage("|cff6fc7ff" .. Cat2.L("Cat2 调试") .. "|r " .. phase .. " " .. stepIndex .. "/" .. stepTotal .. "：|cffffff66" .. stepName .. "|r |cff8e9baa[" .. stepId .. "]|r")
 end
 
 -- 创建单个成员的本轮只读快照；同一 unit 在不同排序列表中共用这个对象。
@@ -302,16 +302,16 @@ function Cat2.ExecuteConfiguration(configurationName)
     while stepIndex <= stepTotal do
         local step = profile.steps[stepIndex]
         if step and step.enabled ~= 0 and step.behavior == "passive" then
-            PrintDebugStep("被动", stepIndex, stepTotal, step)
+            PrintDebugStep(Cat2.L("被动"), stepIndex, stepTotal, step)
             table.insert(context.passiveCards, step)
             executedTotal = executedTotal + 1
             if type(step.Apply) == "function" then
                 local succeeded, applyError = pcall(step.Apply, context, step)
                 if not succeeded then
                     failedTotal = failedTotal + 1
-                    local stepName = step.name or step.id or "未命名被动卡片"
+                    local stepName = step.name or step.id or Cat2.L("未命名被动卡片")
                     table.insert(failedNames, stepName)
-                    DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2：被动卡片「" .. stepName .. "」应用失败：|r" .. tostring(applyError))
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：被动卡片「") .. stepName .. Cat2.L("」应用失败：") .. "|r" .. tostring(applyError))
                     stopped = true
                     Cat2.CurrentExecutionContext = nil
                     return true, executedTotal, failedTotal, stopped, failedNames
@@ -329,10 +329,10 @@ function Cat2.ExecuteConfiguration(configurationName)
             local succeeded, allowed, reason = pcall(passive.Validate, context, passive)
             if not succeeded then
                 failedTotal = failedTotal + 1
-                local stepName = passive.name or passive.id or "未命名被动卡片"
+                local stepName = passive.name or passive.id or Cat2.L("未命名被动卡片")
                 table.insert(failedNames, stepName)
                 -- 错误标题和详细信息分行输出，避免较长的文件路径挤占标题空间。
-                DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2：被动卡片「" .. stepName .. "」检查失败：|r")
+                DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：被动卡片「") .. stepName .. Cat2.L("」检查失败：") .. "|r")
                 DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. tostring(allowed) .. "|r")
                 stopped = true
                 Cat2.CurrentExecutionContext = nil
@@ -353,15 +353,15 @@ function Cat2.ExecuteConfiguration(configurationName)
     while stepIndex <= stepTotal do
         local step = profile.steps[stepIndex]
         if step and step.enabled ~= 0 and step.behavior ~= "passive" and type(step.Execute) == "function" then
-            PrintDebugStep("执行", stepIndex, stepTotal, step)
+            PrintDebugStep(Cat2.L("执行"), stepIndex, stepTotal, step)
             local succeeded, executeResult = pcall(step.Execute, context)
             executedTotal = executedTotal + 1
             if not succeeded then
                 failedTotal = failedTotal + 1
-                local stepName = step.name or step.id or "未命名卡片"
+                local stepName = step.name or step.id or Cat2.L("未命名卡片")
                 table.insert(failedNames, stepName)
                 -- 详细错误单独占一行，让聊天框可以按自身宽度完整换行。
-                DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2：卡片「" .. stepName .. "」执行失败：|r")
+                DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：卡片「") .. stepName .. Cat2.L("」执行失败：") .. "|r")
                 DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. tostring(executeResult) .. "|r")
             elseif executeResult == true then
                 stopped = true
@@ -379,7 +379,7 @@ SLASH_CAT2CONFIGURATION1 = "/cat2"
 SlashCmdList["CAT2CONFIGURATION"] = function(message)
     local configurationName = TrimCommandText(message or "")
     if configurationName == "" then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffcc33Cat2：请输入配置名，例如 /cat2 配置1|r")
+        DEFAULT_CHAT_FRAME:AddMessage("|cffffcc33" .. Cat2.L("Cat2：请输入配置名，例如 /cat2 配置1") .. "|r")
         if Cat2.UI and Cat2.UI.ShowMainWindow then
             Cat2.UI.ShowMainWindow()
         end
@@ -390,19 +390,24 @@ SlashCmdList["CAT2CONFIGURATION"] = function(message)
         if Cat2.UI and Cat2.UI.TogglePlayerDebugWindow then
             Cat2.UI.TogglePlayerDebugWindow()
         else
-            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2：调试窗尚未加载，请完整重启游戏。|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：调试窗尚未加载，请完整重启游戏。") .. "|r")
         end
+        return
+    end
+    if string.sub(string.lower(configurationName), 1, 4) == "lang" then
+        local lang = TrimCommandText(string.sub(configurationName, 5))
+        Cat2.SetLocale(lang)
         return
     end
     local found, executedTotal, failedTotal, stopped, failedNames = Cat2.ExecuteConfiguration(configurationName)
     if not found then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2：找不到配置「" .. configurationName .. "」。|r")
+        DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：找不到配置「") .. configurationName .. Cat2.L("」。") .. "|r")
         return
     end
     if failedTotal > 0 then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffcc33Cat2：配置「" .. configurationName .. "」执行完成，共调用 " .. executedTotal .. " 张卡片，其中 " .. failedTotal .. " 张失败。|r")
+        DEFAULT_CHAT_FRAME:AddMessage("|cffffcc33" .. Cat2.L("Cat2：配置「") .. configurationName .. Cat2.L("」执行完成，共调用 ") .. executedTotal .. Cat2.L(" 张卡片，其中 ") .. failedTotal .. Cat2.L(" 张失败。") .. "|r")
         if failedNames and table.getn(failedNames) > 0 then
-            DEFAULT_CHAT_FRAME:AddMessage("|cffff7777Cat2：失败卡片：|r|cffffaaaa「" .. table.concat(failedNames, "」、「") .. "」|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff7777" .. Cat2.L("Cat2：失败卡片：") .. "|r|cffffaaaa" .. "\"" .. table.concat(failedNames, "\", \"") .. "\"" .. "|r")
         end
     end
 end

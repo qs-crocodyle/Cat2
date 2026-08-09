@@ -125,7 +125,7 @@ local runtimeConfigurations = {
     nextProfileId = 2,
     profileOrder = { 1 },
     profiles = {
-        [1] = { id = 1, name = "配置1", steps = {} }
+        [1] = { id = 1, name = "Profile1", steps = {} }
     }
 }
 local configurationDataLoaded = false
@@ -359,7 +359,7 @@ local function CreateStepBlock(parent, step, index, fromFlow)
         passiveLabel:SetPoint("LEFT", name, "RIGHT", 7, 0)
         passiveLabel:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
         passiveLabel:SetTextColor(0.72, 0.5, 0.94)
-        passiveLabel:SetText("被动")
+        passiveLabel:SetText(Cat2.L("被动"))
         -- 被动卡使用轻微偏紫的边框与淡紫底色，不脱离整体蓝灰主题。
         block:SetBackdropColor(0.145, 0.115, 0.195, 0.95)
         block:SetBackdropBorderColor(0.38, 0.35, 0.56, 0.9)
@@ -435,16 +435,16 @@ local function CreateStepBlock(parent, step, index, fromFlow)
         hiddenStatusText:SetPoint("RIGHT", block, "RIGHT", -12, 0)
         hiddenStatusText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
         hiddenStatusText:SetTextColor(0.48, 0.54, 0.62)
-        hiddenStatusText:SetText("隐")
+        hiddenStatusText:SetText(Cat2.L("隐"))
         hiddenStatusText:Hide()
 
         visibilityButton:SetScript("OnEnter", function()
             visibilityButton:SetBackdropColor(0.12, 0.3, 0.42, 1)
             GameTooltip:SetOwner(visibilityButton, "ANCHOR_RIGHT")
             if block.step.minimizedVisible == 0 then
-                GameTooltip:SetText("显示在流程快捷小窗")
+                GameTooltip:SetText(Cat2.L("显示在流程快捷小窗"))
             else
-                GameTooltip:SetText("从流程快捷小窗隐藏")
+                GameTooltip:SetText(Cat2.L("从流程快捷小窗隐藏"))
             end
         end)
         visibilityButton:SetScript("OnLeave", function()
@@ -518,9 +518,9 @@ local function CreateStepBlock(parent, step, index, fromFlow)
             pauseButton:SetBackdropColor(0.14, 0.28, 0.42, 1)
             GameTooltip:SetOwner(pauseButton, "ANCHOR_RIGHT")
             if block.step.enabled == 0 then
-                GameTooltip:SetText("恢复此流程步骤")
+                GameTooltip:SetText(Cat2.L("恢复此流程步骤"))
             else
-                GameTooltip:SetText("暂停此流程步骤")
+                GameTooltip:SetText(Cat2.L("暂停此流程步骤"))
             end
         end)
         pauseButton:SetScript("OnLeave", function()
@@ -543,7 +543,7 @@ local function CreateStepBlock(parent, step, index, fromFlow)
         deleteButton:SetScript("OnEnter", function()
             deleteButton:SetBackdropColor(0.58, 0.1, 0.1, 1)
             GameTooltip:SetOwner(deleteButton, "ANCHOR_RIGHT")
-            GameTooltip:SetText("从当前流程删除此卡片")
+            GameTooltip:SetText(Cat2.L("从当前流程删除此卡片"))
         end)
         deleteButton:SetScript("OnLeave", function()
             deleteButton:SetBackdropColor(0.35, 0.08, 0.08, 0.98)
@@ -657,11 +657,11 @@ local function CreateStepBlock(parent, step, index, fromFlow)
             end
         else
             if not Cat2.CanAddCardForPlayer(block.step) then
-                ShowNotice("当前正在预览其他职业。\n只有角色本职业可用的共享卡片能够加入流程。")
+                ShowNotice(Cat2.L("当前正在预览其他职业。\n只有角色本职业可用的共享卡片能够加入流程。"))
                 return
             end
             if table.getn(selectedSteps) >= maximumFlowSteps then
-                ShowNotice("流程卡片已经装满，最多可放置 " .. maximumFlowSteps .. " 张卡片。")
+                ShowNotice(Cat2.L("流程卡片已经装满，最多可放置 ") .. maximumFlowSteps .. Cat2.L(" 张卡片。"))
                 return
             end
             if block.step.unique then
@@ -669,7 +669,7 @@ local function CreateStepBlock(parent, step, index, fromFlow)
                 local existingTotal = table.getn(selectedSteps)
                 while existingIndex <= existingTotal do
                     if selectedSteps[existingIndex].id == block.step.id then
-                        ShowNotice("被动卡片「" .. block.step.name .. "」在同一配置中只能放置一张。")
+                        ShowNotice(Cat2.L("被动卡片「") .. block.step.name .. Cat2.L("」在同一配置中只能放置一张。"))
                         return
                     end
                     existingIndex = existingIndex + 1
@@ -954,7 +954,7 @@ end
 function ui.ApplyImportedConfiguration(importedProfile, overwriteProfileId)
     Cat2.EnsureConfigurationDataLoaded()
     if type(importedProfile) ~= "table" or type(importedProfile.steps) ~= "table" then
-        return false, "导入配置数据无效"
+        return false, Cat2.L("导入配置数据无效")
     end
 
     local runtimeSteps = {}
@@ -973,7 +973,7 @@ function ui.ApplyImportedConfiguration(importedProfile, overwriteProfileId)
     if profileId then
         local existing = runtimeConfigurations.profiles[profileId]
         if not existing then
-            return false, "需要覆盖的配置已经不存在"
+            return false, Cat2.L("需要覆盖的配置已经不存在")
         end
         existing.name = importedProfile.name
         existing.steps = runtimeSteps
@@ -1390,13 +1390,13 @@ function ui.SetCardPreviewClass(classFile)
     while tabIndex <= tabTotal do
         local tab = filterTabs[tabIndex]
         if tab.filterKey == "spec1" then
-            tab.text:SetText(specializationNames[1])
+            tab.text:SetText(Cat2.L(specializationNames[1]))
         elseif tab.filterKey == "spec2" then
-            tab.text:SetText(specializationNames[2])
+            tab.text:SetText(Cat2.L(specializationNames[2]))
         elseif tab.filterKey == "spec3" then
-            tab.text:SetText(specializationNames[3])
+            tab.text:SetText(Cat2.L(specializationNames[3]))
         elseif tab.filterKey == "spec4" and specializationNames[4] then
-            tab.text:SetText(specializationNames[4])
+            tab.text:SetText(Cat2.L(specializationNames[4]))
         end
         tabIndex = tabIndex + 1
     end
@@ -1423,9 +1423,9 @@ Cat2.CardPreviewClassOrder = {
     "ROGUE", "SHAMAN", "WARLOCK", "WARRIOR"
 }
 Cat2.CardPreviewClassNames = {
-    DRUID = "德鲁伊", HUNTER = "猎人", MAGE = "法师",
-    PALADIN = "圣骑士", PRIEST = "牧师", ROGUE = "盗贼",
-    SHAMAN = "萨满", WARLOCK = "术士", WARRIOR = "战士"
+    DRUID = "Druid", HUNTER = "Hunter", MAGE = "Mage",
+    PALADIN = "Paladin", PRIEST = "Priest", ROGUE = "Rogue",
+    SHAMAN = "Shaman", WARLOCK = "Warlock", WARRIOR = "Warrior"
 }
 Cat2.CardPreviewClassColors = {
     DRUID = { 1, 0.49, 0.04 }, HUNTER = { 0.67, 0.83, 0.45 },
@@ -1516,7 +1516,7 @@ function ui.CreateClassPreviewDropdown(parent)
     end
 
     parent.RefreshClassPreviewDropdown = function()
-        selectedText:SetText(Cat2.CardPreviewClassNames[Cat2.PlayerClassFile] or "职业")
+        selectedText:SetText(Cat2.CardPreviewClassNames[Cat2.PlayerClassFile] or Cat2.L("职业"))
         local selectedColor = Cat2.CardPreviewClassColors[Cat2.PlayerClassFile]
         if selectedColor then
             selectedText:SetTextColor(selectedColor[1], selectedColor[2], selectedColor[3])
@@ -1743,7 +1743,7 @@ local function CreateMainWindow()
     availableSteps = Cat2.GetCardsForClass(classFile)
     local specializationNames = Cat2.ClassSpecializations[classFile]
     if not specializationNames then
-        specializationNames = { "第一系", "第二系", "第三系" }
+        specializationNames = { Cat2.L("第一系"), Cat2.L("第二系"), Cat2.L("第三系") }
     end
 
     mainWindow = CreateFrame("Frame", "Cat2MainWindow", UIParent)
@@ -1798,14 +1798,14 @@ local function CreateMainWindow()
     titleTail:SetPoint("LEFT", titleNumber, "RIGHT", 0, 0)
     titleTail:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
     titleTail:SetTextColor(1, 0.78, 0.16)
-    titleTail:SetText(" 喵！")
+    titleTail:SetText(Cat2.L(" 喵！"))
 
     -- 版本号使用独立的小号低对比度文字，不影响主标题的醒目配色。
     local titleVersion = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     titleVersion:SetPoint("LEFT", titleTail, "RIGHT", 8, -1)
     titleVersion:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
     titleVersion:SetTextColor(0.5, 0.56, 0.64)
-    titleVersion:SetText("版本：" .. Cat2.Version)
+    titleVersion:SetText(Cat2.L("版本：") .. Cat2.Version)
     mainWindow.titleText = title
     mainWindow.titleNumberText = titleNumber
     mainWindow.titleTailText = titleTail
@@ -1834,9 +1834,9 @@ local function CreateMainWindow()
             visible = Cat2.GetProfileShortcutWindowSettings(Cat2.RuntimeConfigurations.activeProfileId)
         end
         if visible then
-            GameTooltip:SetText("关闭流程快捷小窗")
+            GameTooltip:SetText(Cat2.L("关闭流程快捷小窗"))
         else
-            GameTooltip:SetText("打开流程快捷小窗")
+            GameTooltip:SetText(Cat2.L("打开流程快捷小窗"))
         end
     end)
     minimizeButton:SetScript("OnLeave", function()
@@ -1922,7 +1922,7 @@ local function CreateMainWindow()
     flowTitle:SetPoint("TOPLEFT", flowPanel, "TOPLEFT", 14, -12)
     flowTitle:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
     flowTitle:SetTextColor(0.5, 0.8, 1)
-    flowTitle:SetText("流程")
+    flowTitle:SetText(Cat2.L("流程"))
 
     flowCountText = flowPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     flowCountText:SetPoint("LEFT", flowTitle, "RIGHT", 8, 0)
@@ -1940,7 +1940,7 @@ local function CreateMainWindow()
     rulesText:SetPoint("CENTER", rulesButton, "CENTER", 0, 0)
     rulesText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
     rulesText:SetTextColor(0.64, 0.78, 0.9)
-    rulesText:SetText("规则")
+    rulesText:SetText(Cat2.L("规则"))
     rulesButton:SetScript("OnEnter", function()
         rulesButton:SetBackdropColor(0.1, 0.24, 0.34, 1)
         rulesButton:SetBackdropBorderColor(0.42, 0.72, 0.9, 1)
@@ -1989,7 +1989,7 @@ local function CreateMainWindow()
     emptyHint:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
     emptyHint:SetTextColor(0.65, 0.65, 0.65)
     emptyHint:SetJustifyH("CENTER")
-    emptyHint:SetText("将右侧步骤拖到这里\n支持鼠标左键或右键拖动\n拖动左侧步骤可以调整顺序")
+    emptyHint:SetText(Cat2.L("将右侧步骤拖到这里\n支持鼠标左键或右键拖动\n拖动左侧步骤可以调整顺序"))
 
     dropIndicator = CreateFrame("Frame", nil, flowContent)
     dropIndicator:SetWidth(316)
@@ -2027,13 +2027,13 @@ local function CreateMainWindow()
     centerGap:SetScript("OnClick", function()
     end)
 
-    CreateFilterTab(availablePanel, "all", "全部", 8, 40)
-    CreateFilterTab(availablePanel, "common", "通用", 50, 40)
-    CreateFilterTab(availablePanel, "item", "药水", 92, 40)
-    CreateFilterTab(availablePanel, "spec1", specializationNames[1], 134, 66)
-    CreateFilterTab(availablePanel, "spec2", specializationNames[2], 202, 72)
-    CreateFilterTab(availablePanel, "spec3", specializationNames[3], 276, 72)
-    CreateFilterTab(availablePanel, "spec4", specializationNames[4] or "第四系", 299, 55)
+    CreateFilterTab(availablePanel, "all", Cat2.L("全部"), 8, 40)
+    CreateFilterTab(availablePanel, "common", Cat2.L("通用"), 50, 40)
+    CreateFilterTab(availablePanel, "item", Cat2.L("药水"), 92, 40)
+    CreateFilterTab(availablePanel, "spec1", Cat2.L(specializationNames[1]), 134, 66)
+    CreateFilterTab(availablePanel, "spec2", Cat2.L(specializationNames[2]), 202, 72)
+    CreateFilterTab(availablePanel, "spec3", Cat2.L(specializationNames[3]), 276, 72)
+    CreateFilterTab(availablePanel, "spec4", specializationNames[4] and Cat2.L(specializationNames[4]) or Cat2.L("第四系"), 299, 55)
     -- 复用主窗口构造函数原本已经捕获的 Cat2，不能再新增 ui 这个 upvalue。
     Cat2.UI.LayoutFilterTabs(classFile)
     RefreshFilterTabs()
@@ -2116,12 +2116,12 @@ local function CreateMainWindow()
         end)
     end
 
-    CreateFooterButton("导出", 0, function()
+    CreateFooterButton(Cat2.L("导出"), 0, function()
         if Cat2.UI.ShowExportWindow then
             Cat2.UI.ShowExportWindow()
         end
     end)
-    CreateFooterButton("导入", 98, function()
+    CreateFooterButton(Cat2.L("导入"), 98, function()
         if Cat2.UI.ShowImportWindow then
             Cat2.UI.ShowImportWindow()
         end
@@ -2174,9 +2174,9 @@ local function CreateMainWindow()
     commandCopyBox:SetScript("OnEnter", function()
         commandCopyBox:SetBackdropColor(0.09, 0.15, 0.22, 1)
         GameTooltip:SetOwner(commandCopyBox, "ANCHOR_TOP")
-        GameTooltip:SetText("当前配置的执行指令")
-        GameTooltip:AddLine("点击输入框自动全选，然后按 Ctrl+C 复制。", 0.78, 0.86, 0.96)
-        GameTooltip:AddLine("可粘贴到宏中，也可以直接在聊天栏使用。", 0.64, 0.7, 0.8)
+        GameTooltip:SetText(Cat2.L("当前配置的执行指令"))
+        GameTooltip:AddLine(Cat2.L("点击输入框自动全选，然后按 Ctrl+C 复制。"), 0.78, 0.86, 0.96)
+        GameTooltip:AddLine(Cat2.L("可粘贴到宏中，也可以直接在聊天栏使用。"), 0.64, 0.7, 0.8)
         GameTooltip:Show()
     end)
     commandCopyBox:SetScript("OnLeave", function()
@@ -2322,8 +2322,8 @@ local function CreateMainWindow()
     local function CreateProfileActionButton(labelText, offsetX, onClick, buttonWidth)
         local isAddButton = labelText == "+"
         local isDeleteButton = labelText == "-"
-        local isRenameButton = labelText == "改名"
-        local isManagerButton = labelText == "管理"
+        local isRenameButton = labelText == Cat2.L("改名")
+        local isManagerButton = labelText == Cat2.L("管理")
         local button = CreateFrame("Button", nil, profileActions)
         button:SetWidth(buttonWidth or 42)
         button:SetHeight(28)
@@ -2357,7 +2357,7 @@ local function CreateMainWindow()
             text:SetTextColor(0.68, 0.88, 1)
         end
         if isRenameButton then
-            text:SetText("改")
+            text:SetText(Cat2.L("改"))
         else
             text:SetText(labelText)
         end
@@ -2374,7 +2374,7 @@ local function CreateMainWindow()
                 text:SetTextColor(1, 0.84, 0.28)
                 if isRenameButton then
                     GameTooltip:SetOwner(button, "ANCHOR_TOP")
-                    GameTooltip:SetText("重命名当前配置")
+                    GameTooltip:SetText(Cat2.L("重命名当前配置"))
                     GameTooltip:Show()
                 end
             end
@@ -2424,7 +2424,7 @@ local function CreateMainWindow()
 
     local legacyCreateProfileButton = CreateProfileActionButton("+", 242, function()
         profileMenu:Hide()
-        ShowTextInput("新建配置（2-12个字符）", "", function(value)
+        ShowTextInput(Cat2.L("新建配置（2-12个字符）"), "", function(value)
             return ValidateProfileName(value, nil)
         end, function(value)
             local newId = runtimeConfigurations.nextProfileId
@@ -2445,14 +2445,14 @@ local function CreateMainWindow()
     local legacyDeleteProfileButton = CreateProfileActionButton("-", 288, function()
         local profileTotal = table.getn(runtimeConfigurations.profileOrder)
         if profileTotal <= 1 then
-            ShowNotice("至少需要保留一个配置，不能删除当前配置。")
+            ShowNotice(Cat2.L("至少需要保留一个配置，不能删除当前配置。"))
             return
         end
         profileMenu:Hide()
         local deleteId = runtimeConfigurations.activeProfileId
         local deleteProfile = runtimeConfigurations.profiles[deleteId]
         local deleteName = deleteProfile.name
-        ShowConfirm("确定删除配置「" .. deleteName .. "」吗？\n此操作无法撤销。", function()
+        ShowConfirm(Cat2.L("确定删除配置「") .. deleteName .. Cat2.L("」吗？\n此操作无法撤销。"), function()
             if not runtimeConfigurations.profiles[deleteId] then
                 return
             end
@@ -2492,11 +2492,11 @@ local function CreateMainWindow()
     minimizeButton:SetHeight(28)
     minimizeButton:SetPoint("LEFT", profileActions, "LEFT", 0, 0)
 
-    CreateProfileActionButton("管理", 34, function()
+    CreateProfileActionButton(Cat2.L("管理"), 34, function()
         if Cat2.UI.ToggleProfileManager then
             Cat2.UI.ToggleProfileManager()
         elseif DEFAULT_CHAT_FRAME then
-            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2：配置管理模块尚未加载，请完整重启游戏。|r")
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("配置管理模块尚未加载，请完整重启游戏。") .. "|r")
         end
     end, 52)
     UpdateProfileText()

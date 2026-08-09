@@ -102,7 +102,7 @@ local function CheckSpellLog(str)
 
     if objectGUID and UnitCanAttack("player", objectGUID) then
         -- 打断部分收集信息
-        local spellName = Cat2.Match(str, "开始施放(.-)。")
+        local spellName = Cat2.Match(str, "开始施放(.-)。") or Cat2.Match(str, "begins to cast (.-)%.")
         if spellName then
             castStartTime[objectGUID] = GetTime()
             castName[objectGUID] = spellName
@@ -128,7 +128,7 @@ local function OnEvent()
 
     -- 初始化
     if event == "PLAYER_LOGIN" then
-        DEFAULT_CHAT_FRAME:AddMessage("|cFF9264cdCat2 加载完成！|r")
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF9264cd" .. Cat2.L("Cat2 加载完成！") .. "|r")
 
         if SUPERWOW_STRING then
             Cat2.SuperWoW = true
@@ -190,7 +190,7 @@ local function OnEvent()
 
     -- 背面判断
     elseif event == "UI_ERROR_MESSAGE" then
-        if arg1=="你必须位于目标背后" then
+        if arg1=="你必须位于目标背后" or string.find(arg1 or "", "behind the target") then
             ErrorBehindTimer = GetTime()
             ErrorBehind = false
         end
@@ -246,9 +246,9 @@ local function OnEvent()
     -- 技能伤害
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
-        if string.find( arg1, "你的英勇打击.*" ) then
+        if string.find( arg1, "你的英勇打击.*" ) or string.find( arg1 or "", "Your Heroic Strike" ) then
             BeginHit()
-        elseif string.find( arg1, "你的顺劈斩.*" ) then
+        elseif string.find( arg1, "你的顺劈斩.*" ) or string.find( arg1 or "", "Your Cleave" ) then
             BeginHit()
         end
 
@@ -256,9 +256,9 @@ local function OnEvent()
     elseif event == "CHAT_MSG_COMBAT_SELF_MISSES" then
 
         if not Cat2.SuperWoW then
-            if string.find( arg1, "你发起了攻击.*" ) then
+            if string.find( arg1, "你发起了攻击.*" ) or string.find( arg1 or "", "Your attack" ) then
                 BeginHit()
-            elseif string.find( arg1, "你没有击中.*" ) then
+            elseif string.find( arg1, "你没有击中.*" ) or string.find( arg1 or "", "missed" ) then
                 BeginHit()
             end
         end
@@ -266,9 +266,9 @@ local function OnEvent()
     elseif event == "CHAT_MSG_COMBAT_SELF_HITS" then
 
         if not Cat2.SuperWoW then
-            if string.find( arg1, "你对.*" ) then
+            if string.find( arg1, "你对.*" ) or string.find( arg1 or "", "You hit" ) then
                 BeginHit()
-            elseif string.find( arg1, "你击中.*" ) then
+            elseif string.find( arg1, "你击中.*" ) or string.find( arg1 or "", "You hit the" ) then
                 BeginHit()
             end
         end

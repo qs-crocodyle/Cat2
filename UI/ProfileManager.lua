@@ -83,11 +83,11 @@ end
 local function ValidateProfileName(value, ignoredProfileId)
     local length = string.len(value or "")
     if length < 2 or length > 36 then
-        return false, "名称长度必须为 2-12 个汉字或字符。"
+        return false, Cat2.L("名称长度必须为 2-12 个汉字或字符。")
     end
     -- debug 已由 /cat2 debug 用作调试指令，不能再作为配置名称。
     if string.lower(value) == "debug" then
-        return false, "debug 是调试指令，不能作为配置名称。"
+        return false, Cat2.L("debug 是调试指令，不能作为配置名称。")
     end
     local repository = Cat2.RuntimeConfigurations
     local index = 1
@@ -95,7 +95,7 @@ local function ValidateProfileName(value, ignoredProfileId)
         local profileId = repository.profileOrder[index]
         local profile = repository.profiles[profileId]
         if profileId ~= ignoredProfileId and profile and profile.name == value then
-            return false, "已经存在同名配置。"
+            return false, Cat2.L("已经存在同名配置。")
         end
         index = index + 1
     end
@@ -190,7 +190,7 @@ local function RefreshManager()
     managerWindow.iconLimit = iconLimit
     managerWindow.direction = direction
     managerWindow.scale = scale
-    managerWindow.visibilityButton.text:SetText(visible and "已开启" or "已关闭")
+    managerWindow.visibilityButton.text:SetText(visible and Cat2.L("已开启") or Cat2.L("已关闭"))
     if visible then
         managerWindow.visibilityButton.SetColors(0.08, 0.3, 0.18, 0.14, 0.45, 0.28, 0.04, 0.16, 0.09)
     else
@@ -205,7 +205,7 @@ local function RefreshManager()
     if ui.GetMaximumShortcutWindows then
         maximumWindows = ui.GetMaximumShortcutWindows()
     end
-    managerWindow.windowCount:SetText("已开启快捷窗：" .. CountVisibleWindows() .. " / " .. maximumWindows)
+    managerWindow.windowCount:SetText(Cat2.L("已开启快捷窗：") .. CountVisibleWindows() .. " / " .. maximumWindows)
 end
 
 local function SaveLayout(visible, iconLimit, direction, scale)
@@ -251,7 +251,7 @@ local function CreateManager()
     title:SetPoint("TOPLEFT", managerWindow, "TOPLEFT", 18, -16)
     title:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
     title:SetTextColor(1, 0.78, 0.16)
-    title:SetText("配置与快捷窗管理")
+    title:SetText(Cat2.L("配置与快捷窗管理"))
 
     local close = CreateButton(managerWindow, "X", 26, 24)
     close:SetPoint("TOPRIGHT", managerWindow, "TOPRIGHT", -12, -11)
@@ -269,10 +269,10 @@ local function CreateManager()
     listTitle:SetPoint("TOPLEFT", managerWindow.list, "TOPLEFT", 10, -10)
     listTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     listTitle:SetTextColor(0.5, 0.82, 1)
-    listTitle:SetText("配置列表")
+    listTitle:SetText(Cat2.L("配置列表"))
 
     -- 配置的创建与删除集中放在列表底部，避免主界面与管理界面各维护一套入口。
-    local createProfileButton = CreateButton(managerWindow.list, "新建配置", 78, 28)
+    local createProfileButton = CreateButton(managerWindow.list, Cat2.L("新建配置"), 78, 28)
     createProfileButton:SetPoint("BOTTOMLEFT", managerWindow.list, "BOTTOMLEFT", 7, 8)
     createProfileButton.SetColors(0.06, 0.24, 0.13, 0.1, 0.4, 0.22, 0.03, 0.12, 0.06)
     createProfileButton:ApplyBaseColor()
@@ -281,7 +281,7 @@ local function CreateManager()
             return
         end
         managerWindow:Hide()
-        ui.ShowTextInput("新建配置（2-12个字符）", "", function(value)
+        ui.ShowTextInput(Cat2.L("新建配置（2-12个字符）"), "", function(value)
             return ValidateProfileName(value, nil)
         end, function(value)
             local repository = Cat2.RuntimeConfigurations
@@ -304,10 +304,10 @@ local function CreateManager()
             end
             managerWindow:Show()
             RefreshManager()
-        end, "创建")
+        end, Cat2.L("创建"))
     end)
 
-    local deleteProfileButton = CreateButton(managerWindow.list, "删除配置", 78, 28)
+    local deleteProfileButton = CreateButton(managerWindow.list, Cat2.L("删除配置"), 78, 28)
     deleteProfileButton:SetPoint("BOTTOMRIGHT", managerWindow.list, "BOTTOMRIGHT", -7, 8)
     deleteProfileButton.SetColors(0.32, 0.07, 0.08, 0.48, 0.1, 0.12, 0.18, 0.03, 0.04)
     deleteProfileButton:ApplyBaseColor()
@@ -315,7 +315,7 @@ local function CreateManager()
         local repository = Cat2.RuntimeConfigurations
         if table.getn(repository.profileOrder) <= 1 then
             if ui.ShowNotice then
-                ui.ShowNotice("至少需要保留一个配置，不能删除当前配置。")
+                ui.ShowNotice(Cat2.L("至少需要保留一个配置，不能删除当前配置。"))
             end
             return
         end
@@ -324,7 +324,7 @@ local function CreateManager()
             return
         end
         local deletingName = deletingProfile.name
-        ui.ShowConfirm("确定删除配置「" .. deletingName .. "」吗？\n此操作无法撤销。", function()
+        ui.ShowConfirm(Cat2.L("确定删除配置「") .. deletingName .. Cat2.L("」吗？\n此操作无法撤销。"), function()
             local orderIndex = 1
             local deletingOrderIndex = nil
             while orderIndex <= table.getn(repository.profileOrder) do
@@ -359,7 +359,7 @@ local function CreateManager()
                 ui.RedrawMinimizedShortcuts()
             end
             RefreshManager()
-        end, "删除")
+        end, Cat2.L("删除"))
     end)
 
     local content = CreateFrame("Frame", nil, managerWindow)
@@ -372,13 +372,13 @@ local function CreateManager()
     profileLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
     profileLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     profileLabel:SetTextColor(0.72, 0.84, 0.96)
-    profileLabel:SetText("当前配置")
+    profileLabel:SetText(Cat2.L("当前配置"))
     managerWindow.profileName = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     managerWindow.profileName:SetPoint("LEFT", profileLabel, "RIGHT", 12, 0)
     managerWindow.profileName:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
     managerWindow.profileName:SetTextColor(1, 0.82, 0.2)
 
-    local rename = CreateButton(content, "改名", 56, 24)
+    local rename = CreateButton(content, Cat2.L("改名"), 56, 24)
     rename:SetPoint("TOPRIGHT", content, "TOPRIGHT", -14, -11)
     rename:SetScript("OnClick", function()
         local repository = Cat2.RuntimeConfigurations
@@ -387,7 +387,7 @@ local function CreateManager()
             return
         end
         managerWindow:Hide()
-        ui.ShowTextInput("配置改名（2-12个字符）", profile.name, function(value)
+        ui.ShowTextInput(Cat2.L("配置改名（2-12个字符）"), profile.name, function(value)
             return ValidateProfileName(value, selectedProfileId)
         end, function(value)
             local current = Cat2.RuntimeConfigurations.profiles[selectedProfileId]
@@ -405,7 +405,7 @@ local function CreateManager()
             end
             managerWindow:Show()
             RefreshManager()
-        end, "改名")
+        end, Cat2.L("改名"))
     end)
 
     local separator = content:CreateTexture(nil, "ARTWORK")
@@ -419,8 +419,8 @@ local function CreateManager()
     visibleLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -68)
     visibleLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     visibleLabel:SetTextColor(0.72, 0.84, 0.96)
-    visibleLabel:SetText("快捷窗")
-    managerWindow.visibilityButton = CreateButton(content, "已关闭", 76, 26)
+    visibleLabel:SetText(Cat2.L("快捷窗"))
+    managerWindow.visibilityButton = CreateButton(content, Cat2.L("已关闭"), 76, 26)
     managerWindow.visibilityButton:SetPoint("LEFT", visibleLabel, "RIGHT", 18, 0)
     managerWindow.visibilityButton:SetScript("OnClick", function()
         if ui.SelectConfigurationProfile then
@@ -440,7 +440,7 @@ local function CreateManager()
     limitLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -112)
     limitLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     limitLabel:SetTextColor(0.72, 0.84, 0.96)
-    limitLabel:SetText("每行或列图标数")
+    limitLabel:SetText(Cat2.L("每行或列图标数"))
     local decrease = CreateButton(content, "-", 26, 24)
     decrease:SetPoint("LEFT", limitLabel, "RIGHT", 16, 0)
     managerWindow.limitText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -470,10 +470,10 @@ local function CreateManager()
     directionLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -157)
     directionLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     directionLabel:SetTextColor(0.72, 0.84, 0.96)
-    directionLabel:SetText("排列方向")
-    managerWindow.horizontalButton = CreateButton(content, "横向优先", 86, 26)
+    directionLabel:SetText(Cat2.L("排列方向"))
+    managerWindow.horizontalButton = CreateButton(content, Cat2.L("横向优先"), 86, 26)
     managerWindow.horizontalButton:SetPoint("LEFT", directionLabel, "RIGHT", 28, 0)
-    managerWindow.verticalButton = CreateButton(content, "纵向优先", 86, 26)
+    managerWindow.verticalButton = CreateButton(content, Cat2.L("纵向优先"), 86, 26)
     managerWindow.verticalButton:SetPoint("LEFT", managerWindow.horizontalButton, "RIGHT", 8, 0)
     managerWindow.horizontalButton:SetScript("OnClick", function()
         SaveLayout(managerWindow.visible, managerWindow.iconLimit, "horizontal", managerWindow.scale)
@@ -486,7 +486,7 @@ local function CreateManager()
     scaleLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -202)
     scaleLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     scaleLabel:SetTextColor(0.72, 0.84, 0.96)
-    scaleLabel:SetText("快捷窗缩放")
+    scaleLabel:SetText(Cat2.L("快捷窗缩放"))
     local scaleDecrease = CreateButton(content, "-", 26, 24)
     scaleDecrease:SetPoint("LEFT", scaleLabel, "RIGHT", 40, 0)
     managerWindow.scaleText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -516,7 +516,7 @@ local function CreateManager()
     commandLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -247)
     commandLabel:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
     commandLabel:SetTextColor(0.72, 0.84, 0.96)
-    commandLabel:SetText("宏命令（点击全选后 Ctrl+C 复制）")
+    commandLabel:SetText(Cat2.L("宏命令（点击全选后 Ctrl+C 复制）"))
 
     local commandBox = CreateFrame("EditBox", nil, content)
     commandBox:SetWidth(278)
@@ -558,8 +558,8 @@ local function CreateManager()
     commandBox:SetScript("OnEnter", function()
         commandBox:SetBackdropColor(0.08, 0.13, 0.2, 1)
         GameTooltip:SetOwner(commandBox, "ANCHOR_TOP")
-        GameTooltip:SetText("当前配置的执行命令")
-        GameTooltip:AddLine("点击自动全选，再按 Ctrl+C 复制到宏中。", 0.72, 0.84, 0.96)
+        GameTooltip:SetText(Cat2.L("当前配置的执行命令"))
+        GameTooltip:AddLine(Cat2.L("点击自动全选，再按 Ctrl+C 复制到宏中。"), 0.72, 0.84, 0.96)
         GameTooltip:Show()
     end)
     commandBox:SetScript("OnLeave", function()
@@ -567,7 +567,7 @@ local function CreateManager()
         GameTooltip:Hide()
     end)
 
-    local reset = CreateButton(content, "还原位置", 88, 28)
+    local reset = CreateButton(content, Cat2.L("还原位置"), 88, 28)
     reset:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 16, 16)
     reset:SetScript("OnClick", function()
         if ui.ResetMinimizedWindowPosition then

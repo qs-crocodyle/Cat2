@@ -85,12 +85,12 @@ local function OnEvent()
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
         -- 神圣打击 - 无论是否命中、招架、闪避，都能刷新威能
-        if string.find( arg1, "你的神圣打击.*" ) then
+        if string.find( arg1, "你的神圣打击.*" ) or string.find( arg1 or "", "Your Holy Strike" ) then
             PaladinHolyStrikeDuration = GetTime()
-        elseif string.find( arg1, "你的十字军打击.*" ) then
+        elseif string.find( arg1, "你的十字军打击.*" ) or string.find( arg1 or "", "Your Crusader Strike" ) then
             PaladinFrenzyDuration = GetTime()
             CrusaderStrikeCheck = GetTime()
-        elseif string.find( arg1, "你的.*审判.*" ) then
+        elseif string.find( arg1, "你的.*审判.*" ) or string.find( arg1 or "", "Your Judgement" ) then
             PaladinSealJustice = false
             PaladinSealCommand = false
             PaladinSealWisdom = false
@@ -103,14 +103,14 @@ local function OnEvent()
         --message(arg1)
         --message("---SPELLCAST_STOP-----")
 
-        if string.find( arg1, "你获得了狂热的效果.*" ) then
+        if string.find( arg1, "你获得了狂热的效果.*" ) or string.find( arg1 or "", "You gain the effect of Zeal" ) then
             local number = Cat2.ExtractNumber(arg1) 
             if number then
                 PaladinFrenzyLayer = Cat2.ToNumber(number)
             else
                 PaladinFrenzyLayer = 1
             end
-        elseif string.find( arg1, "你获得了正义圣印的效果.*" ) then
+        elseif string.find( arg1, "你获得了正义圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of Seal of Righteousness" ) then
             PaladinSealJustice = true
             PaladinSealCommand = false
             PaladinSealWisdom = false
@@ -123,7 +123,7 @@ local function OnEvent()
             PaladinSealCommandDuration = 0
             PaladinSealRightDuration = 0
 
-        elseif string.find( arg1, "你获得了命令圣印的效果.*" ) then
+        elseif string.find( arg1, "你获得了命令圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of Seal of Command" ) then
             PaladinSealJustice = false
             PaladinSealCommand = true
             PaladinSealWisdom = false
@@ -136,7 +136,7 @@ local function OnEvent()
             PaladinSealCommandDuration = GetTime()
             PaladinSealRightDuration = 0
 
-        elseif string.find( arg1, "你获得了智慧圣印的效果.*" ) then
+        elseif string.find( arg1, "你获得了智慧圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of Seal of Wisdom" ) then
             PaladinSealJustice = false
             PaladinSealCommand = false
             PaladinSealWisdom = true
@@ -149,7 +149,7 @@ local function OnEvent()
             PaladinSealCommandDuration = 0
             PaladinSealRightDuration = 0
 
-        elseif string.find( arg1, "你获得了十字军圣印的效果.*" ) then
+        elseif string.find( arg1, "你获得了十字军圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of Seal of the Crusader" ) then
             PaladinSealJustice = false
             PaladinSealCommand = false
             PaladinSealWisdom = false
@@ -162,7 +162,7 @@ local function OnEvent()
             PaladinSealCommandDuration = 0
             PaladinSealRightDuration = 0
 
-        elseif string.find( arg1, "你获得了光明圣印的效果.*" ) then
+        elseif string.find( arg1, "你获得了光明圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of Seal of Light" ) then
             PaladinSealJustice = false
             PaladinSealCommand = false
             PaladinSealWisdom = false
@@ -181,11 +181,11 @@ local function OnEvent()
         --message(arg1)
         --message("---CHAT_MSG_SPELL_AURA_GONE_SELF-----")
 
-        if string.find( arg1, ".*狂热效果.*消失.*" ) then
+        if string.find( arg1, ".*狂热效果.*消失.*" ) or string.find( arg1 or "", "Zeal fades" ) then
             if not Cat2.SuperWoW then
                 PaladinFrenzyLayer = 0
             end
-        elseif string.find( arg1, ".*圣印.*消失.*" ) then
+        elseif string.find( arg1, ".*圣印.*消失.*" ) or string.find( arg1 or "", "Seal.*fades" ) then
 
             PaladinSealJustice = false
             PaladinSealCommand = false
@@ -219,7 +219,7 @@ local function OnEvent()
 
                 -- 正义圣印
                 if arg4==21084 or arg4==20287 or arg4==20288 or arg4==20289 or arg4==20290 or arg4==20291 or arg4==20292 or arg4==20293 then
-                    Cat2.Msg("正义圣印")
+                    Cat2.Msg(Cat2.L("正义圣印"))
                     PaladinSealJusticeDuration = GetTime()
                     PaladinSealWisdomDuration = 0
                     PaladinSealCrusaderDuration = 0
@@ -227,7 +227,7 @@ local function OnEvent()
                     PaladinSealRightDuration = 0
                 -- 命令圣印
                 elseif arg4==20920 or arg4==20919 or arg4==20918 or arg4==20915 or arg4==20375 then
-                    Cat2.Msg("命令圣印")
+                    Cat2.Msg(Cat2.L("命令圣印"))
                     PaladinSealJusticeDuration = 0
                     PaladinSealWisdomDuration = 0
                     PaladinSealCrusaderDuration = 0
@@ -235,7 +235,7 @@ local function OnEvent()
                     PaladinSealRightDuration = 0
                 -- 智慧圣印
                 elseif arg4==20166 or arg4==20356 or arg4==20357 or arg4==51745 or arg4 == 51746 then
-                    Cat2.Msg("智慧圣印")
+                    Cat2.Msg(Cat2.L("智慧圣印"))
                     PaladinSealWisdomDuration = GetTime()
                     PaladinSealJusticeDuration = 0
                     PaladinSealCrusaderDuration = 0
@@ -244,7 +244,7 @@ local function OnEvent()
 
                 -- 十字军圣印
                 elseif arg4==21082 or arg4==20162 or arg4==20305 or arg4==20306 or arg4==20307 or arg4==20308 then
-                    Cat2.Msg("十字军圣印")
+                    Cat2.Msg(Cat2.L("十字军圣印"))
                     PaladinSealCrusaderDuration = GetTime()
                     PaladinSealJusticeDuration = 0
                     PaladinSealWisdomDuration = 0
@@ -252,7 +252,7 @@ local function OnEvent()
                     PaladinSealRightDuration = 0
                 -- 光明圣印
                 elseif arg4==20165 or arg4==20347 or arg4==20348 or arg4==20349 then
-                    Cat2.Msg("光明圣印")
+                    Cat2.Msg(Cat2.L("光明圣印"))
                     PaladinSealCrusaderDuration = 0
                     PaladinSealJusticeDuration = 0
                     PaladinSealWisdomDuration = 0
@@ -261,7 +261,7 @@ local function OnEvent()
 
                 -- 审判
                 elseif arg4 == 20271 then
-                    Cat2.Msg("审判")
+                    Cat2.Msg(Cat2.L("审判"))
                     PaladinSealJusticeDuration = 0
                     PaladinSealWisdomDuration = 0
                     PaladinSealCrusaderDuration = 0

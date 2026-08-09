@@ -68,7 +68,7 @@ local function FormatValue(value)
     end
     if valueType == "string" then
         if value == "" then
-            return "|cff687486空字符串|r"
+            return "|cff687486" .. Cat2.L("空字符串") .. "|r"
         end
         return value
     end
@@ -89,7 +89,7 @@ local function AppendValue(rows, section, key, value, visited)
         return
     end
     if visited[value] then
-        AddRow(rows, section, key, "|cffff7777循环引用|r")
+        AddRow(rows, section, key, "|cffff7777" .. Cat2.L("循环引用") .. "|r")
         return
     end
     visited[value] = true
@@ -102,7 +102,7 @@ local function AppendValue(rows, section, key, value, visited)
     end)
     local total = table.getn(keys)
     if total == 0 then
-        AddRow(rows, section, key, "|cff687486空表|r")
+        AddRow(rows, section, key, "|cff687486" .. Cat2.L("空表") .. "|r")
     else
         local index = 1
         while index <= total do
@@ -198,8 +198,8 @@ local function RefreshRows()
     end
     local information = Cat2.PlayerInformation or {}
     local rows = {}
-    AppendSection(rows, "基础", information.basic or {}, basicFields)
-    AppendSection(rows, "临时", information.temporary or {}, temporaryFields)
+    AppendSection(rows, Cat2.L("基础"), information.basic or {}, basicFields)
+    AppendSection(rows, Cat2.L("临时"), information.temporary or {}, temporaryFields)
 
     local index = 1
     local total = table.getn(rows)
@@ -236,7 +236,7 @@ local function RefreshRows()
     if debugWindow.slider:GetValue() > maximum then
         debugWindow.slider:SetValue(maximum)
     end
-    debugWindow.countText:SetText("字段：" .. total)
+    debugWindow.countText:SetText(Cat2.L("字段：") .. total)
 end
 
 local function CreateDebugWindow()
@@ -285,7 +285,7 @@ local function CreateDebugWindow()
     title:SetPoint("TOPLEFT", debugWindow, "TOPLEFT", 16, -14)
     title:SetFont("Fonts\\FRIZQT__.TTF", 15, "OUTLINE")
     title:SetTextColor(1, 0.78, 0.16)
-    title:SetText("PlayerInformation 调试")
+    title:SetText(Cat2.L("PlayerInformation 调试"))
 
     local countText = debugWindow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     countText:SetPoint("TOPRIGHT", debugWindow, "TOPRIGHT", -54, -18)
@@ -304,7 +304,7 @@ local function CreateDebugWindow()
     header:SetHeight(22)
     header:SetPoint("TOPLEFT", debugWindow, "TOPLEFT", 18, -46)
     ApplyFlatBackdrop(header, 0.08, 0.15, 0.22, 1)
-    local labels = { "分组", "字段", "值" }
+    local labels = { Cat2.L("分组"), Cat2.L("字段"), Cat2.L("值") }
     local offsets = { 7, 76, 320 }
     local widths = { 62, 236, 173 }
     local labelIndex = 1

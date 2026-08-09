@@ -101,7 +101,7 @@ local function OnEvent()
     -- 施法事件处理，读条类，读条也要处理GCD
     elseif event == "SPELLCAST_START" then
 
-        if arg1 == "熔岩爆裂" then 
+        if arg1 == "熔岩爆裂" or arg1 == "Lava Burst" then 
             BeginLavaBurstCastTimer = GetTime()+4.0
         end
 
@@ -119,7 +119,7 @@ local function OnEvent()
     -- 捕获图腾消失
     elseif event == "CHAT_MSG_COMBAT_FRIENDLY_DEATH" then
 
-        if string.find( arg1, ".*根基图腾.*" ) then
+        if string.find( arg1, ".*根基图腾.*" ) or string.find( arg1 or "", "Grounding Totem" ) then
             if Cat2.SuperWoW then
                 local mainplayer = Cat2.Match(arg1, "%((.-)%)")
                 if mainplayer == UnitName("player") then
@@ -132,7 +132,7 @@ local function OnEvent()
 
     elseif event == "CHAT_MSG_SPELL_SELF_BUFF" then
 
-        if string.find( arg1, ".*图腾召回.*" ) then
+        if string.find( arg1, ".*图腾召回.*" ) or string.find( arg1 or "", "Totemic Recall" ) then
             EarthTotemTimer = 0
             FireTotemTimer = 0
             WaterTotemTimer = 0
@@ -140,110 +140,110 @@ local function OnEvent()
         end
 
         if not Cat2.SuperWoW then
-            local totemName = Cat2.Match(arg1, "你施放了(.+)。")
+            local totemName = Cat2.Match(arg1, "你施放了(.+)。") or Cat2.Match(arg1 or "", "You cast (.+)%.")
 
-            if totemName=="地缚图腾" then
+            if totemName=="地缚图腾" or totemName=="Earthbind Totem" then
                 EarthTotemDuration = 45
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "地缚图腾"
-            elseif totemName=="石爪图腾" then
+            elseif totemName=="石爪图腾" or totemName=="Stoneclaw Totem" then
                 EarthTotemDuration = 15
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "石爪图腾"
-            elseif totemName=="大地之力图腾" then
+            elseif totemName=="大地之力图腾" or totemName=="Strength of Earth Totem" then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "大地之力图腾"
-            elseif totemName=="石肤图腾" then
+            elseif totemName=="石肤图腾" or totemName=="Stoneskin Totem" then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "石肤图腾"
-            elseif totemName=="战栗图腾" then
+            elseif totemName=="战栗图腾" or totemName=="Tremor Totem" then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "战栗图腾"
 
-            elseif totemName=="火焰新星图腾" then
+            elseif totemName=="火焰新星图腾" or totemName=="Fire Nova Totem" then
                 FireTotemDuration = 5
                 FireTotemTimer = GetTime()
                 FireTotemName = "火焰新星图腾"
 
-            elseif totemName=="灼热图腾" then
+            elseif totemName=="灼热图腾" or totemName=="Searing Totem" then
                 FireTotemDuration = 55
                 FireTotemTimer = GetTime()
                 FireTotemName = "灼热图腾"
 
-            elseif totemName=="熔岩图腾" then
+            elseif totemName=="熔岩图腾" or totemName=="Magma Totem" then
                 FireTotemDuration = 20
                 FireTotemTimer = GetTime()
                 FireTotemName = "熔岩图腾"
 
-            elseif totemName=="抗寒图腾" then
+            elseif totemName=="抗寒图腾" or totemName=="Frost Resistance Totem" then
                 FireTotemDuration = 120
                 FireTotemTimer = GetTime()
                 FireTotemName = "抗寒图腾"
 
-            elseif totemName=="火舌图腾" then
+            elseif totemName=="火舌图腾" or totemName=="Flametongue Totem" then
                 FireTotemDuration = 120
                 FireTotemTimer = GetTime()
                 FireTotemName = "火舌图腾"
 
-            elseif totemName=="抗火图腾" then
+            elseif totemName=="抗火图腾" or totemName=="Fire Resistance Totem" then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "抗火图腾"
 
-            elseif totemName=="治疗之泉图腾" then
+            elseif totemName=="治疗之泉图腾" or totemName=="Healing Stream Totem" then
                 WaterTotemDuration = 60
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "治疗之泉图腾"
 
-            elseif totemName=="法力之泉图腾" then
+            elseif totemName=="法力之泉图腾" or totemName=="Mana Spring Totem" then
                 WaterTotemDuration = 60
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "法力之泉图腾"
 
-            elseif totemName=="清毒图腾" then
+            elseif totemName=="清毒图腾" or totemName=="Poison Cleansing Totem" then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "清毒图腾"
 
-            elseif totemName=="祛病图腾" then
+            elseif totemName=="祛病图腾" or totemName=="Disease Cleansing Totem" then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "祛病图腾"
 
-            elseif totemName=="岗哨图腾" then
+            elseif totemName=="岗哨图腾" or totemName=="Sentry Totem" then
                 AirTotemDuration = 300
                 AirTotemTimer = GetTime()
                 AirTotemName = "岗哨图腾"
 
-            elseif totemName=="根基图腾" then
+            elseif totemName=="根基图腾" or totemName=="Grounding Totem" then
                 AirTotemDuration = 45
                 AirTotemTimer = GetTime()
                 AirTotemName = "根基图腾"
 
-            elseif totemName=="自然抗性图腾" then
+            elseif totemName=="自然抗性图腾" or totemName=="Nature Resistance Totem" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "自然抗性图腾"
 
-            elseif totemName=="风之优雅图腾" then
+            elseif totemName=="风之优雅图腾" or totemName=="Grace of Air Totem" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风之优雅图腾"
 
-            elseif totemName=="风墙图腾" then
+            elseif totemName=="风墙图腾" or totemName=="Windwall Totem" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风墙图腾"
 
-            elseif totemName=="风怒图腾" then
+            elseif totemName=="风怒图腾" or totemName=="Windfury Totem" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风怒图腾"
 
-            elseif totemName=="宁静之风图腾" then
+            elseif totemName=="宁静之风图腾" or totemName=="Tranquil Air Totem" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "宁静之风图腾"
@@ -468,7 +468,7 @@ local function OnEvent()
         if arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
             -- 烈焰震击
-            if string.find( arg2, "你的烈焰震击.*抵抗了.*" ) then
+            if string.find( arg2, "你的烈焰震击.*抵抗了.*" ) or string.find( arg2 or "", "Your Flame Shock.*resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2) 
                 if targetGUID and FlameShockDelayTime[targetGUID] then 
                     local timer = GetTime() - FlameShockDelayTime[targetGUID]
@@ -477,7 +477,7 @@ local function OnEvent()
                     end
                 end
 
-            elseif string.find( arg2, "你的熔岩爆裂击中.*" ) or string.find( arg2, "你的熔岩爆裂致命一击.*" ) then
+            elseif string.find( arg2, "你的熔岩爆裂击中.*" ) or string.find( arg2, "你的熔岩爆裂致命一击.*" ) or ( string.find(arg2 or "", "Your Lava Burst") and string.find(arg2 or "", "hits") ) or ( string.find(arg2 or "", "Your Lava Burst") and string.find(arg2 or "", "crits") ) then
                 if Cat2.GetFlameShockDot() then
                     local targetGUID = Cat2.MatchGUID(arg2) 
                     if targetGUID and FlameShockCheck[targetGUID] then
@@ -487,7 +487,7 @@ local function OnEvent()
 
                 BeginLavaBurstCastTimer = GetTime()
 
-            elseif string.find( arg2, "你的重燃烈火击中.*" ) or string.find( arg2, "你的重燃烈火致命一击.*" ) then
+            elseif string.find( arg2, "你的重燃烈火击中.*" ) or string.find( arg2, "你的重燃烈火致命一击.*" ) or ( string.find(arg2 or "", "Your Raging Flames") and string.find(arg2 or "", "hits") ) or ( string.find(arg2 or "", "Your Raging Flames") and string.find(arg2 or "", "crits") ) then
                 if Cat2.GetFlameShockDot() then
                     local targetGUID = Cat2.MatchGUID(arg2) 
                     if targetGUID and FlameShockCheck[targetGUID] then
@@ -583,23 +583,23 @@ function Cat2.GetShamanEnchantName(slot)
         local text = line:GetText() or ""
 
         -- 匹配附魔名称（根据客户端语言调整关键词）
-        if string.find(text, "分钟") then
-            if string.find(text, "风怒") then
+        if string.find(text, "分钟") or string.find(text or "", "minutes") then
+            if string.find(text, "风怒") or string.find(text or "", "Windfury") then
 			    Cat2ShamanTooltip:Hide()
                 return "风怒武器"
 
-            elseif string.find(text, "火舌") then
+            elseif string.find(text, "火舌") or string.find(text or "", "Flametongue") then
 			    Cat2ShamanTooltip:Hide()
                 return "火舌武器"
 
-            elseif string.find(text, "冰霜") then
+            elseif string.find(text, "冰霜") or string.find(text or "", "Frost") then
 			    Cat2ShamanTooltip:Hide()
                 return "冰封武器"
-            elseif string.find(text, "冰封") then     -- 特殊情况，冰封(等级 3)的翻译情况
+            elseif string.find(text, "冰封") or string.find(text or "", "Icebrand") then     -- 特殊情况，冰封(等级 3)的翻译情况
 			    Cat2ShamanTooltip:Hide()
                 return "冰封武器"
 
-            elseif string.find(text, "石化") then
+            elseif string.find(text, "石化") or string.find(text or "", "Rockbiter") then
 			    Cat2ShamanTooltip:Hide()
                 return "石化武器"
 

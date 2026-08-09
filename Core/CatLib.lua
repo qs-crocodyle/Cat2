@@ -3,6 +3,16 @@
 -- 文件保留旧项目兼容写法与部分全局 API 探测；重构前应先确认对应卡片仍在使用。
 _G = getfenv()
 
+local originalCastSpellByName = CastSpellByName
+function CastSpellByName(spellName, unit)
+    local localizedName = Cat2.L.Spell(spellName)
+    if unit then
+        originalCastSpellByName(localizedName, unit)
+    else
+        originalCastSpellByName(localizedName)
+    end
+end
+
 
 local function GetChatFrameByName(frameName)
     for i = 1, NUM_CHAT_WINDOWS do
@@ -90,7 +100,7 @@ function Cat2.SwitchDistantTarget(value)
 		if dist and dist<41 and dist > farway then
 
 			-- 目标 1可以攻击 2未死亡 3已进入战斗 4排除小动物
-			if UnitCanAttack("player", key) and not UnitIsDeadOrGhost(key) and UnitAffectingCombat(key) and UnitCreatureType(key) ~= "小动物" then
+			if UnitCanAttack("player", key) and not UnitIsDeadOrGhost(key) and UnitAffectingCombat(key) and UnitCreatureType(key) ~= Cat2.L("小动物") then
 
 				-- 正面朝向
 				if not UnitXP("behind", key, "player") then
@@ -179,6 +189,10 @@ end
 -- name技能名称
 -- return 获取成立返id
 function Cat2.GetSpellID(name, rank)
+	name = Cat2.L.Spell(name)
+	if rank then
+		rank = Cat2.L.Rank(rank)
+	end
 	local i = 0
 	local spellName = " "
 	while spellName ~= nil do
@@ -278,7 +292,7 @@ end
 
 function Cat2.CastWithNampower(spellName, unit)
 	if Cat2.Nampower then
-		QueueSpellByName(spellName)
+		QueueSpellByName(Cat2.L.Spell(spellName))
 	else
 		CastSpellByName(spellName)
 	end
@@ -305,7 +319,7 @@ end
 -- 使用方法同CastSpellByName
 function Cat2.CastSpell(spellName)
 	if Cat2.Nampower then
-		QueueSpellByName(spellName)
+		QueueSpellByName(Cat2.L.Spell(spellName))
 	else
 		CastSpellByName(spellName)
 	end
@@ -335,6 +349,8 @@ function Cat2.SetShape(shapename)
 		return false
 	end
 
+	shapename = Cat2.L.Spell(shapename)
+
 	for i = 1, 6 do
 		local _, name, a, id = GetShapeshiftFormInfo(i)
         if name and name==shapename then
@@ -363,6 +379,7 @@ end
 -- itemName 物品名
 -- return 存在为真
 function Cat2.UseItemByName(itemName)
+	itemName = Cat2.L.Item(itemName)
 	local bag, slot
     for bag = 0, 4 do
         for slot = 1, GetContainerNumSlots(bag) do
@@ -410,6 +427,7 @@ end
 -- 检查背包中物品CD
 -- return 存在为真
 function Cat2.GetItemByNameCD(itemName)
+	itemName = Cat2.L.Item(itemName)
 	local bag, slot
     for bag = 0, 4 do
         for slot = 1, GetContainerNumSlots(bag) do
@@ -433,6 +451,7 @@ end
 -- 检查背包中物品ID
 -- return id
 function Cat2.GetItemByNameID(itemName)
+	itemName = Cat2.L.Item(itemName)
 	local bag, slot
     for bag = 0, 4 do
         for slot = 1, GetContainerNumSlots(bag) do
@@ -455,6 +474,7 @@ end
 -- 检查背包中物品数量
 -- return 数量
 function Cat2.GetItemByNameCount(itemName)
+	itemName = Cat2.L.Item(itemName)
 	local bag, slot
 	local count = 0
     for bag = 0, 4 do
@@ -482,6 +502,7 @@ end
 -- 获取背包中物品贴图
 -- return 
 function Cat2.GetItemTexByName(itemName)
+	itemName = Cat2.L.Item(itemName)
 	local bag, slot
     for bag = 0, 4 do
         for slot = 1, GetContainerNumSlots(bag) do
@@ -585,6 +606,7 @@ end
 -- spellRank 技能等级，如："回春术"
 -- 返回int
 function Cat2.GetHighestRankOfSpell(spellName)
+    spellName = Cat2.L.Spell(spellName)
     local highestRank = 0
     local highestSpellIndex = nil
     
@@ -652,12 +674,12 @@ function Cat2.CalculateTotalHealingPower()
                 local line = _G["Cat2HealingPowerScannerTooltipTextLeft"..i]
                 if line then
                     local text = line:GetText() or ""
-                    local healingValue = Cat2.Match(text, "治疗效果，最多(%d+)点")
+                    local healingValue = Cat2.Match(text, Cat2.L("治疗效果，效果最多(%d+)点"))
                     if healingValue then
                         totalHealing = totalHealing + Cat2.ToNumber(healingValue)
                     end
 
-					healingValue = Cat2.Match(text, "治疗效果提高最多(%d+)")
+					healingValue = Cat2.Match(text, Cat2.L("治疗效果提高最多(%d+)"))
                     if healingValue then
                         totalHealing = totalHealing + Cat2.ToNumber(healingValue)
                     end
@@ -681,7 +703,7 @@ function Cat2.IsOffHandShield()
     local itemID = Cat2.Match(itemLink, "item:(%d+):")
     if itemLink then
         local _, _, _, _, _, itemType = GetItemInfo(itemID)
-        return itemType == "盾牌"
+        return itemType == Cat2.L("盾牌")
     end
     
     return false
@@ -693,7 +715,7 @@ function Cat2.IsMainHandDagger()
     local itemID = Cat2.Match(itemLink, "item:(%d+):")
     if itemLink then
         local _, _, _, _, _, itemType = GetItemInfo(itemID)
-        return itemType == "匕首"  -- 注意：英文可能是"Dagger" or "Daggers" 
+        return itemType == Cat2.L("匕首")  -- 注意：英文可能是"Dagger" or "Daggers" 
     end
     
     return false
@@ -723,7 +745,7 @@ function IsRangedThrownWeapon()
     if not itemID then return false end
 
 	local _,_,_,_,_,itemSubType = GetItemInfo(itemID)
-	if itemSubType=="投掷武器" then 
+	if itemSubType==Cat2.L("投掷武器") then 
 		return true 
 	end
 
@@ -736,6 +758,8 @@ end
 function Cat2.CheckInventoryItemName(slot, name)
 	local Link = GetInventoryItemLink("player",slot)
 	if Link and strfind(Link,name) then return true end
+	local localizedName = Cat2.L.Item(name)
+	if localizedName ~= name and Link and strfind(Link,localizedName) then return true end
 	return false
 end
 
@@ -827,7 +851,7 @@ function Cat2.ClickReplace()
     -- 弹窗是否存在
     if StaticPopup1 and StaticPopup1:IsVisible() then
         local str=StaticPopup1Text:GetText() or ""
-        if string.find(str,"替换") then
+        if string.find(str,Cat2.L("替换")) then
             StaticPopup1Button1:Click()
         end
     end

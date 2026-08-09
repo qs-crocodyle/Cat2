@@ -21,4 +21,4 @@ Cat2.UI = Cat2.UI or {}
 Cat2.Name = "Cat2"
 
 -- 版本
-Cat2.Version = "2026-08-09-01 测试版"
+Cat2.Version = "2026-08-09-01 Beta"

@@ -19,7 +19,7 @@ function Cat2.GetBuffNameByIndex(unit, index)
 		return true, buffName
 	end
 
-	return false, "未发现BUFF"
+	return false, Cat2.L("未发现BUFF")
 end
 
 -- 内部调用
@@ -33,13 +33,14 @@ function Cat2.GetDebuffNameByIndex(unit, index)
 		return true, buffName
 	end
 
-	return false, "未发现BUFF"
+	return false, Cat2.L("未发现BUFF")
 end
 
 
 
 -- 查找 Aura（BUFF 或 DEBUFF）并返回可能的时间，-1为未找到
 function Cat2.BuffTime(buffName, unit)
+	buffName = Cat2.L.Buff(buffName)
 	unit = unit or "player";  -- 默认检查玩家自己
 
 	-- 提取buff的index client显示
@@ -91,7 +92,7 @@ end
 -- @param unit: 目标单位（默认为 "player"）
 -- 支持SuperWoW
 function Cat2.Buff(buffName, unit)
-
+	buffName = Cat2.L.Buff(buffName)
 	unit = unit or "player"  -- 默认检查玩家自己
 	Cat2GetBuffTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 
@@ -147,6 +148,12 @@ function Cat2.BuffList(unit)
 			break
 		end
 		list[name] = true
+		if Cat2.Locals and Cat2.Locals.BuffsReverse and Cat2.Locals.BuffsReverse[name] then
+			list[Cat2.Locals.BuffsReverse[name]] = true
+		end
+		if Cat2.Locals and Cat2.Locals.Buffs and Cat2.Locals.Buffs[name] then
+			list[Cat2.Locals.Buffs[name]] = true
+		end
 		i = i + 1
 	end
 
@@ -157,6 +164,12 @@ function Cat2.BuffList(unit)
 			break
 		end
 		list[name] = true
+		if Cat2.Locals and Cat2.Locals.BuffsReverse and Cat2.Locals.BuffsReverse[name] then
+			list[Cat2.Locals.BuffsReverse[name]] = true
+		end
+		if Cat2.Locals and Cat2.Locals.Buffs and Cat2.Locals.Buffs[name] then
+			list[Cat2.Locals.Buffs[name]] = true
+		end
 		i = i + 1
 	end
 

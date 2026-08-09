@@ -86,17 +86,17 @@ eventFrame:SetScript("OnEvent", function()
         if ui.ToggleMainWindow then
             local succeeded, errorMessage = pcall(ui.ToggleMainWindow)
             if not succeeded then
-                DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2 主界面错误：|r" .. tostring(errorMessage))
+                DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2 主界面错误：") .. "|r" .. tostring(errorMessage))
             end
         else
-            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2 主界面加载失败：|r请查看 Lua 错误信息。")
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2 主界面加载失败：请查看 Lua 错误信息。") .. "|r")
         end
     end)
     button:SetScript("OnEnter", function()
         GameTooltip:SetOwner(button, "ANCHOR_LEFT")
         GameTooltip:ClearLines()
-        GameTooltip:AddLine("Cat|cffff3f3f2|r 喵！一键宏", 1, 0.82, 0.2)
-        GameTooltip:AddLine("左键点击打开设置", 0.55, 0.58, 0.62)
+        GameTooltip:AddLine(Cat2.L("Cat|cffff3f3f2|r 喵！一键宏"), 1, 0.82, 0.2)
+        GameTooltip:AddLine(Cat2.L("左键点击打开设置"), 0.55, 0.58, 0.62)
         GameTooltip:Show()
         local instructionLine = getglobal("GameTooltipTextLeft2")
         if instructionLine then
