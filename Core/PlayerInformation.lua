@@ -70,8 +70,9 @@ function Cat2.RefreshPlayerTemporaryInformation()
     temporary.percentHealth = (temporary.health / temporary.maximumHealth) * 100
     temporary.mana = UnitMana("player") or 0
     if Cat2.PlayerInformation.basic.classFile == "DRUID" then
-        temporary.power, temporary.mana = UnitMana("player")-- or 0, 0
-        _, temporary.maxMana = UnitManaMax("player")
+        temporary.power = UnitMana("player") or 0
+        temporary.mana = UnitMana("player") or 0
+        temporary.maxMana = UnitManaMax("player") or 0
     else
         temporary.power = UnitMana("player") or 0
         temporary.maxMana = UnitManaMax("player")

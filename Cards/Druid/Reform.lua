@@ -32,11 +32,13 @@ function card.Execute(context)
 
     local player = Cat2.PlayerInformation.temporary
 
-    if GetTime()-Cat2.DruidMHTimer>8 then
-        if player.power<25 and player.gcd<0.2 and player.mana>=400 then
-            Cat2.CastWithoutNampower("重整")
-		    return true
-        end
+    if not player.buff["猎豹形态"] and not player.buff["熊形态"] and not player.buff["巨熊形态"] then
+        return
+    end
+
+    if player.power<25 and player.gcd<0.2 then
+        Cat2.CastWithoutNampower("重整")
+	    return true
     end
 
 end
