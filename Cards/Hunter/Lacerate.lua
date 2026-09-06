@@ -2,8 +2,8 @@
 local card = {
     id = "hunter_lacerate",
     name = "割伤",
-    description = "距离适合时，施放割伤",
-    details = "距离适合时，施放割伤。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "目标在8码内且攻击造成暴击时，施放割伤",
+    details = "目标在8码内且攻击造成暴击时，施放割伤。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 28,
     category = "class",
     classes = {
@@ -11,6 +11,10 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\spell_Lacerate_1C",
+    },
+    cooldown = {
+        type = "spell",
+        name = "割伤",
     },
 }
 
@@ -35,9 +39,9 @@ function card.Execute(context)
         return false
     end
 
-    if Cat2.TargetDistance("target", 9) then
+    if Cat2.TargetDistance("target", 8) and Cat2.GetHunterGoreAllow() then
         if Cat2.SpellReady("割伤") then
-            CastSpellByName("割伤")
+            Cat2.Cast("割伤")
             return true
         end
     end

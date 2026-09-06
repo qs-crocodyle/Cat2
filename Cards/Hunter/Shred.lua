@@ -2,8 +2,8 @@
 local card = {
     id = "hunter_shred",
     name = "切碎",
-    description = "攻击造成暴击时，施放切碎",
-    details = "攻击造成暴击时，施放切碎。需要存在有效目标。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "目标在8码内且触发条件满足时，施放切碎",
+    details = "目标在8码内且触发条件满足时，施放切碎。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 29,
     category = "class",
     classes = {
@@ -11,6 +11,10 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\INV_ThrowingKnife_06",
+    },
+    cooldown = {
+        type = "spell",
+        name = "切碎",
     },
 }
 
@@ -35,12 +39,14 @@ function card.Execute(context)
         return false
     end
 
-    -- 暴击时间检测
-    if Cat2.GetHunterGoreAllow() then
-        if Cat2.SpellReady("切碎") then
-            CastSpellByName("切碎")
-            return true
-        end
+    -- 目标必须位于8码范围内。
+    if not Cat2.TargetDistance("target", 8) then
+        return false
+    end
+
+    if Cat2.SpellReady("切碎") then
+        Cat2.Cast("切碎")
+        return true
     end
 
     return false

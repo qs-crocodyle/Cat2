@@ -287,6 +287,15 @@ function Cat2.ExecuteConfiguration(configurationName)
     function context:IsCardActive(cardId)
         return activeCardLookup[cardId] == true
     end
+    function context:GetStepOption(step, optionKey)
+        return Cat2.ResolveStepOption(step, optionKey, self.parameters)
+    end
+    function context:GetCardEventState(cardId)
+        if Cat2.GetCardEventState then
+            return Cat2.GetCardEventState(cardId)
+        end
+        return nil
+    end
     -- scope：party/group；order：original/health/maxHealth/random。
     function context:GetTeamMembers(scope, order)
         return GetTeamMembers(self, scope, order)
@@ -354,7 +363,7 @@ function Cat2.ExecuteConfiguration(configurationName)
         local step = profile.steps[stepIndex]
         if step and step.enabled ~= 0 and step.behavior ~= "passive" and type(step.Execute) == "function" then
             PrintDebugStep(Cat2.L("执行"), stepIndex, stepTotal, step)
-            local succeeded, executeResult = pcall(step.Execute, context)
+            local succeeded, executeResult = pcall(step.Execute, context, step)
             executedTotal = executedTotal + 1
             if not succeeded then
                 failedTotal = failedTotal + 1

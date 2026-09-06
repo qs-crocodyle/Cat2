@@ -2,7 +2,7 @@
 local card = {
     id = "warrior_execute",
     name = "斩杀",
-    description = "条件满足时，施放斩杀",
+    description = "目标血量进入斩杀线时，施放斩杀",
     details = "条件满足时，施放斩杀。需要存在有效目标。会检查当前资源。启用“斩杀时中断读条”后，施放前会中断猛击读条。成功执行时会阻断本轮后续卡片。",
     sort = 95,
     category = "class",
@@ -37,6 +37,9 @@ function card.Execute(context)
         return false
     end
 
+    if Cat2.GetShapeByName("防御姿态") then
+        return false
+    end
 
     if player.power>=powerExecute and player.targetPercentHealth<19.9 then
         if context.parameters.warriorInterruptCastForExecute then
@@ -44,7 +47,7 @@ function card.Execute(context)
                 SpellStopCasting()
             end
         end
-        CastSpellByName("斩杀")
+        Cat2.Cast("斩杀")
         return true
     end
 

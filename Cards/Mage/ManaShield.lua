@@ -22,7 +22,7 @@ function card.Execute(context)
     local player = Cat2.PlayerInformation.temporary
 
     if not player.buff["法力护盾"] then
-        CastSpellByName("法力护盾")
+        Cat2.Cast("法力护盾")
         return true
     end
 

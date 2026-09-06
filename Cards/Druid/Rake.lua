@@ -53,14 +53,29 @@ function card.Execute(context)
         return false
     end
 
+    local rakeOnlyBoss = context and context.parameters and context.parameters.druidRakeOnlyBoss
+    if rakeOnlyBoss and not Cat2.IsBossTarget() then
+        return false
+    end
 
     -- 不吃流血忽略
     if not player.targetBleed then
         return false
     end
 
-    if (player.power>=rakePower or player.buff["节能施法"]) and not Cat2.GetRakeDot() then
-        CastSpellByName("扫击")
+    local rake = Cat2.GetRakeDot()
+
+	-- 扫击保险
+    if Cat2.SuperWoW and Cat2.PlayerInformation.basic.level==60 then
+	    if rake and Cat2.GetDruidRateJumpTimer()-GetTime() < -0.5 then
+		    Cat2.ResetRakeDot(player.targetGUID)
+            rake = false
+		    DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("扫击续杯失败，重置计时！"))
+	    end
+    end
+
+    if (player.power>=rakePower or player.buff["节能施法"]) and not rake then
+        Cat2.Cast("扫击")
         return true
     end
 

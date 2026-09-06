@@ -20,10 +20,23 @@ end
 
 function card.Execute(context)
 
+    local AutoWaterShield = Cat2.CardRegistry.ById["shaman_auto_water_shield_mana"]
+
+    if context:IsCardActive("shaman_auto_water_shield_mana")
+        and AutoWaterShield
+        and type(AutoWaterShield.GetCustomValue) == "function" then
+
+        -- 自动水之护盾正在回蓝时，普通水之护盾交由自动卡维持。
+        local value = AutoWaterShield.GetCustomValue(context)
+        if value then
+            return false
+        end
+    end
+
     local player = Cat2.PlayerInformation.temporary
 
     if not player.buff["水之护盾"] then
-        CastSpellByName("水之护盾")
+        Cat2.Cast("水之护盾")
         return
     end
 

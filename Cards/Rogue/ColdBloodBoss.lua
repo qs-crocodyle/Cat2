@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Ice_Lament",
     },
+    cooldown = {
+        type = "spell",
+        name = "冷血",
+    },
 }
 
 local allowUse = 0
@@ -38,7 +42,7 @@ function card.Execute(context)
     end
 
     if Cat2.RogueColdBloodReady() and Cat2.TargetDistance() then
-        CastSpellByName("冷血")
+        Cat2.Cast("冷血")
     end
 
     return false

@@ -3,7 +3,7 @@ local card = {
     id = "shaman_lava_burst",
     name = "熔岩爆裂",
     description = "无条件施放熔岩爆裂，适合作为填充",
-    details = "无条件施放熔岩爆裂，适合作为填充。需要存在有效目标。",
+    details = "无条件施放熔岩爆裂，适合作为填充。需要存在有效目标；目标火焰免疫时不会施放。",
     sort = 25,
     category = "class",
     classes = {
@@ -14,7 +14,11 @@ local card = {
     },
 }
 
+local distance = 36
+
 function card.RefreshRuntimeData()
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("熔岩爆裂", "等级 1"), "(%d+)码距离"))
+    if not distance then distance = 36 end
 end
 
 function card.Execute(context)
@@ -26,15 +30,20 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标火焰免疫时，不再尝试施放火焰伤害技能。
+    if Cat2.IsFireImmune() then
+        return false
+    end
+
     -- 有unitxp模组，用于射程过滤
     if Cat2.UnitXP then
         local range = UnitXP("distanceBetween", "player", "target")
-        if range>36 then
+        if range>distance then
             return false
         end
     end
 
-    CastSpellByName("熔岩爆裂")
+    Cat2.Cast("熔岩爆裂")
 
 end
 

@@ -12,12 +12,19 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Shadow_UnsummonBuilding",
     },
+    cooldown = {
+        type = "spell",
+        name = "吸血鬼的拥抱",
+    },
 }
 
 local allowUse = 0
+local distance = 30
 
 function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(3,14)
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("吸血鬼的拥抱", "等级 1"), "(%d+)码距离"))
+    if not distance then distance = 30 end
 end
 
 function card.Execute(context)
@@ -34,8 +41,15 @@ function card.Execute(context)
         return false
     end
 
-    if not Cat2.GetVampiricDot() then
-        CastSpellByName("吸血鬼的拥抱")
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > distance then
+            return false
+        end
+    end
+
+    if not Cat2.GetVampiricDot() and Cat2.SpellReady("吸血鬼的拥抱") then
+        Cat2.Cast("吸血鬼的拥抱")
         return true
     end
 

@@ -84,10 +84,100 @@ local BLEENCHECKDELAY = 0.2
 -- 引导法术持续状态
 local ChanneledDuration = 0
 local ChanneledSpellID = 0
+local ChanneledSpellName = nil
 local ChanneledTimer = 0
+local PendingChanneledSpellName = nil
+local PendingChanneledSpellTimer = 0
+
+-- DOT 被动只允许打断这三种吸取类引导，其他引导继续受到保护。
+local DotInterruptibleChannelNames = {
+    ["吸取生命"] = true,
+    ["吸取法力"] = true,
+    ["吸取灵魂"] = true,
+}
+local ChanneledSpellNameCache = {}
+
+-- Cat2 自己发起吸取术时提前记录名称。原生客户端的引导开始事件没有技能名称，
+-- 而施法条文字在部分界面环境中不会更新或更新得较晚。
+function Cat2.RecordWarlockChannelCast(spellName)
+    if DotInterruptibleChannelNames[spellName] then
+        PendingChanneledSpellName = spellName
+        PendingChanneledSpellTimer = GetTime()
+    else
+        PendingChanneledSpellName = nil
+        PendingChanneledSpellTimer = 0
+    end
+end
+
+local function GetChanneledSpellNameByID(spellID)
+    if not spellID or spellID==0 then
+        return nil
+    end
+
+    local spellName = ChanneledSpellNameCache[spellID]
+    if not spellName and type(GetSpellNameAndRankForId)=="function" then
+        spellName = GetSpellNameAndRankForId(spellID)
+    end
+    if not spellName and type(SpellInfo)=="function" then
+        spellName = SpellInfo(spellID)
+    end
+    if spellName then
+        ChanneledSpellNameCache[spellID] = spellName
+    end
+
+    return spellName
+end
+
+-- Nampower 4+ 同样能直接提供当前引导技能 ID，可在没有 SuperWoW 时使用。
+local function GetNampowerChanneledSpellName()
+    if type(GetCastInfo)~="function" then
+        return nil
+    end
+
+    local success, castInfo = pcall(GetCastInfo)
+    if not success or type(castInfo)~="table" or castInfo.castType~=3 then
+        return nil
+    end
+
+    return GetChanneledSpellNameByID(castInfo.spellId)
+end
+
+-- 原生 1.12 的 SPELLCAST_CHANNEL_START 只提供引导时长，不提供技能 ID。
+-- 无 SuperWoW 时，从客户端施法条读取当前引导名称；这里只接受允许打断的
+-- 三种吸取术，避免把其他引导技能误判为可打断。
+local function GetNativeChanneledSpellName()
+    local spellName
+
+    if CastingBarText and type(CastingBarText.GetText)=="function" then
+        spellName = CastingBarText:GetText()
+        if spellName and DotInterruptibleChannelNames[spellName] then
+            return spellName
+        end
+    end
+
+    -- 兼容部分施法条组件使用的另一种全局 FontString 名称。
+    if CastingBarFrameText and type(CastingBarFrameText.GetText)=="function" then
+        spellName = CastingBarFrameText:GetText()
+        if spellName and DotInterruptibleChannelNames[spellName] then
+            return spellName
+        end
+    end
+
+    return nil
+end
 
 
+-- 暗影箭
 local ShadowTwilightTimer = 0
+function Cat2.GetShadowTwilightTimer()
+    return ShadowTwilightTimer
+end
+
+-- 灼热之痛
+local SearingPainTimer = 0
+function Cat2.GetSearingPainTimerTimer()
+    return SearingPainTimer
+end
 
 -- 施放潜力
 local PotentialTimer = 0
@@ -115,7 +205,11 @@ local function ResetData()
     ImmolateDelayTime = {}
 
     ChanneledDuration = 0
+    ChanneledSpellID = 0
+    ChanneledSpellName = nil
     ChanneledTimer = 0
+    PendingChanneledSpellName = nil
+    PendingChanneledSpellTimer = 0
 
     PotentialTimer = 0
     PotentialLayer = 0
@@ -145,6 +239,15 @@ local function OnEvent()
         ChanneledDuration = arg1
         if not Cat2.SuperWoW then
             ChanneledTimer = GetTime()
+            ChanneledSpellID = 0
+            ChanneledSpellName = GetNampowerChanneledSpellName()
+                or GetNativeChanneledSpellName()
+            if not ChanneledSpellName and PendingChanneledSpellName
+                and GetTime()-PendingChanneledSpellTimer<=2 then
+                ChanneledSpellName = PendingChanneledSpellName
+            end
+            PendingChanneledSpellName = nil
+            PendingChanneledSpellTimer = 0
         end
 
     elseif event == "SPELLCAST_CHANNEL_UPDATE" then
@@ -154,13 +257,18 @@ local function OnEvent()
         ChanneledDuration = 0
         ChanneledTimer = 0
         ChanneledSpellID = 0
+        ChanneledSpellName = nil
+        PendingChanneledSpellName = nil
+        PendingChanneledSpellTimer = 0
 
 
     -- 施法事件处理，读条类
     elseif event == "SPELLCAST_START" then
 
-        if arg1 == "献祭" or arg1 == "Immolate" then ImmolateTimer=GetTime()+2
-        elseif arg1 == "腐蚀术" or arg1 == "Corruption" then CorruptionTimer=GetTime()+1.6 end
+        if arg1 == "献祭" then ImmolateTimer=GetTime()+2
+        elseif arg1 == "腐蚀术" then CorruptionTimer=GetTime()+1.6 end
+        --elseif arg1 == "灼热之痛" then SearingPainTimer = GetTime()
+        --elseif arg1 == "暗影箭" then ShadowTwilightTimer = GetTime() end
 
     elseif event == "SPELLCAST_STOP" then
 
@@ -232,11 +340,12 @@ local function OnEvent()
 
                 ChanneledTimer = GetTime()
                 ChanneledSpellID = arg4
+                ChanneledSpellName = nil
 
                 if not Cat2.Nampower4 then
                     if arg4==52550 or arg4==52551 or arg4==52552 then
 
-                        Cat2.Msg( Cat2.L("施放 [暗影收割]") .. string.format("%.2f",arg5/1000) .. Cat2.L("重新计算DOT持续时间") )
+                        Cat2.Msg(Cat2.L("施放 [暗影收割]") .. Cat2.L("，持续时间") .. string.format("%.2f",arg5/1000) .. Cat2.L("重新计算DOT持续时间"))
 
                         -- 痛苦诅咒
                         if Cat2.GetCurseAgonyDot() then
@@ -269,7 +378,7 @@ local function OnEvent()
             -- 仅监控自己放出的技能
             if arg1 == Cat2.PlayerInformation.basic.guid then
 
-                --MPMsg(arg4)
+                --print(arg4)
 
                 -- 痛苦诅咒
                 if arg4==980 or arg4==1014 or arg4==6217 or arg4==11711 or arg4==11712 or arg4 == 11713 then
@@ -302,6 +411,10 @@ local function OnEvent()
                             ImmolateCheck[arg2] = ImmolateCheck[arg2] - 3.0
                         end
                     end
+
+                -- 灼热之痛
+                elseif arg4==5676 or arg4==17919 or arg4==17920 or arg4==17921 or arg4==17922 or arg4==17923 then
+                    SearingPainTimer = GetTime()
 
                 -- 顺发 暗影箭
                 elseif arg4==686 or arg4==11660 or arg4==11661 or arg4==25307 then
@@ -362,7 +475,7 @@ local function OnEvent()
     elseif event == "SPELL_CHANNEL_START" then
 
         if arg1==52550 or arg1==52551 or arg1==52552 then
-            Cat2.Msg( Cat2.L("施放 [暗影收割]") .. string.format("%.2f",arg3/1000) .. Cat2.L("重新计算DOT持续时间") )
+            Cat2.Msg(Cat2.L("施放 [暗影收割]") .. Cat2.L("，持续时间") .. string.format("%.2f",arg3/1000) .. Cat2.L("重新计算DOT持续时间"))
 
             -- 痛苦诅咒
             if Cat2.GetCurseAgonyDot() then
@@ -637,6 +750,41 @@ function Cat2.GetImmolateCheck()
 end
 
 
+-- 术士技能共用的吸取打断入口。只有对应被动规则启用时，才允许打断三种吸取类引导；
+-- 其他引导仍由 Cat2.Cast() 保护。
+function Cat2.CastWarlockWithDrainInterrupt(context, parameterKey, spellName)
+
+    local allowInterrupt = context and context.parameters and context.parameters[parameterKey]
+    if allowInterrupt and Cat2.GetChanneled()>0 then
+
+        local channeledSpellName = ChanneledSpellName
+        if ChanneledSpellID and ChanneledSpellID~=0 then
+            channeledSpellName = GetChanneledSpellNameByID(ChanneledSpellID)
+        elseif not channeledSpellName then
+            channeledSpellName = GetNampowerChanneledSpellName()
+                or GetNativeChanneledSpellName()
+            ChanneledSpellName = channeledSpellName
+        end
+
+        if channeledSpellName and DotInterruptibleChannelNames[channeledSpellName] then
+            SpellStopCasting()
+            CastSpellByName(spellName)
+            return
+        end
+
+    end
+
+    Cat2.Cast(spellName)
+
+end
+
+
+-- 痛苦系 DOT 的统一施法入口。
+function Cat2.CastWarlockDot(context, spellName)
+    Cat2.CastWarlockWithDrainInterrupt(context, "warlockDotInterruptChannel", spellName)
+end
+
+
 -- 获取引导时间
 function Cat2.GetWarlockChanneledDuration()
     return ChanneledDuration
@@ -682,8 +830,5 @@ function Cat2.GetLifeChannel()
     return LifeChannel
 end
 
-function Cat2.GetShadowTwilightTimer()
-    return ShadowTwilightTimer
-end
 
 

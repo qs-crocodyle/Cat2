@@ -4,8 +4,8 @@
 local card = {
     id = "priest_renew",
     name = "恢复",
-    description = "根据|cffb87ff0[被动卡]|r规则，自适配等级施放恢复",
-    details = "根据|cffb87ff0[被动卡]|r规则，自适配等级施放恢复。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。成功执行时会阻断本轮后续卡片。",
+    description = "根据|cffb87ff0[被动卡]|r规则，血量<|cff6bc7e0{triggerPercent}%|r时自适配等级施放",
+    details = "根据|cffb87ff0[被动卡]|r规则，血量低于卡片设定值时，在设定等级区间内自适配等级施放恢复。默认触发血量为99%。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。成功执行时会阻断本轮后续卡片。",
     sort = 50,
     category = "class",
     classes = {
@@ -13,6 +13,11 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Spell_Holy_Renew",
+    },
+    optionSchema = {
+        { key = "triggerPercent", type = "number", label = "触发血量", unit = "%", default = 99, minimum = 1, maximum = 99 },
+        { key = "minimumRank", type = "number", label = "最小等级", default = 1, minimum = 1, maximum = 10 },
+        { key = "maximumRank", type = "number", label = "最大等级", default = 10, minimum = 1, maximum = 10 },
     },
 }
 
@@ -59,7 +64,7 @@ end
 local healTargetDelay = {}
 
 -- 判断目标是否适合施放恢复，并在条件满足时完成施放。
-function card.Health(unit, member, context)
+function card.Health(unit, member, context, triggerPercent, minimumRank, maximumRank)
 
     if not unit then
         return false
@@ -84,7 +89,7 @@ function card.Health(unit, member, context)
     end
 
     local percentHealth = health / maxHealth * 100
-    if percentHealth > 99.9 then
+    if percentHealth >= triggerPercent then
         return false
     end
 
@@ -126,28 +131,28 @@ function card.Health(unit, member, context)
 
     if PriestRenewManaMaxLevel > 0 then
 
-        -- 根据配置等级和所学等级计算
-        for i = PriestRenewManaMaxLevel, 1, -1 do
-            if PriestRenewEffect[i] < HealthDec then
-
-                if Cat2.PlayerInformation.temporary.mana >= PriestRenewMana[i] then
-                    return Cat2.CastSpellWithoutTarget("恢复(等级 "..i..")", unit, 1)
-                else
-                    return Cat2.CastSpellWithoutTarget("恢复(等级 1)", unit, 1)
-                end
-
+        for i = maximumRank, minimumRank, -1 do
+            if PriestRenewEffect[i] < HealthDec and Cat2.PlayerInformation.temporary.mana >= PriestRenewMana[i] then
+                return Cat2.CastSpellWithoutTarget("恢复(等级 "..i..")", unit, 1)
             end
         end
-
-        return Cat2.CastSpellWithoutTarget("恢复(等级 1)", unit, 1)
+        if Cat2.PlayerInformation.temporary.mana >= PriestRenewMana[minimumRank] then
+            return Cat2.CastSpellWithoutTarget("恢复(等级 "..minimumRank..")", unit, 1)
+        end
     end
 
     return false
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 99
+    local minimumRank = context:GetStepOption(step, "minimumRank") or 1
+    local maximumRank = context:GetStepOption(step, "maximumRank") or 10
+    if maximumRank > PriestRenewManaMaxLevel then maximumRank = PriestRenewManaMaxLevel end
+    if minimumRank > PriestRenewManaMaxLevel then minimumRank = PriestRenewManaMaxLevel end
+    if minimumRank > maximumRank then minimumRank, maximumRank = maximumRank, minimumRank end
 
     if player.gcd > 0.2 then
         return false
@@ -163,22 +168,22 @@ function card.Execute(context)
         and not context:IsCardActive("shared_healing_target")
         and not context:IsCardActive("shared_healing_self")
         and not context:IsCardActive("shared_healing_party") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r")
+        DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r"))
         return false
     end
 
     local targetFirst = context.parameters.HealingTarget
-    if targetFirst and player.targetExists and card.Health("target") then
+    if targetFirst and player.targetExists and card.Health("target", nil, context, triggerPercent, minimumRank, maximumRank) then
         return true
     end
 
     local targetTarget = context.parameters.HealingTargetTarget
-    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget") then
+    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget", nil, context, triggerPercent, minimumRank, maximumRank) then
         return true
     end
 
     local selfFirst = context.parameters.HealingSelf
-    if selfFirst and card.Health("player") then
+    if selfFirst and card.Health("player", nil, context, triggerPercent, minimumRank, maximumRank) then
         return true
     end
 
@@ -186,7 +191,7 @@ function card.Execute(context)
     if partyFirst then
         local partyMembers = context:GetTeamMembers("party", "health")
         for _, member in ipairs(partyMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end
@@ -196,7 +201,7 @@ function card.Execute(context)
     if randomTeam then
         local groupMembers = context:GetTeamMembers("group", "random")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end
@@ -206,7 +211,7 @@ function card.Execute(context)
     if teamFirst then
         local groupMembers = context:GetTeamMembers("group", "health")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end
@@ -216,7 +221,7 @@ function card.Execute(context)
     if tankFirst then
         local groupMembers = context:GetTeamMembers("group", "maxHealth")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end

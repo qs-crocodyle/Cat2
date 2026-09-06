@@ -15,6 +15,10 @@ local card = {
         "Interface\\Icons\\Ability_Rogue_Garrote",
         "Interface\\Icons\\Ability_Rogue_Ambush",
     },
+    cooldown = {
+        type = "spell",
+        name = "潜行",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -31,9 +35,13 @@ function card.Execute(context)
         Cat2.StopAttack()
 
         if player.targetBleed then
-            CastSpellByName("绞喉")
+            Cat2.Cast("绞喉")
         else
-            CastSpellByName("伏击")
+            if Cat2.IsMainHandDagger() then
+                Cat2.Cast("伏击")
+            else
+                Cat2.Cast("绞喉")
+            end
         end
 
         return true

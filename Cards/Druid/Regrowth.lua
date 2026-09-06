@@ -5,9 +5,9 @@ local card = {
     -- 界面中显示的卡片标题。
     name = "愈合",
     -- 卡片标题下方显示的简短说明。
-    description = "根据|cffb87ff0[被动卡]|r规则，自适配等级施放治疗并附加持续治疗",
+    description = "根据|cffb87ff0[被动卡]|r规则，血量<|cff6bc7e0{triggerPercent}%|r时自适配等级施放",
     -- 预留给后续详情面板或 Tooltip 的完整功能说明。
-    details = "根据|cffb87ff0[被动卡]|r规则，自适配等级施放治疗并附加持续治疗。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。",
+    details = "根据|cffb87ff0[被动卡]|r规则，血量低于卡片设定值时，在设定等级区间内自适配等级施放治疗并附加持续治疗。默认触发血量为99%。需要存在有效目标。",
     -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
     sort = 220,
     -- 仅能是 common、item、class 三种分类之一。
@@ -19,6 +19,43 @@ local card = {
     -- 魔兽客户端图标纹理路径。
     icons = {
         "Interface\\Icons\\Spell_Nature_ResistNature",
+    },
+    castProfile = {
+        spellNames = {
+            "愈合",
+        },
+        tags = {
+            healing = true,
+            singleTarget = true,
+            fullHealthCancelable = true,
+        },
+    },
+    optionSchema = {
+        {
+            key = "triggerPercent",
+            type = "number",
+            label = "触发血量",
+            unit = "%",
+            default = 99,
+            minimum = 1,
+            maximum = 99,
+        },
+        {
+            key = "minimumRank",
+            type = "number",
+            label = "最小等级",
+            default = 1,
+            minimum = 1,
+            maximum = 9,
+        },
+        {
+            key = "maximumRank",
+            type = "number",
+            label = "最大等级",
+            default = 9,
+            minimum = 1,
+            maximum = 9,
+        },
     },
 }
 
@@ -90,7 +127,24 @@ end
 local HealTargetDelay = {}
 local HundredFlower = 0
 
-function card.Health(unit, member, context)
+local function NormalizeRankRange(minimumRank, maximumRank)
+    if DruidRegrowthMaxLevel <= 0 then
+        return nil, nil
+    end
+
+    minimumRank = math.floor(tonumber(minimumRank) or 1)
+    maximumRank = math.floor(tonumber(maximumRank) or 9)
+    minimumRank = math.max(1, math.min(minimumRank, DruidRegrowthMaxLevel))
+    maximumRank = math.max(1, math.min(maximumRank, DruidRegrowthMaxLevel))
+    if minimumRank > maximumRank then
+        minimumRank, maximumRank = maximumRank, minimumRank
+    end
+    return minimumRank, maximumRank
+end
+
+-- 验证完成后对指定单位施法。beforeCast 用于自然迅捷这类前置技能，
+-- 只有愈合已学习、等级有效且法力足够时才会调用，避免提前消耗冷却。
+function card.CastOnUnit(unit, member, context, triggerPercent, minimumRank, maximumRank, beforeCast)
 
     if not unit then
         return false
@@ -119,18 +173,23 @@ function card.Health(unit, member, context)
 
     local HealthDec = maxHealth - health
 
+    local percentHealth = health / maxHealth * 100
+    if percentHealth >= triggerPercent then
+        return false
+    end
     if HealthDec < 10 then
         return false
     end
 
-    -- 目标是否已经有愈合
+    -- 目标是否已经有愈合；组合卡直接调用本入口时也读取本轮百花齐放参数。
+    local currentHundredFlower = context and context.parameters and context.parameters.flowers
+    if currentHundredFlower == nil then
+        currentHundredFlower = HundredFlower
+    end
     if Cat2.Buff("愈合",unit) then
         -- 百花齐放
-        if HundredFlower==1 then
-            local percentHealth = health/maxHealth * 100
-            if percentHealth > 79.9 then
-                return false
-            end
+        if currentHundredFlower==1 then
+            -- 目标已有效时，仍沿用本卡的触发血量阈值。
         else
             return false
         end
@@ -158,43 +217,65 @@ function card.Health(unit, member, context)
 
     -- 用于防止1秒同一目标多次治疗
     local targetName = member and member.name or UnitName(unit)
-    if HealTargetDelay[targetName] and HealTargetDelay[targetName]-GetTime()>0 then
+    if targetName and HealTargetDelay[targetName] and HealTargetDelay[targetName]-GetTime()>0 then
         return false
     end
-    HealTargetDelay[targetName] = GetTime()+1.0
 
-    -- 读愈合
-
-    -- 先确保技能已学
-    if DruidRegrowthMaxLevel>0 then
-
-        -- 根据配置等级和所学等级计算
-        for i = DruidRegrowthMaxLevel, 1, -1 do
-            if DruidRegrowthEffect[i] < HealthDec then
-
-                if Cat2.PlayerInformation.temporary.mana >= DruidRegrowth[i] then
-                    return Cat2.CastSpellWithoutTarget("愈合(等级 "..i..")", unit, 1)
-                else
-                    return Cat2.CastSpellWithoutTarget("愈合(等级 1)", unit, 1)
-                end
-
-            end
-        end
-
-        return Cat2.CastSpellWithoutTarget("愈合(等级 1)", unit, 1)
-
+    minimumRank, maximumRank = NormalizeRankRange(minimumRank, maximumRank)
+    if not minimumRank then
+        return false
     end
 
+    local mana = Cat2.PlayerInformation.temporary.mana
+    local selectedRank
+    for i = maximumRank, minimumRank, -1 do
+        if DruidRegrowthEffect[i] < HealthDec and mana >= DruidRegrowth[i] then
+            selectedRank = i
+            break
+        end
+    end
+    if not selectedRank and mana >= DruidRegrowth[minimumRank] then
+        selectedRank = minimumRank
+    end
+    if not selectedRank then
+        return false
+    end
 
-    return false
+    local spellName = "愈合(等级 "..selectedRank..")"
+    if type(beforeCast) == "function" and beforeCast(unit, member, spellName) ~= true then
+        return false
+    end
+
+    if targetName then
+        HealTargetDelay[targetName] = GetTime()+1.0
+    end
+    return Cat2.CastSpellWithoutTarget(spellName, unit, 1)
+end
+
+function card.Health(unit, member, context, triggerPercent, minimumRank, maximumRank)
+    return card.CastOnUnit(unit, member, context, triggerPercent, minimumRank, maximumRank)
 end
 
 
 
 -- 返回后续流程执行器读取的动作描述。
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 99
+    local minimumRank = context:GetStepOption(step, "minimumRank") or 1
+    local maximumRank = context:GetStepOption(step, "maximumRank") or 9
+
+    -- 不允许参数越过角色实际已学等级；填反区间时自动交换为有效范围。
+    if maximumRank > DruidRegrowthMaxLevel then
+        maximumRank = DruidRegrowthMaxLevel
+    end
+    if minimumRank > DruidRegrowthMaxLevel then
+        minimumRank = DruidRegrowthMaxLevel
+    end
+    if minimumRank > maximumRank then
+        minimumRank, maximumRank = maximumRank, minimumRank
+    end
 
     if player.gcd > 0.2 then
         return false
@@ -210,7 +291,7 @@ function card.Execute(context)
     and not context:IsCardActive("shared_healing_target") 
     and not context:IsCardActive("shared_healing_self") 
     and not context:IsCardActive("shared_healing_party") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r")
+        DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r"))
         return false
     end
 
@@ -224,24 +305,24 @@ function card.Execute(context)
     -- 目标
     local TargetFirst = context and context.parameters and context.parameters.HealingTarget
     if TargetFirst and player.targetExists then
-        if card.Health("target") then
-            return
+        if card.Health("target", nil, context, triggerPercent, minimumRank, maximumRank) then
+            return true
         end
     end
 
     -- 目标 的 目标
     local TargetTarget = context and context.parameters and context.parameters.HealingTargetTarget
     if TargetTarget and player.targetExists and UnitExists("targettarget") then
-        if card.Health("targettarget") then
-            return
+        if card.Health("targettarget", nil, context, triggerPercent, minimumRank, maximumRank) then
+            return true
         end
     end
 
     -- 自己
     local SelfFirst = context and context.parameters and context.parameters.HealingSelf
     if SelfFirst then
-        if card.Health("player") then
-            return
+        if card.Health("player", nil, context, triggerPercent, minimumRank, maximumRank) then
+            return true
         end
     end
 
@@ -250,8 +331,8 @@ function card.Execute(context)
     if PartyFirst then
         local sortedMembers = context:GetTeamMembers("party", "health")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
-                return
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
+                return true
             end
         end
     end
@@ -262,8 +343,8 @@ function card.Execute(context)
         local sortedMembers = context:GetTeamMembers("group", "random")
             
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
-                return
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
+                return true
             end
         end
     end
@@ -273,8 +354,8 @@ function card.Execute(context)
     if ScanTeam then
         local sortedMembers = context:GetTeamMembers("group", "health")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
-                return
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
+                return true
             end
         end
     end
@@ -284,12 +365,13 @@ function card.Execute(context)
     if TankFirst then
         local sortedMembers = context:GetTeamMembers("group", "maxHealth")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
-                return
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
+                return true
             end
         end
     end
 
+    return false
 end
 
 Cat2.RegisterCard(card)

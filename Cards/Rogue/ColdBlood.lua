@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Ice_Lament",
     },
+    cooldown = {
+        type = "spell",
+        name = "冷血",
+    },
 }
 
 local allowUse = 0
@@ -22,17 +26,17 @@ end
 
 function card.Execute(context)
 
+    -- 不存在这个天赋
+    if allowUse==0 then
+        return false
+    end
+
     local player = Cat2.PlayerInformation.temporary
 
     if not player.targetExists then
         return false
     end
 
-
-    -- 不存在这个天赋
-    if allowUse==0 then
-        return false
-    end
 
     -- 必须战斗中才有意义
     if not player.inCombat then
@@ -41,7 +45,7 @@ function card.Execute(context)
 
 
     if Cat2.RogueColdBloodReady() and Cat2.TargetDistance() then
-        CastSpellByName("冷血")
+        Cat2.Cast("冷血")
     end
 
     return false

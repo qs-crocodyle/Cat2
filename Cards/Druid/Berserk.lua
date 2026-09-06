@@ -1,9 +1,9 @@
 -- 狂暴技能卡片：沿用盗贼“冲动”的低能量触发机制。
 local card = {
     id = "druid_berserk",
-    name = "狂暴",
-    description = "技能冷却后，能量低于40时施放狂暴",
-    details = "技能冷却后，能量低于40时施放狂暴。需要存在有效目标。会检查目标距离。会检查当前资源。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    name = "狂暴（猫）",
+    description = "能量低于|cff6bc7e0{maximumEnergy}|r时施放狂暴",
+    details = "技能冷却后，能量低于卡片设定值时施放狂暴。需要存在有效目标。会检查目标距离。会检查当前资源。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 423.1,
     category = "class",
     classes = {
@@ -11,6 +11,18 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Ability_Druid_Berserk",
+    },
+    cooldown = { type = "spell", name = "狂暴" },
+    optionSchema = {
+        {
+            key = "maximumEnergy",
+            type = "number",
+            label = "最高能量",
+            shortLabel = "能",
+            default = 40,
+            minimum = 1,
+            maximum = 100,
+        },
     },
 }
 
@@ -20,9 +32,10 @@ function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(2,15)
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local maximumEnergy = context:GetStepOption(step, "maximumEnergy") or 40
 
     if not player.targetExists then
         return false
@@ -34,8 +47,8 @@ function card.Execute(context)
         return false
     end
 
-    if player.power < 40 and Cat2.SpellReady("狂暴") and Cat2.TargetDistance() then
-        CastSpellByName("狂暴")
+    if player.power < maximumEnergy and Cat2.SpellReady("狂暴") and Cat2.TargetDistance() then
+        Cat2.Cast("狂暴")
         return true
     end
 

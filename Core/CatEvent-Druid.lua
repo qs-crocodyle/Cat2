@@ -7,14 +7,10 @@ end
 -- 创建一个 Frame 并监听事件
 local frame = CreateFrame("Frame")
 
-frame:RegisterEvent("SPELLCAST_START")
-frame:RegisterEvent("SPELLCAST_STOP")
-frame:RegisterEvent("SPELLCAST_FAILED")
-frame:RegisterEvent("SPELLCAST_INTERRUPTED")
-
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 frame:RegisterEvent("PLAYER_DEAD")
+frame:RegisterEvent("UNIT_ENERGY")
 
 frame:RegisterEvent("PLAYER_COMBO_POINTS")
 
@@ -44,6 +40,29 @@ local RavageCheck = {}
 local RavageDelayTime = {}
 local DruidRavageDuration = 18
 
+-- 流血dot 跳 时间
+local DruidRateJumpTimer = 0
+local DruidRipJumpTimer = 0
+
+function Cat2.GetDruidRateJumpTimer()
+    return DruidRateJumpTimer
+end
+function Cat2.GetDruidRipJumpTimer()
+    return DruidRipJumpTimer
+end
+
+-- 猛虎回能 跳 时间
+local DruidTigerFuryTimer = 0
+
+function Cat2.GetDruidTigerFuryTimer()
+    return DruidTigerFuryTimer
+end
+
+-- 回能监测
+local OldEnergy = nil
+local RestoredEnergyTime = nil
+
+
 -- 月火术、虫群监测
 local MoonfireCheck = {}
 local MoonfireDelayTime = {}
@@ -65,11 +84,12 @@ local ComboPoints = 0
 
 local function ResetData()
 
-    MoonfireCheck = {}
-    MoonfireDelayTime = {}
-
-    InsectSwarmCheck = {}
-    InsectSwarmDelayTime = {}
+    RateCheck = {}
+    RateDelayTime = {}
+    RipCheck = {}
+    RipDelayTime = {}
+    RavageCheck = {}
+    RavageDelayTime = {}
 
     MoonfireCheck = {}
     MoonfireDelayTime = {}
@@ -98,19 +118,6 @@ local function OnEvent()
     elseif event == "PLAYER_DEAD" then
         ResetData()
 
-    -- 施法事件处理，读条类，读条也要处理GCD
-    elseif event == "SPELLCAST_START" then
-
-
-    elseif event == "SPELLCAST_STOP" then
-
-
-    elseif event == "SPELLCAST_FAILED" then
-
-
-    elseif event == "SPELLCAST_INTERRUPTED" then
-
-
 
     elseif event == "PLAYER_COMBO_POINTS" then
 
@@ -122,6 +129,28 @@ local function OnEvent()
                 Refill = false
             end
 
+        end
+
+    -- 回能量事件处理
+    elseif event == "UNIT_ENERGY" and arg1 == "player" then
+        local maximumEnergy = UnitManaMax("player")
+        local currentEnergy = UnitMana("player")
+
+        -- 防止非能量
+        if maximumEnergy<150 then
+
+            -- 第一份数据只建立快照；后续事件再比较实际能量变化。
+            if OldEnergy ~= nil then
+                local energyChange = currentEnergy-OldEnergy
+                if energyChange==20 then
+
+                    -- 捕获一次真实自然回能，并以此校准后续2秒周期。
+                    RestoredEnergyTime = GetTime()
+                end
+            end
+
+            -- UNIT_ENERGY 独立维护前一次能量快照。
+            OldEnergy = currentEnergy
         end
 
     ---------------------------
@@ -143,6 +172,7 @@ local function OnEvent()
                 if arg4 == 9904 then
 
                     RateDelayTime[arg2] = GetTime()
+                    DruidRateJumpTimer = GetTime() + 3.0
 
                 -- 撕扯
                 elseif arg4 == 9896 then
@@ -150,6 +180,8 @@ local function OnEvent()
                     RipDelayTime[arg2] = GetTime()
                     -- 动态调整持续时间
                     DruidRipDuration = 8+ComboPoints*2
+
+                    DruidRipJumpTimer = GetTime() + 2.0
 
                 -- 血袭
                 elseif arg4 == 9827 then
@@ -181,6 +213,7 @@ local function OnEvent()
                 -- 猛虎之怒
                 elseif arg4 == 9846 then
                     Cat2.DruidMHTimer = GetTime()
+                    DruidTigerFuryTimer = GetTime() + 3.0
                 
                 end
 
@@ -241,6 +274,23 @@ local function OnEvent()
 
             end
 
+        elseif arg1 == "CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE" then
+
+            -- 扫击 dot jump
+            if string.find( arg2, "你的扫击使.*" ) then
+                DruidRateJumpTimer = GetTime() + 3.0
+
+            -- 撕扯 dot jump
+            elseif string.find( arg2, "你的撕扯使.*" ) then
+                DruidRipJumpTimer = GetTime() + 2.0
+
+            end
+
+        elseif arg1 == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
+
+            if string.find( arg2, "你从猛虎之怒.*" ) then
+                DruidTigerFuryTimer = GetTime() + 3.0
+            end
 
         end
 
@@ -253,13 +303,14 @@ local function OnUpdate()
 
     -- 保存Combo
     -- 注意：这如果放在事件中，特别是终结技的事件中，星已经被清空
-    ComboPoints = GetComboPoints("target")
+    ComboPoints = GetComboPoints()
 
-    if Cat2.SuperWoW or Cat2.Nampower4 then
+
+    if Cat2.SuperWoW then
 
         if Refill then
             local time = GetTime() - RefillTimer
-            if time>BLEENCHECKDELAY then
+            if time>0.4 then
                 Refill = false
             end
         end
@@ -272,6 +323,26 @@ end
 -- 设置事件处理函数
 frame:SetScript("OnEvent", OnEvent)
 frame:SetScript("OnUpdate", OnUpdate)
+
+
+-- 获取当前回能时间（猫德使用）
+-- 注：双流血猫德不建议使用
+-- return 首次捕获自然回能前返回 nil；捕获后返回当前2秒回能周期中的位置
+function Cat2.DruidRestoredEnergy()
+    -- 尚未捕获真实自然回能时，不提供推算结果。
+    if RestoredEnergyTime == nil then
+        return nil
+    end
+
+    local timer = GetTime()-RestoredEnergyTime
+    if timer<0 then
+        return nil
+    end
+
+    local fullCycles = math.floor(timer / 2)  -- 完整的2秒周期数
+    local cyclePos = timer - (fullCycles * 2)  -- 当前周期中的位置
+    return cyclePos
+end
 
 
 
@@ -292,6 +363,10 @@ local function GetRakeDotCheck( guid )
     end
 
     return false
+end
+
+function Cat2.ResetRakeDot(guid)
+    RateCheck[guid] = nil
 end
 
 function Cat2.GetRakeDot()
@@ -340,6 +415,10 @@ local function GetRipDotCheck( guid )
     end
 
     return false
+end
+
+function Cat2.ResetRipDot(guid)
+    RipCheck[guid] = nil
 end
 
 function Cat2.GetRipDot()
@@ -519,7 +598,6 @@ function Cat2.GetInsectSwarmDot(unit)
 
     return GetInsectSwarmDotCheck(guid)
 end
-
 
 
 

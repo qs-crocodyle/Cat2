@@ -2,8 +2,8 @@
 local card = {
     id = "mage_arcane_power_boss",
     name = "奥术强化 仅强敌时",
-    description = "强敌阶段蓝量>50%时，冷却后施放奥术强化",
-    details = "强敌阶段蓝量>50%时，冷却后施放奥术强化。需要存在有效目标。会检查战斗状态。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "强敌阶段蓝量>|cff6bc7e0{minimumMana}%|r时，冷却后施放奥术强化",
+    details = "强敌阶段蓝量高于卡片设定值时，冷却后施放奥术强化。需要存在有效目标。会检查战斗状态。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 121,
     category = "class",
     classes = {
@@ -11,6 +11,22 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Spell_Nature_Lightning",
+    },
+    cooldown = {
+        type = "spell",
+        name = "奥术强化",
+    },
+    optionSchema = {
+        {
+            key = "minimumMana",
+            type = "number",
+            label = "最低蓝量",
+            shortLabel = "蓝",
+            unit = "%",
+            default = 50,
+            minimum = 22,
+            maximum = 99,
+        },
     },
 }
 
@@ -20,9 +36,10 @@ function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(1,19)
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local minimumMana = context:GetStepOption(step, "minimumMana") or 50
 
     -- 未进入战斗或当前目标不是强敌
     if not player.inCombat or not player.targetExists or not Cat2.IsBossTarget() then
@@ -35,8 +52,8 @@ function card.Execute(context)
         return false
     end
 
-    if Cat2.SpellReadyOffset("奥术强化",1.5) and player.percentMana>50.0 then
-        Cat2.CastWithoutNampower("奥术强化")
+    if Cat2.SpellReadyOffset("奥术强化",1.5) and player.percentMana > minimumMana then
+        Cat2.Cast("奥术强化")
         return true
     end
 

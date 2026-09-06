@@ -7,7 +7,7 @@ local card = {
     -- 卡片标题下方显示的简短说明。
     description = "让宠物开始或维持普通攻击",
     -- 预留给后续详情面板或 Tooltip 的完整功能说明。
-    details = "让宠物开始或维持普通攻击。",
+    details = "宠物存在时，让宠物开始或维持普通攻击，不限制目标是否已经进入战斗。",
     -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
     sort = 11,
     -- 仅能是 common、item、class 三种分类之一。
@@ -25,9 +25,11 @@ end
 
 -- 返回后续流程执行器读取的动作描述。
 function card.Execute(context)
+    if not UnitExists("pet") then
+        return false
+    end
 
     PetAttack()
-
 end
 
 Cat2.RegisterCard(card)

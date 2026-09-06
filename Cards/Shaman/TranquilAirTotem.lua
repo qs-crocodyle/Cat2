@@ -2,7 +2,7 @@
 local card = {
     id = "shaman_tranquil_air_totem",
     name = "宁静之风图腾",
-    description = "保持并施放宁静之风图腾",
+    description = "保持并施放|cff6bc7e0{spellRank}级|r宁静之风图腾",
     details = "保持并施放宁静之风图腾。",
     sort = 210,
     exclusiveGroup = "shaman_air_totem",
@@ -13,16 +13,19 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_Brilliance",
     },
+    optionSchema = { Cat2.CreateSpellRankOption("宁静之风图腾") },
 }
 
 function card.RefreshRuntimeData()
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
+
+    local spellRank = context:GetStepOption(step, "spellRank")
 
     -- 图腾是否存在
     if not Cat2.AirTotem() then
-        CastSpellByName("宁静之风图腾")
+        Cat2.CastRankedWithNampower("宁静之风图腾", spellRank)
         return false
     end
 
@@ -30,7 +33,7 @@ function card.Execute(context)
     if Force then
         -- 图腾名字比对
         if Cat2.AirTotemName() ~= "宁静之风图腾" then
-            CastSpellByName("宁静之风图腾")
+            Cat2.CastRankedWithNampower("宁静之风图腾", spellRank)
             return false
         end
     end

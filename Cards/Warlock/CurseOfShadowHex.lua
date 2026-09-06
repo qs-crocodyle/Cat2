@@ -14,10 +14,15 @@ local card = {
 }
 
 local allowUse = 0
+local distance = 30
 
 function card.RefreshRuntimeData()
 
     allowUse = Cat2.IsTalentLearned(1,16)
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("暗影诅咒", "等级 1"), "(%d+)码距离"))
+    if not distance then
+        distance = 30
+    end
 
     local CurseAgonyDuration = 24
 
@@ -40,8 +45,20 @@ function card.Execute(context)
         return false
     end
 
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > distance then
+            return false
+        end
+    end
+
+    local dotOnlyBoss = context and context.parameters and context.parameters.warlockDotOnlyBoss
+    if dotOnlyBoss and not Cat2.IsBossTarget() then
+        return false
+    end
+
     if not player.targetBuff["暗影诅咒"] or not Cat2.GetCurseAgonyDot() then
-        CastSpellByName("暗影诅咒")
+        Cat2.CastWarlockDot(context, "暗影诅咒")
         return true
     end
 

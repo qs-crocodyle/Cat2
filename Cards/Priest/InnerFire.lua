@@ -22,7 +22,7 @@ function card.Execute(context)
     local player = Cat2.PlayerInformation.temporary
 
     if not player.buff["心灵之火"] then
-        Cat2.CastWithoutNampower("心灵之火")
+        Cat2.Cast("心灵之火")
         return true
     end
 

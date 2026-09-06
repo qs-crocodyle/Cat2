@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\btnholyscriptures",
     },
+    cooldown = {
+        type = "spell",
+        name = "启发",
+    },
 }
 
 local allowUse = 0

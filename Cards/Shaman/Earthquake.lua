@@ -12,12 +12,16 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_Earthquake",
     },
+    cooldown = { type = "spell", name = "地震术" },
 }
 
 local allowUse = 0
+local distance = 36
 
 function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(1, 17)
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("地震术", "等级 1"), "(%d+)码距离"))
+    if not distance then distance = 36 end
 end
 
 function card.Execute(context)
@@ -37,13 +41,13 @@ function card.Execute(context)
     -- 有unitxp模组，用于射程过滤
     if Cat2.UnitXP then
         local range = UnitXP("distanceBetween", "player", "target")
-        if range>36 then
+        if range>distance then
             return false
         end
     end
 
     if Cat2.SpellReadyOffset("地震术",1.5) then
-        CastSpellByName("地震术")
+        Cat2.Cast("地震术")
         return true
     end
 

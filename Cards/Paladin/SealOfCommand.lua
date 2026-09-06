@@ -14,6 +14,10 @@ local card = {
         "Interface\\Icons\\Ability_Warrior_InnerRage",
         "Interface\\Icons\\Spell_Holy_RighteousFury",
     },
+    cooldown = {
+        type = "spell",
+        name = "审判",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -55,7 +59,7 @@ function card.Execute(context)
     -- 执行圣印卡片内容
 
     if not player.buff["命令圣印"] then
-        CastSpellByName("命令圣印")
+        Cat2.CastWithNampower("命令圣印")
         return true
     else
 
@@ -64,8 +68,16 @@ function card.Execute(context)
             return false
         end
 
-        if Cat2.SpellReady("审判") and player.gcd<0.2 and Cat2.TargetDistance("target",10) then
-            CastSpellByName("审判")
+        if Cat2.UnitXP then
+            local targetDistance = UnitXP("distanceBetween", "player", "target")
+            if targetDistance and targetDistance > 10 then
+                return false
+            end
+        end
+
+        if Cat2.SpellReady("审判") and player.gcd<0.2 then
+            Cat2.CastWithNampower("审判")
+            Cat2.CastWithNampower("命令圣印")
             return true
         end
 

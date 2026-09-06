@@ -7,7 +7,7 @@ local card = {
     -- 卡片标题下方显示的简短说明。
     description = "施放自然伤害法术",
     -- 预留给后续详情面板或 Tooltip 的完整功能说明。
-    details = "施放自然伤害法术。需要存在有效目标。",
+    details = "施放自然伤害法术。需要存在有效目标；目标自然免疫时不会施放。流程中存在“愤怒切换神像”被动卡时，会在施放前尝试切换对应神像。",
     -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
     sort = 100,
     -- 仅能是 common、item、class 三种分类之一。
@@ -26,6 +26,15 @@ local card = {
 function card.RefreshRuntimeData()
 end
 
+local function EquipConfiguredIdol(context)
+    local desiredIdol = context and context.parameters and context.parameters.druidWrathIdol
+    if type(desiredIdol)=="string" and desiredIdol~="" and not Cat2.CheckUIStatus() then
+        if not Cat2.CheckInventoryItemName(18, desiredIdol) then
+            Cat2.EquipItemByName(desiredIdol, 18)
+        end
+    end
+end
+
 -- 返回后续流程执行器读取的动作描述。
 function card.Execute(context)
     local player = Cat2.PlayerInformation.temporary
@@ -35,8 +44,13 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标自然免疫时，不再尝试施放自然伤害技能
+    if Cat2.IsNatureImmune() then
+        return false
+    end
 
-    Cat2.CastWithoutNampower("愤怒")
+    EquipConfiguredIdol(context)
+    Cat2.Cast("愤怒")
 end
 
 Cat2.RegisterCard(card)

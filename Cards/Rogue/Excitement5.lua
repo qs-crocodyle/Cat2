@@ -20,6 +20,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_DualWield",
     },
+    cooldown = {
+        type = "spell",
+        name = "兴奋",
+    },
 }
 
 
@@ -37,7 +41,7 @@ function card.Execute(context)
 
 
     if player.targetCombo == 5 and Cat2.SpellReady("兴奋") then
-        CastSpellByName("兴奋")
+        Cat2.Cast("兴奋")
         return true
     end
 
@@ -45,4 +49,3 @@ function card.Execute(context)
 end
 
 Cat2.RegisterCard(card)
-

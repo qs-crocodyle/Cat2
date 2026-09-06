@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Frost_FrostWard",
     },
+    cooldown = {
+        type = "spell",
+        name = "防护冰霜结界",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -20,7 +24,7 @@ end
 function card.Execute(context)
 
     if Cat2.SpellReady("防护冰霜结界") then
-        CastSpellByName("防护冰霜结界")
+        Cat2.Cast("防护冰霜结界")
         return true
     end
 

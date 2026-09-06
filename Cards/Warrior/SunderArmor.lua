@@ -2,8 +2,8 @@
 local card = {
     id = "warrior_sunder_armor",
     name = "破甲攻击",
-    description = "无限施放破甲攻击，适合作为填充",
-    details = "无限施放破甲攻击，适合作为填充。需要存在有效目标。会检查当前资源。成功执行时会阻断本轮后续卡片。",
+    description = "怒气达到|cff6bc7e0{rageThreshold}|r时无限施放破甲攻击",
+    details = "怒气达到卡片设定值时无限施放破甲攻击，适合作为填充，默认需要30怒气。需要存在有效目标。会检查当前资源。成功执行时会阻断本轮后续卡片。",
     sort = 20,
     category = "class",
     classes = {
@@ -11,6 +11,17 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Ability_Warrior_Sunder",
+    },
+    optionSchema = {
+        {
+            key = "rageThreshold",
+            type = "number",
+            label = "怒气阈值",
+            shortLabel = "怒",
+            default = 30,
+            minimum = 5,
+            maximum = 100,
+        },
     },
 }
 
@@ -33,24 +44,23 @@ function card.RefreshRuntimeData()
 
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local rageThreshold = context:GetStepOption(step, "rageThreshold") or 30
 
     -- 没有目标时无需继续。
     if not player.targetExists then
         return false
     end
 
-
-    -- 判断队列中是否存在盾猛
-    -- 同队有盾猛时，优先把怒气留给盾猛
-    if context:IsCardActive("warrior_shield_slam") then
-        powerSunderArmor = powerSunderArmor + 20
+    local requiredRage = powerSunderArmor
+    if rageThreshold > requiredRage then
+        requiredRage = rageThreshold
     end
 
-    if player.power>=powerSunderArmor then
-        CastSpellByName("破甲攻击")
+    if player.power>=requiredRage then
+        Cat2.Cast("破甲攻击")
         return true
     end
 

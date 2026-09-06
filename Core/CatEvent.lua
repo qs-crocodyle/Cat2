@@ -15,6 +15,10 @@ frame:RegisterEvent("SPELLCAST_STOP")
 frame:RegisterEvent("SPELLCAST_FAILED")
 frame:RegisterEvent("SPELLCAST_INTERRUPTED")
 
+frame:RegisterEvent("SPELLCAST_CHANNEL_START")
+frame:RegisterEvent("SPELLCAST_CHANNEL_UPDATE")
+frame:RegisterEvent("SPELLCAST_CHANNEL_STOP")
+
 frame:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
 frame:RegisterEvent("CHAT_MSG_COMBAT_SELF_MISSES")
 frame:RegisterEvent("CHAT_MSG_COMBAT_SELF_HITS")
@@ -24,6 +28,9 @@ frame:RegisterEvent("UI_ERROR_MESSAGE")
 -- SuperWow专有事件
 frame:RegisterEvent("UNIT_CASTEVENT")
 frame:RegisterEvent("RAW_COMBATLOG")
+
+-- Nampower专有事件
+frame:RegisterEvent("AUTO_ATTACK_SELF")
 
 
 -- 模组参数
@@ -36,6 +43,9 @@ Cat2.Nampower4 = false
 Cat2.Nampower5 = false
 Cat2.Interact = false
 
+Cat2.UnitXPMove = false
+Cat2.NampowerMove = false
+
 
 -- 是否能打背标记变量
 local ErrorBehind = true
@@ -46,6 +56,95 @@ local gcdtimer = 0
 local gcdmax = 1.5
 -- 自己读条计时
 local isCast = false
+local SpellName = nil
+
+function Cat2.GetIsCast()
+    return isCast
+end
+
+function Cat2.GetSpellName()
+    return SpellName
+end
+
+-- 引导法术持续状态
+local ChanneledDuration = 0
+local ChanneledEndTime = 0
+
+local function ResetChanneledState()
+    ChanneledDuration = 0
+    ChanneledEndTime = 0
+end
+
+-- Nampower 4+ 能直接返回当前真实施法状态。原生 SPELLCAST_FAILED/
+-- SPELLCAST_INTERRUPTED 无法说明失败的是当前引导还是新尝试的技能，因此在可用时
+-- 以 GetCastInfo() 作为额外的引导保护来源。
+local function GetNampowerChanneledState()
+    if not Cat2.Nampower or type(GetCastInfo) ~= "function" then
+        return nil, nil, false
+    end
+
+    local success, castInfo = pcall(GetCastInfo)
+    if not success then
+        return nil, nil, false
+    end
+    if type(castInfo) ~= "table" or tonumber(castInfo.castType) ~= 3 then
+        return nil, nil, true
+    end
+
+    local remaining = tonumber(castInfo.castRemainingMs)
+    if (not remaining or remaining <= 0) and tonumber(castInfo.castEndS) then
+        remaining = (tonumber(castInfo.castEndS) - GetTime()) * 1000
+    end
+    if not remaining or remaining <= 0 then
+        return nil, nil, true
+    end
+
+    local duration = tonumber(castInfo.castDurationMs)
+    if not duration or duration <= 0 then
+        duration = remaining
+    end
+
+    return remaining, duration, true
+end
+
+-- 获取引导时间
+function Cat2.GetChanneledDuration()
+    local nampowerRemaining, nampowerDuration, nampowerChecked = GetNampowerChanneledState()
+    if nampowerRemaining then
+        return nampowerDuration
+    end
+    if nampowerChecked then
+        return 0
+    end
+
+    if ChanneledDuration <= 0 or ChanneledEndTime <= GetTime() then
+        return 0
+    end
+    return ChanneledDuration
+end
+
+-- 获取引导持续剩余时间
+function Cat2.GetChanneled()
+    local nampowerRemaining, _, nampowerChecked = GetNampowerChanneledState()
+    if nampowerRemaining then
+        return nampowerRemaining / 1000
+    end
+    if nampowerChecked then
+        return 0
+    end
+
+    if ChanneledDuration <= 0 or ChanneledEndTime <= 0 then
+        return 0
+    end
+
+    local remaining = ChanneledEndTime - GetTime()
+    if remaining <= 0 then
+        return 0
+    end
+
+    return remaining
+end
+
 
 -- 普攻计时器(主手)
 local MainHandBeginTime = 0
@@ -56,6 +155,27 @@ local castStartTime = {}
 local castName = {}
 local castDuration = {}
 
+-- 不应触发打断卡片的读条技能。表按战斗日志中的技能名称匹配，供拳击、脚踢、
+-- 沉默等所有调用 TargetCast 的卡片共用；后续确认新技能时可继续在这里补充。
+Cat2.InterruptSpellBlockList = Cat2.InterruptSpellBlockList or {
+    ["猛击"] = true,
+}
+
+-- 允许其他模块在不修改本文件的情况下扩展或移除过滤项。
+-- blocked 省略或为 true 时加入；传 false 时移除。
+function Cat2.SetInterruptSpellBlocked(spellName, blocked)
+    if type(spellName) ~= "string" or spellName == "" then
+        return false
+    end
+
+    if blocked == false then
+        Cat2.InterruptSpellBlockList[spellName] = nil
+    else
+        Cat2.InterruptSpellBlockList[spellName] = true
+    end
+    return true
+end
+
 
 local function BeginHit()
     -- 记录挥击开始时间
@@ -64,15 +184,12 @@ local function BeginHit()
     MainHandDuration = UnitAttackSpeed("player")
 end
 
-function Cat2.GetIsCast()
-    return isCast
-end
-
 local function ResetData()
     isCast = false
     castStartTime = {}
     castName = {}
     castDuration = {}
+    ResetChanneledState()
     Cat2.AutoAttack = false
     Cat2.AutoAttackLock = false
 end
@@ -166,6 +283,14 @@ local function OnEvent()
 
         end
 
+        if Cat2.UnitXP and type(UnitXP) == "function" then
+            Cat2.UnitXPMove = true
+        end
+
+        if Cat2.Nampower and type(PlayerIsMoving) == "function" then
+            Cat2.NampowerMove = true
+        end
+
     elseif event == "ADDON_LOADED" then
 
         if arg1 == "Cat2" then
@@ -200,6 +325,7 @@ local function OnEvent()
     elseif event == "SPELLCAST_START" then
         -- GCD时间处理
         isCast = true
+        SpellName = arg1
         gcdtimer = GetTime()
         gcdmax = 1.5
 
@@ -215,6 +341,7 @@ local function OnEvent()
         -- GCD时间处理
         if isCast then
             isCast = false
+            SpellName = nil
         else
 
             -- 未读条，应该是瞬发，GCD时间启动
@@ -233,15 +360,40 @@ local function OnEvent()
 
     elseif event == "SPELLCAST_FAILED" then
         -- GCD时间处理
-        if isCast then
-            isCast = false
-        end
+        isCast = false
+        SpellName = nil
+        -- 该事件也会由引导期间尝试的另一项技能失败触发，不能据此判定当前引导结束。
+        -- 引导状态由 CHANNEL_STOP、自然到期以及 GetCastInfo() 的实时结果共同维护。
 
     elseif event == "SPELLCAST_INTERRUPTED" then
         -- GCD时间处理
-        if isCast then
-            isCast = false
+        isCast = false
+        SpellName = nil
+        -- 与 FAILED 相同，原生事件不携带技能身份；等待 CHANNEL_STOP 或自然到期。
+
+    elseif event == "SPELLCAST_CHANNEL_START" then
+        local duration = tonumber(arg1)
+        if duration and duration > 0 then
+            ChanneledDuration = duration
+            ChanneledEndTime = GetTime() + duration / 1000
+        else
+            ResetChanneledState()
         end
+    elseif event == "SPELLCAST_CHANNEL_UPDATE" then
+        local remaining = tonumber(arg1)
+        if remaining and remaining > 0 then
+            -- UPDATE 的 arg1 是从当前时刻计算的剩余毫秒数。
+            -- START 丢失时以剩余时长建立降级状态，正常情况下保留最初的总时长。
+            if ChanneledDuration <= 0 then
+                ChanneledDuration = remaining
+            end
+            ChanneledEndTime = GetTime() + remaining / 1000
+        elseif remaining == 0 then
+            ResetChanneledState()
+        end
+    elseif event == "SPELLCAST_CHANNEL_STOP" then
+        ResetChanneledState()
+
 
     -- 技能伤害
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
@@ -336,19 +488,29 @@ local function OnEvent()
         -- 用于收集读条的技能名字，而不是ID
         CheckSpellLog(arg2)
 
+
+    -- Nampower专有事件
+
+    elseif event == "AUTO_ATTACK_SELF" then
+        BeginHit()
+
+
     end
 end
 
 
 local interval = 0.05  -- 轮询间隔（秒）
 local elapsed = 0
-local nameframe_interval = 0.2  -- 轮询间隔（秒）
+local nameframe_interval = 0.3  -- 轮询间隔（秒）
 local nameframe_elapsed = 0
 
 local prevX, prevY = 0, 0
--- 角色移动状态（全局）
-Cat2.PlayerIsMoving = false
+-- 地图坐标轮询得到的移动状态，仅作为外部接口均未确认移动时的最终兜底。
+local MapPositionIsMoving = false
+local MOVEMENT_SPEED_THRESHOLD = 0.01
 
+--[[
+-- 旧版姓名板轮询实现备份：每次轮询都会重新创建 WorldFrame 子框体表。
 local function NameFramePollingFunction()
 
     if not Cat2.SuperWoW then
@@ -368,17 +530,72 @@ local function NameFramePollingFunction()
 	end
 
 end
+]]
+
+-- WorldFrame 的子框体通常只会增加而不会销毁；缓存列表并仅在数量变化时重建，
+-- 避免姓名板轮询每 0.3 秒创建一张临时表并持续增加垃圾回收压力。
+local cachedWorldChildren = {}
+local cachedWorldChildCount = -1
+
+local function RefreshWorldChildrenCache()
+    local childCount = WorldFrame:GetNumChildren()
+    if childCount == cachedWorldChildCount then
+        return
+    end
+
+    cachedWorldChildren = { WorldFrame:GetChildren() }
+    cachedWorldChildCount = childCount
+end
+
+local function NameFramePollingFunction()
+    if not Cat2.SuperWoW then
+        return
+    end
+
+    RefreshWorldChildrenCache()
+
+    local index = 1
+    while index <= cachedWorldChildCount do
+        local plate = cachedWorldChildren[index]
+        if plate and plate:GetObjectType() ~= NAMEPLATE_FRAMETYPE then
+            local objectName = plate:GetName(1)
+            if objectName then
+                Cat2.PushObject(objectName)
+            end
+        end
+        index = index + 1
+    end
+end
 
 local function OnUpdate()
     -- 处理自动攻击
     elapsed = elapsed + arg1
     if elapsed >= interval then
         elapsed = 0  -- 重置计时器
+
+        -- 自动攻击检测
         if Cat2.AutoAttackLock then
             if GetTime()-Cat2.AutoAttackLockTimer > 0.2 then
                 Cat2.AutoAttackLock = false
             end
         end
+
+        -- 始终保留地图坐标轮询作为最终兜底。狭窄区域可能无法正确更新坐标，
+        -- 因此实际查询还会优先合并 UnitXP、SuperWoW 与 Nampower 的结果。
+        if not Cat2.UnitXPMove and not Cat2.NampowerMove then
+            local x, y = GetPlayerMapPosition("player")
+            if x ~= prevX or y ~= prevY then
+                if not MapPositionIsMoving then
+                    MapPositionIsMoving = true
+                end
+            else
+                if MapPositionIsMoving then
+                    MapPositionIsMoving = false
+                end
+            end
+            prevX, prevY = x, y
+        end
+
     end
 
 
@@ -389,21 +606,6 @@ local function OnUpdate()
     end
 
 
-    -- 计算角色是否在移动
-    if not Cat2.Nampower3 then
-        local x, y = GetPlayerMapPosition("player")
-        if x ~= prevX or y ~= prevY then
-            if not Cat2.PlayerIsMoving then
-                Cat2.PlayerIsMoving = true
-            end
-        else
-            if Cat2.PlayerIsMoving then
-                Cat2.PlayerIsMoving = false
-            end
-        end
-        prevX, prevY = x, y
-    end
-
 end
 
 
@@ -412,7 +614,27 @@ frame:SetScript("OnEvent", OnEvent)
 frame:SetScript("OnUpdate", OnUpdate)
 
 
+function Cat2.PlayerIsMoving()
+    -- UnitXP 的第一个返回值是当前移动速度；大于阈值即可确认正在移动。
+    if Cat2.UnitXPMove then
+        local succeeded, currentSpeed = pcall(UnitXP, "speed", "player")
+        if succeeded and tonumber(currentSpeed) and tonumber(currentSpeed) > MOVEMENT_SPEED_THRESHOLD then
+            return true
+        end
+    end
 
+    -- Nampower 直接提供移动状态；使用函数存在性判断兼容不同大版本。
+    if Cat2.NampowerMove then
+        local succeeded, moving = pcall(PlayerIsMoving)
+        if succeeded and moving == 1 then
+            return true
+        else
+            return false
+        end
+    end
+
+    return MapPositionIsMoving
+end
 
 
 
@@ -454,6 +676,11 @@ function Cat2.TargetCast()
 
     if castStartTime[guid] ~= nil then
         if castName[guid] then
+            -- 某些技能虽然表现为读条，但不属于需要或能够打断的施法。
+            if Cat2.InterruptSpellBlockList[castName[guid]] == true then
+                return false, castName[guid]
+            end
+
             local timer = GetTime()-castStartTime[guid]
             if timer < castDuration[guid] then
                 return true, castName[guid]
@@ -494,6 +721,15 @@ function Cat2.GCDMax()
     return gcdmax
 end
 
+-- 当前是否正处于一次公共冷却的前半段。
+-- GetLeftGCD 返回剩余时间，因此“前半段”等价于剩余时间大于总时长的一半；
+-- 剩余为0时表示当前没有公共冷却，不能用于换装窗口。
+function Cat2.IsGCDInFirstHalf()
+    local maximum = Cat2.GCDMax()
+    local remaining = Cat2.GetLeftGCD()
+    return maximum > 0 and remaining > maximum / 2 and remaining <= maximum
+end
+
 
 
 --------------------------------------------
@@ -514,8 +750,26 @@ function Cat2.CheckBehind()
         end
     end
 
+    --[[
     if Cat2.UnitXP then
         return UnitXP("behind", "player", "target")
+    end
+    ]]
+
+    return true
+end
+
+-- 获取目标的朝向
+-- return 获取成立返回真
+function Cat2.CheckBehindErrorMessage()
+
+    -- 检测异常捕获的方向错误
+    if ErrorBehind == false then
+        if GetTime() - ErrorBehindTimer > 0.3 then
+            ErrorBehind = true
+        else
+            return false
+        end
     end
 
     return true
@@ -544,7 +798,6 @@ function Cat2.ScanNearbyEnemies(range)
         return 0,0
     end
 
-    local count = 0
     local inMeleeRange
     local _,targetGUID = UnitExists("target")  -- 保存当前目标GUID
     local toRemove = {}  -- 存储待删除的键

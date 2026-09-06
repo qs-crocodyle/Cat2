@@ -11,7 +11,26 @@ local legacyCardIds = {
     -- “随机治疗团队”规范化命名后的兼容迁移。
     shared_healing_raid = "shared_random_healing_team",
     -- “优先血量最高”改为团队治疗的优先坦克策略。
-    shared_healing_highest_health = "shared_healing_team_priority_tank"
+    shared_healing_highest_health = "shared_healing_team_priority_tank",
+    -- 三张固定阈值生命分流合并为一张参数卡。
+    warlock_life_tap_30 = "warlock_life_tap",
+    warlock_life_tap_70 = "warlock_life_tap",
+    -- 一级渐隐术合并到参数型渐隐术。
+    priest_fade_rank_one = "priest_fade"
+}
+
+-- 固定数值旧卡合并为参数卡时，为旧流程补回原有数值。
+local legacyCardOptionValues = {
+    warlock_life_tap_30 = { triggerPercent = 30 },
+    warlock_life_tap_70 = { triggerPercent = 70 },
+    priest_fade_rank_one = { spellRank = 1 }
+}
+
+-- 已明确下架的卡片在恢复旧配置时直接跳过；其他未知 ID 仍保留为缺失卡片。
+local removedCardIds = {
+    item_recovery_percent_50 = true,
+    -- 已下架的猛击变体；旧流程恢复时直接跳过，不留下未识别占位卡。
+    warrior_slam_unorthodox = true
 }
 
 local function CreateDefaultRepository()
@@ -62,7 +81,20 @@ local function RestoreStep(savedStep)
     if type(savedStep) ~= "table" or type(savedStep.id) ~= "string" then
         return nil
     end
+    if removedCardIds[savedStep.id] then
+        return nil
+    end
     local cardId = legacyCardIds[savedStep.id] or savedStep.id
+    local savedOptionValues = savedStep.optionValues
+    local migratedOptionValues = legacyCardOptionValues[savedStep.id]
+    if migratedOptionValues then
+        savedOptionValues = Cat2.CopyRawCardOptionValues(savedOptionValues)
+        for optionKey, optionValue in pairs(migratedOptionValues) do
+            if savedOptionValues[optionKey] == nil then
+                savedOptionValues[optionKey] = optionValue
+            end
+        end
+    end
     local card = FindCard(cardId)
     if not card then
         -- 卡片暂时未注册时保留原 ID 与流程位置，避免一次加载就永久破坏用户配置。
@@ -74,6 +106,7 @@ local function RestoreStep(savedStep)
             icons = { "Interface\\Icons\\INV_Misc_QuestionMark" },
             enabled = 0,
             minimizedVisible = 0,
+            optionValues = Cat2.CopyRawCardOptionValues(savedOptionValues),
             isMissing = true
         }
     end
@@ -82,7 +115,8 @@ local function RestoreStep(savedStep)
     end
     local step = {
         enabled = savedStep.enabled == 0 and 0 or 1,
-        minimizedVisible = savedStep.minimizedVisible == 0 and 0 or 1
+        minimizedVisible = savedStep.minimizedVisible == 0 and 0 or 1,
+        optionValues = Cat2.CopyCardOptionValues(savedOptionValues, card)
     }
     setmetatable(step, {
         __index = card
@@ -178,7 +212,8 @@ function Cat2.SaveConfigurationData(repository)
                     table.insert(savedProfile.steps, {
                         id = step.id,
                         enabled = step.enabled == 0 and 0 or 1,
-                        minimizedVisible = step.minimizedVisible == 0 and 0 or 1
+                        minimizedVisible = step.minimizedVisible == 0 and 0 or 1,
+                        optionValues = Cat2.CopyRawCardOptionValues(step.optionValues)
                     })
                 end
                 stepIndex = stepIndex + 1
@@ -219,6 +254,37 @@ function Cat2.SaveMinimizedPosition(left, top)
 end
 
 -- 记录退出游戏时独立流程快捷小窗是否仍处于显示状态。
+
+
+-- �ɰ浥��ݴ������� ShaguDPS ��ͬ�����ĵ�������ꡣ���ڻָ�ʱ�:::;
+-- ����л��ֱ��ʺ����ܱ��ִ�����ͬ����Ļλ�ã��� left/top ���ݼ�����Ϊ���ݻ��ˡ�
+function Cat2.GetMinimizedWindowCenterPosition()
+    local database = EnsureDatabase()
+    local position = database.ui.minimizedCenterPosition
+    if type(position) ~= "table" then
+        return nil, nil
+    end
+    local relativeX = tonumber(position[1])
+    local relativeY = tonumber(position[2])
+    if position.rel ~= true or relativeX == nil or relativeY == nil then
+        return nil, nil
+    end
+    return relativeX * GetScreenWidth(), relativeY * GetScreenHeight()
+end
+
+function Cat2.SaveMinimizedWindowCenterPosition(centerX, centerY)
+    centerX = tonumber(centerX)
+    centerY = tonumber(centerY)
+    local screenWidth = GetScreenWidth()
+    local screenHeight = GetScreenHeight()
+    if centerX == nil or centerY == nil or not screenWidth or not screenHeight or screenWidth <= 0 or screenHeight <= 0 then
+        return false
+    end
+    local database = EnsureDatabase()
+    database.ui.minimizedCenterPosition = { centerX / screenWidth, centerY / screenHeight, rel = true }
+    database.ui.minimizedPosition = nil
+    return true
+end
 function Cat2.ShouldRestoreMinimizedWindow()
     local database = EnsureDatabase()
     return database.ui.minimizedWindowVisible == 1
@@ -293,7 +359,9 @@ function Cat2.GetProfileShortcutWindowSettings(profileId)
     if scale > 1.8 then
         scale = 1.8
     end
-    return settings.visible == 1, iconLimit, direction, tonumber(settings.left), tonumber(settings.top), scale
+    local opacity = tonumber(settings.opacity) or 0.6
+    local showCooldown = settings.showCooldown == 1
+    return settings.visible == 1, iconLimit, direction, tonumber(settings.left), tonumber(settings.top), scale, opacity, showCooldown
 end
 
 function Cat2.SaveProfileShortcutWindowSettings(profileId, visible, iconLimit, direction, left, top, scale)

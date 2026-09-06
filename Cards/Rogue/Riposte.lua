@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Warrior_Challange",
     },
+    cooldown = {
+        type = "spell",
+        name = "还击",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -26,7 +30,7 @@ function card.Execute(context)
     end
 
     if player.power>=10 then
-        CastSpellByName("还击")
+        Cat2.Cast("还击")
         -- 这里没侦测招架，直接返回，避免卡技能
     end
 

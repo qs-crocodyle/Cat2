@@ -33,7 +33,7 @@ function card.Execute(context)
 
     if player.power >= 10 then
         if not player.targetBuff["挫志咆哮"] and not player.targetBuff["挫志怒吼"] then
-            CastSpellByName("挫志怒吼")
+            Cat2.Cast("挫志怒吼")
             return true
         end
     end

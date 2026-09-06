@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Shadow_DeathPact",
     },
+    cooldown = {
+        type = "spell",
+        name = "死亡之愿",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -32,7 +36,7 @@ function card.Execute(context)
     end
 
     if player.power>=10 and Cat2.SpellReady("死亡之愿") then
-        Cat2.CastWithNampower("死亡之愿")
+        Cat2.Cast("死亡之愿")
         return true
     end
 

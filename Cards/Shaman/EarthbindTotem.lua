@@ -2,7 +2,7 @@
 local card = {
     id = "shaman_earthbind_totem",
     name = "地缚图腾",
-    description = "保持并施放地缚图腾",
+    description = "保持并施放|cff6bc7e0{spellRank}级|r地缚图腾",
     details = "保持并施放地缚图腾。",
     sort = 50,
     exclusiveGroup = "shaman_earth_totem",
@@ -13,16 +13,19 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_StrengthOfEarthTotem02",
     },
+    optionSchema = { Cat2.CreateSpellRankOption("地缚图腾") },
 }
 
 function card.RefreshRuntimeData()
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
+
+    local spellRank = context:GetStepOption(step, "spellRank")
 
     -- 图腾是否存在
     if not Cat2.EarthTotem() then
-        CastSpellByName("地缚图腾")
+        Cat2.CastRankedWithNampower("地缚图腾", spellRank)
         return false
     end
 
@@ -30,7 +33,7 @@ function card.Execute(context)
     if Force then
         -- 图腾名字比对
         if Cat2.EarthTotemName() ~= "地缚图腾" then
-            CastSpellByName("地缚图腾")
+            Cat2.CastRankedWithNampower("地缚图腾", spellRank)
             return false
         end
     end

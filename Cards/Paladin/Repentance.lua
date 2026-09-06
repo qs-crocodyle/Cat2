@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_PrayerOfHealing",
     },
+    cooldown = {
+        type = "spell",
+        name = "忏悔",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -28,7 +32,7 @@ function card.Execute(context)
 
 
     if Cat2.SpellReady("忏悔") and Cat2.TargetDistance("target",20) then
-        CastSpellByName("忏悔")
+        Cat2.Cast("忏悔")
         return true
     end
 

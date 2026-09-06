@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_ThunderClap",
     },
+    cooldown = {
+        type = "spell",
+        name = "雷霆一击",
+    },
 }
 
 local powerThunderClap = 20
@@ -40,13 +44,13 @@ function card.Execute(context)
     end
 
     -- 狂暴姿态下不执行。
-    if Cat2.SetShape("狂暴姿态") then
+    if Cat2.GetShapeByName("狂暴姿态") then
         return false
     end
 
 
     if player.power>=powerThunderClap and not player.targetBuff["雷霆一击"] then
-        CastSpellByName("雷霆一击")
+        Cat2.Cast("雷霆一击")
         return true
     end
 

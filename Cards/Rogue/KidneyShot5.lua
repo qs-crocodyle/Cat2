@@ -20,6 +20,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Rogue_KidneyShot",
     },
+    cooldown = {
+        type = "spell",
+        name = "肾击",
+    },
 }
 
 -- 插件启动时注册卡片后调用一次。
@@ -35,7 +39,7 @@ function card.Execute(context)
     end
 
     if player.targetCombo == 5 and Cat2.SpellReady("肾击") then
-        CastSpellByName("肾击")
+        Cat2.Cast("肾击")
         return true
     end
 
@@ -43,4 +47,3 @@ function card.Execute(context)
 end
 
 Cat2.RegisterCard(card)
-

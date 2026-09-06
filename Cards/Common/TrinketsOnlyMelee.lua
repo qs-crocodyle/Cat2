@@ -1,9 +1,9 @@
 -- 饰品仅对强敌开启的被动卡片。
 local card = {
     id = "common_trinkets_only_melee",
-    name = "饰品/爆发 仅近战距离",
-    description = "饰品和爆发仅在接近敌人时启用",
-    details = "饰品和爆发仅在接近敌人时启用。作为被动规则，启用时影响当前流程。",
+    name = "饰品/天赋 仅近战距离",
+    description = "饰品和天赋仅在接近敌人时启用",
+    details = "饰品和天赋仅在接近敌人时启用。作为被动规则，启用时影响当前流程。",
     sort = 44,
     behavior = "passive",
     unique = true,

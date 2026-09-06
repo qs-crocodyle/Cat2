@@ -34,12 +34,12 @@ function card.Execute(context)
     end
 
     if not player.buff["智慧圣印"] then
-        CastSpellByName("智慧圣印")
+        Cat2.Cast("智慧圣印")
         return true
     else
 
         if Cat2.SpellReady("审判") and player.gcd<0.2 and Cat2.TargetDistance("target",10) then
-            CastSpellByName("审判")
+            Cat2.Cast("审判")
             return true
         end
 

@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_UnyieldingFaith",
     },
+    cooldown = {
+        type = "spell",
+        name = "责罚",
+    },
 }
 
 local allowUse = 0

@@ -30,7 +30,7 @@ function card.Execute(context)
     local player = Cat2.PlayerInformation.temporary
 
     if not player.buff["暗影形态"] then
-        CastSpellByName("暗影形态")
+        Cat2.Cast("暗影形态")
         return true
     end
 

@@ -22,18 +22,47 @@ local card = {
     },
 }
 
+local ShapeshiftID = 0
+
 -- 插件启动时注册卡片后调用一次。
 function card.RefreshRuntimeData()
+	for i = 1, 9 do
+		local _, name, _, id = GetShapeshiftFormInfo(i)
+        if name then
+
+            if name=="巨熊形态" then
+                ShapeshiftID = i
+                return
+            end
+            if name=="熊形态" then
+                ShapeshiftID = i
+                return
+            end
+        end
+	end
 end
 
 -- 返回后续流程执行器读取的动作描述。
 function card.Execute(context)
 
-    if not Cat2.PlayerInformation.temporary.buff["熊形态"] and not Cat2.PlayerInformation.temporary.buff["巨熊形态"] then
-        CastSpellByName("巨熊形态")
-        CastSpellByName("熊形态")
+    if ShapeshiftID > 0 then
+
+		if not Cat2.GetShape(ShapeshiftID) then
+			CastShapeshiftForm(ShapeshiftID)
+			return true
+		end
+
+    else
+
+        if not Cat2.PlayerInformation.temporary.buff["熊形态"] and not Cat2.PlayerInformation.temporary.buff["巨熊形态"] then
+            Cat2.Cast("巨熊形态")
+            Cat2.Cast("熊形态")
+		    return true
+        end
+
     end
 
+    return false
 end
 
 Cat2.RegisterCard(card)

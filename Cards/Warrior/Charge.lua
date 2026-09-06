@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Warrior_Charge",
     },
+    cooldown = {
+        type = "spell",
+        name = "冲锋",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -26,12 +30,12 @@ function card.Execute(context)
         return false
     end
 
-    if not Cat2.SetShape("战斗姿态") then
+    if not Cat2.GetShapeByName("战斗姿态") then
         return false
     end
 
     -- 战斗中不能冲锋
-    if player.imCombat then
+    if player.inCombat then
         return false
     end
 
@@ -42,7 +46,7 @@ function card.Execute(context)
 
 
     if Cat2.SpellReady("冲锋") then
-        CastSpellByName("冲锋")
+        Cat2.Cast("冲锋")
         return true
     end
 

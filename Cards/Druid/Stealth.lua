@@ -50,10 +50,10 @@ function card.Execute(context)
         -- 根据吃流血状态发起攻击
         if player.targetBleed then
 			-- 目标可流血用突袭
-			CastSpellByName("突袭")
+			Cat2.Cast("突袭")
 		else
 			-- 目标不可流血就毁灭
-			CastSpellByName("毁灭")
+			Cat2.Cast("毁灭")
 		end
 
         return true

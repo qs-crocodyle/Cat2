@@ -21,7 +21,7 @@ end
 function card.Execute(context)
 
     if not Cat2.PlayerInformation.temporary.buff["冰甲术"] then
-        CastSpellByName("冰甲术")
+        Cat2.Cast("冰甲术")
     end
 
     return false

@@ -13,6 +13,10 @@ local card = {
         "Interface\\Icons\\Spell_Holy_CrusaderStrike",
         "Interface\\Icons\\INV_Sword_01",
     },
+    cooldown = {
+        type = "spell",
+        name = "十字军打击",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -35,17 +39,17 @@ function card.Execute(context)
 
 	-- 主打十字军打击
 	if not Cat2.GetCrusaderStrike() then
-		CastSpellByName("十字军打击")
+		Cat2.Cast("十字军打击")
         return true
 	elseif Cat2.GetCrusaderStrike() and Cat2.GetFrenzyLayer()<2 then
-		CastSpellByName("十字军打击")
+		Cat2.Cast("十字军打击")
         return true
 	else
 		if GetTime()-Cat2.GetHolyStrikeDuration()>13 then
-		    CastSpellByName("神圣打击")
+		    Cat2.Cast("神圣打击")
             return true
 		else
-		    CastSpellByName("十字军打击")
+		    Cat2.Cast("十字军打击")
             return true
 		end
 	end

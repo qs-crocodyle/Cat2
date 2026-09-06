@@ -19,8 +19,22 @@ function card.RefreshRuntimeData()
 end
 
 function card.Execute(context)
+
+    local AutoViper = Cat2.CardRegistry.ById["hunter_auto_aspect_of_the_viper"]
+
+    if context:IsCardActive("hunter_auto_aspect_of_the_viper")
+        and AutoViper
+        and type(AutoViper.GetCustomValue) == "function" then
+
+        -- 检测自动蝰蛇守护是否运行中
+        local value = AutoViper.GetCustomValue()
+        if value then
+            return false
+        end
+    end
+
     if not Cat2.PlayerInformation.temporary.buff["豹群守护"] then
-        CastSpellByName("豹群守护")
+        Cat2.Cast("豹群守护")
     end
 end
 

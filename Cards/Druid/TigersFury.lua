@@ -34,12 +34,12 @@ function card.Execute(context)
 
     if Cat2.PlayerInformation.temporary.inCombat then
 	    if (not Cat2.DruidMHTimer or GetTime()-Cat2.DruidMHTimer>17) and Cat2.PlayerInformation.temporary.power>=30 then
-		    CastSpellByName("猛虎之怒")
+		    Cat2.Cast("猛虎之怒")
 		    Cat2.DruidMHTimer=GetTime()
 	    end
     else
 	    if (not Cat2.DruidMHTimer or GetTime()-Cat2.DruidMHTimer>8) and Cat2.PlayerInformation.temporary.power>=80 then
-		    CastSpellByName("猛虎之怒")
+		    Cat2.Cast("猛虎之怒")
 		    Cat2.DruidMHTimer=GetTime()
 	    end
     end

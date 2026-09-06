@@ -237,11 +237,11 @@ function Cat2.RegisterCard(card)
 
     -- 对所有卡片统一 Execute 契约：只返回布尔值，true 表示流程到此终止。
     -- 旧卡片没有返回值或返回其他数据时统一视为 false，后续卡片继续执行。
-    local originalExecute = card.Execute
+local originalExecute = card.Execute
     if type(originalExecute) == "function" then
-        card.Execute = function(context)
+        card.Execute = function(context, step)
             Cat2.EnsureCardRuntimeData(card)
-            return originalExecute(context) == true
+            return originalExecute(context, step) == true
         end
     else
         card.Execute = function()
@@ -305,4 +305,225 @@ function Cat2.GetCardsForClass(classFile)
         return left.sort < right.sort
     end)
     return cards
+end
+
+
+-- �������ͨ�����ֶ���Resolver���ṩ��ֵ̬������ʧ��ʱ���˾�̬�ֶΡ�
+-- ���� defaultResolver �� maximumResolver ���漼����仯ʵʱ���¡�
+function Cat2.ResolveCardOptionDefinitionValue(definition, fieldName, card)
+    if type(definition) ~= "table" or type(fieldName) ~= "string" then
+        return nil
+    end
+    local resolver = definition[fieldName .. "Resolver"]
+    if type(resolver) == "function" then
+        local resolved = resolver(card, definition)
+        if resolved ~= nil then
+            return resolved
+        end
+    end
+    return definition[fieldName]
+end
+
+-- ��������ʾ����
+-- { key = "mode", type = "string", control = "select", default = "a",
+--   choices = { { value = "a", label = "����A" }, { value = "b", label = "����B" } } }
+-- value ʹ������ string/number/boolean �������ͱ��棬label ������չʾ��
+-- allowCustom = true ʱ������ͬʱ�����ֶ����� choices ֮���ֵ�����Ϊ���ɱ༭������
+-- ���ѡ choicesResolver(card, definition) �����Ժ󰴼����鶯̬����ѡ�
+function Cat2.GetCardOptionChoices(definition, card)
+    if type(definition) ~= "table" then
+        return {}
+    end
+    if type(definition.choicesResolver) == "function" then
+        local resolved = definition.choicesResolver(card, definition)
+        if type(resolved) == "table" then
+            return resolved
+        end
+    end
+    if type(definition.choices) == "table" then
+        return definition.choices
+    end
+    return {}
+end
+
+function Cat2.GetCardOptionChoice(definition, value, card)
+    local choices = Cat2.GetCardOptionChoices(definition, card)
+    local choiceIndex = 1
+    local choiceTotal = table.getn(choices)
+    while choiceIndex <= choiceTotal do
+        local choice = choices[choiceIndex]
+        if type(choice) == "table" and choice.value == value then
+            return choice
+        end
+        choiceIndex = choiceIndex + 1
+    end
+    return nil
+end
+
+-- 卡片参数定义使用数组保存顺序；流程实例只保存用户覆写过的值。
+-- 未覆写时可继承被动卡片写入 context.parameters 的共享参数，最后回退到默认值。
+function Cat2.GetCardOptionDefinition(card, optionKey)
+    if type(card) ~= "table" or type(card.optionSchema) ~= "table" then
+        return nil
+    end
+    local optionIndex = 1
+    local optionTotal = table.getn(card.optionSchema)
+    while optionIndex <= optionTotal do
+        local definition = card.optionSchema[optionIndex]
+        if type(definition) == "table" and definition.key == optionKey then
+            return definition
+        end
+        optionIndex = optionIndex + 1
+    end
+    return nil
+end
+
+function Cat2.GetCardOptionDisplayValue(definition, value, card)
+    if definition and definition.control == "select" then
+        local choice = Cat2.GetCardOptionChoice(definition, value, card)
+        if choice and choice.label ~= nil then
+            return Cat2.L(tostring(choice.label))
+        end
+    end
+    if value == nil then
+        return nil
+    end
+    return tostring(value)
+end
+
+function Cat2.NormalizeCardOptionValue(definition, value, card)
+    if type(definition) ~= "table" then
+        return nil
+    end
+    local normalized = nil
+    if definition.type == "number" then
+        value = tonumber(value)
+        if not value then
+            return nil
+        end
+        if definition.integer ~= false then
+            value = math.floor(value + 0.5)
+        end
+        local minimum = Cat2.ResolveCardOptionDefinitionValue(definition, "minimum", card)
+        local maximum = Cat2.ResolveCardOptionDefinitionValue(definition, "maximum", card)
+        if minimum and value < minimum then
+            value = minimum
+        end
+        if maximum and value > maximum then
+            value = maximum
+        end
+        normalized = value
+    elseif definition.type == "boolean" then
+        normalized = value == true or value == 1
+    elseif definition.type == "string" and type(value) == "string" then
+        normalized = value
+    end
+    if normalized == nil then
+        return nil
+    end
+    -- select 只是展示控件，底层仍使用现有基础类型。兼容旧版可编辑下拉框曾把
+    -- 带颜色码的 label 误存为参数：先按稳定 value 查找，再按完整 label 反查并还原 value。
+    if definition.control == "select" then
+        local selectedChoice = Cat2.GetCardOptionChoice(definition, normalized, card)
+        if not selectedChoice and type(normalized) == "string" then
+            local choices = Cat2.GetCardOptionChoices(definition, card)
+            local choiceIndex = 1
+            local choiceTotal = table.getn(choices)
+            while choiceIndex <= choiceTotal do
+                local choice = choices[choiceIndex]
+                if type(choice) == "table" and choice.value ~= nil and choice.label ~= nil and
+                   tostring(choice.label) == normalized then
+                    normalized = choice.value
+                    selectedChoice = choice
+                    break
+                end
+                choiceIndex = choiceIndex + 1
+            end
+        end
+        -- 不允许自定义的下拉框遇到无效旧值时回退默认值。
+        if definition.allowCustom ~= true and not selectedChoice then
+            return nil
+        end
+    end
+    return normalized
+end
+
+function Cat2.CopyCardOptionValues(values, card)
+    local result = {}
+    if type(values) ~= "table" then
+        return result
+    end
+    for optionKey, value in pairs(values) do
+        local definition = Cat2.GetCardOptionDefinition(card, optionKey)
+        local normalized = Cat2.NormalizeCardOptionValue(definition, value, card)
+        if normalized ~= nil then
+            result[optionKey] = normalized
+        end
+    end
+    return result
+end
+
+function Cat2.CopyRawCardOptionValues(values)
+    local result = {}
+    if type(values) ~= "table" then
+        return result
+    end
+    for optionKey, value in pairs(values) do
+        local valueType = type(value)
+        if type(optionKey) == "string" and (valueType == "number" or valueType == "string" or valueType == "boolean") then
+            result[optionKey] = value
+        end
+    end
+    return result
+end
+
+function Cat2.ResolveStepOption(step, optionKey, parameters)
+    local definition = Cat2.GetCardOptionDefinition(step, optionKey)
+    if not definition then
+        return nil
+    end
+    if type(step.optionValues) == "table" and step.optionValues[optionKey] ~= nil then
+        return Cat2.NormalizeCardOptionValue(definition, step.optionValues[optionKey], step)
+    end
+    if type(parameters) == "table" and type(definition.inheritParameter) == "string" then
+        local inherited = parameters[definition.inheritParameter]
+        if inherited ~= nil then
+            local normalized = Cat2.NormalizeCardOptionValue(definition, inherited, step)
+            if normalized ~= nil then
+                return normalized
+            end
+        end
+    end
+    local defaultValue = Cat2.ResolveCardOptionDefinitionValue(definition, "default", step)
+    return Cat2.NormalizeCardOptionValue(definition, defaultValue, step)
+end
+
+-- 创建技能等级参数。未独立设置时始终跟随当前最高已学等级。
+function Cat2.CreateSpellRankOption(spellName)
+    local function GetLearnedRank()
+        local highestRank = Cat2.GetHighestRankOfSpell(spellName)
+        if highestRank and highestRank > 0 then
+            return highestRank
+        end
+        return nil
+    end
+    local function GetDefaultRank()
+        local highestRank = GetLearnedRank()
+        if highestRank then
+            return highestRank
+        end
+        return 1
+    end
+    return {
+        key = "spellRank",
+        type = "number",
+        label = "技能等级",
+        shortLabel = "级",
+        unit = "级",
+        default = 1,
+        defaultResolver = GetDefaultRank,
+        minimum = 1,
+        -- 技能书尚未就绪或技能未学习时不限制保存值，避免登录恢复时误改用户配置。
+        maximumResolver = GetLearnedRank,
+    }
 end

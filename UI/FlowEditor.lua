@@ -38,6 +38,51 @@ local function CountTextCharacters(text)
     return count
 end
 
+-- 将卡片简介中的 {参数名} 替换为当前流程实例的实际参数值。
+-- 本函数只由界面重绘调用；/cat2 执行流程不会经过这里，因此不会增加按宏的运行成本。
+local function GetCardDescriptionText(step)
+    if type(step) ~= "table" then
+        return ""
+    end
+    local template = step.description
+    if type(template) ~= "string" or template == "" then
+        return ""
+    end
+
+    local output = ""
+    local cursor = 1
+    while cursor <= string.len(template) do
+        local openIndex = string.find(template, "{", cursor, true)
+        if not openIndex then
+            output = output .. string.sub(template, cursor)
+            break
+        end
+        local closeIndex = string.find(template, "}", openIndex + 1, true)
+        if not closeIndex then
+            output = output .. string.sub(template, cursor)
+            break
+        end
+        output = output .. string.sub(template, cursor, openIndex - 1)
+        local optionKey = string.sub(template, openIndex + 1, closeIndex - 1)
+        local optionValue = nil
+        if Cat2.ResolveStepOption then
+            optionValue = Cat2.ResolveStepOption(step, optionKey, nil)
+        end
+        if optionValue == nil then
+            output = output .. string.sub(template, openIndex, closeIndex)
+        else
+            local definition = Cat2.GetCardOptionDefinition and Cat2.GetCardOptionDefinition(step, optionKey) or nil
+            if Cat2.GetCardOptionDisplayValue then
+                output = output .. (Cat2.GetCardOptionDisplayValue(definition, optionValue, step) or tostring(optionValue))
+            else
+                output = output .. tostring(optionValue)
+            end
+        end
+        cursor = closeIndex + 1
+    end
+    return output
+end
+
 -- 互斥组使用固定的十二色主题表；颜色保持克制，避免盖过卡片标题和状态反馈。
 local exclusiveGroupColors = {
     { 0.36, 0.72, 1 },
@@ -365,11 +410,16 @@ local function CreateStepBlock(parent, step, index, fromFlow)
         block:SetBackdropBorderColor(0.38, 0.35, 0.56, 0.9)
     end
 
+    -- 参数定义仅供右侧参数按钮和编辑器使用；参数值改由卡片描述模板表达，
+    -- 不再附加在标题后方，避免标题区域拥挤。
+    local optionSchema = type(step.optionSchema) == "table" and step.optionSchema or nil
+    local optionTotal = optionSchema and table.getn(optionSchema) or 0
+
     local description = block:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     description:SetPoint("BOTTOMLEFT", lastIcon, "BOTTOMRIGHT", 8, 0)
     description:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
     description:SetTextColor(0.82, 0.82, 0.82)
-    description:SetText(step.description)
+    description:SetText(GetCardDescriptionText(step))
 
     block.normalAlpha = 1
     if fromFlow and step.enabled == 0 then
@@ -405,6 +455,124 @@ local function CreateStepBlock(parent, step, index, fromFlow)
     end
 
     if fromFlow then
+        local optionButton = nil
+        do
+            optionButton = CreateFrame("Button", nil, block)
+            optionButton:SetFrameLevel(block:GetFrameLevel() + 5)
+            optionButton:SetWidth(24)
+            optionButton:SetHeight(24)
+            optionButton:SetPoint("RIGHT", block, "RIGHT", -104, 0)
+            ApplyFlatBackdrop(optionButton, 0.08, 0.2, 0.25, 0.98)
+
+            -- 直接绘制三条横线，避免客户端字体把“≡”显示得过细。
+            local optionSymbol = CreateFrame("Frame", nil, optionButton)
+            optionSymbol:SetWidth(14)
+            optionSymbol:SetHeight(12)
+            optionSymbol:SetPoint("CENTER", optionButton, "CENTER", 0, 0)
+            local optionLines = {}
+            local lineOffsets = { 4, 0, -4 }
+            local lineIndex = 1
+            while lineIndex <= table.getn(lineOffsets) do
+                local shadow = optionSymbol:CreateTexture(nil, "ARTWORK")
+                shadow:SetTexture("Interface\\Buttons\\WHITE8X8")
+                shadow:SetWidth(14)
+                shadow:SetHeight(3)
+                shadow:SetPoint("CENTER", optionSymbol, "CENTER", 1, lineOffsets[lineIndex] - 1)
+                shadow:SetVertexColor(0.015, 0.025, 0.045, 0.95)
+
+                local line = optionSymbol:CreateTexture(nil, "OVERLAY")
+                line:SetTexture("Interface\\Buttons\\WHITE8X8")
+                line:SetWidth(12)
+                line:SetHeight(2)
+                line:SetPoint("CENTER", optionSymbol, "CENTER", 0, lineOffsets[lineIndex])
+                line:SetVertexColor(0.5, 0.84, 0.94, 1)
+                table.insert(optionLines, line)
+                lineIndex = lineIndex + 1
+            end
+
+            local function SetOptionSymbolColor(red, green, blue)
+                local colorIndex = 1
+                local colorTotal = table.getn(optionLines)
+                while colorIndex <= colorTotal do
+                    optionLines[colorIndex]:SetVertexColor(red, green, blue, 1)
+                    colorIndex = colorIndex + 1
+                end
+            end
+
+            local function RefreshOptionAppearance()
+                if optionTotal > 0 then
+                    optionButton:SetBackdropColor(0.08, 0.2, 0.25, 0.98)
+                    optionButton:SetBackdropBorderColor(0.3, 0.4, 0.52, 0.9)
+                    SetOptionSymbolColor(0.5, 0.84, 0.94)
+                else
+                    -- 无参数按钮使用中性灰，与卡片底色拉开层次，同时保持禁用感。
+                    optionButton:SetBackdropColor(0.17, 0.18, 0.2, 0.96)
+                    optionButton:SetBackdropBorderColor(0.38, 0.41, 0.46, 0.82)
+                    SetOptionSymbolColor(0.52, 0.55, 0.6)
+                end
+            end
+            RefreshOptionAppearance()
+
+            optionButton:SetScript("OnEnter", function()
+                if optionTotal == 0 then
+                    RefreshOptionAppearance()
+                    GameTooltip:SetOwner(optionButton, "ANCHOR_RIGHT")
+                    GameTooltip:SetText(Cat2.L("该卡片没有参数可修改"))
+                    GameTooltip:Show()
+                    return
+                end
+                optionButton:SetBackdropColor(0.1, 0.3, 0.36, 1)
+                SetOptionSymbolColor(0.65, 0.94, 1)
+                GameTooltip:SetOwner(optionButton, "ANCHOR_RIGHT")
+                GameTooltip:SetText(Cat2.L("设置卡片参数"))
+                local hasSavedValue = false
+                local savedIndex = 1
+                while savedIndex <= optionTotal do
+                    local definition = optionSchema[savedIndex]
+                    if block.step.optionValues and block.step.optionValues[definition.key] ~= nil then
+                        hasSavedValue = true
+                        break
+                    end
+                    savedIndex = savedIndex + 1
+                end
+                if not hasSavedValue then
+                    GameTooltip:AddLine(Cat2.L("当前没有独立设置，运行时使用卡片的继承值或默认值。"), 0.72, 0.74, 0.82, true)
+                else
+                    GameTooltip:AddLine(Cat2.L("部分或全部参数使用本卡片实例的独立设置。"), 0.72, 0.74, 0.82, true)
+                end
+                GameTooltip:Show()
+            end)
+            optionButton:SetScript("OnLeave", function()
+                RefreshOptionAppearance()
+                GameTooltip:Hide()
+            end)
+            optionButton:SetScript("OnMouseDown", function()
+                if optionTotal == 0 then
+                    return
+                end
+                optionButton:SetBackdropColor(0.04, 0.12, 0.15, 1)
+                optionSymbol:ClearAllPoints()
+                optionSymbol:SetPoint("CENTER", optionButton, "CENTER", 1, -1)
+            end)
+            optionButton:SetScript("OnMouseUp", function()
+                if optionTotal == 0 then
+                    return
+                end
+                optionSymbol:ClearAllPoints()
+                optionSymbol:SetPoint("CENTER", optionButton, "CENTER", 0, 0)
+            end)
+            optionButton:SetScript("OnClick", function()
+                if optionTotal == 0 then
+                    return
+                end
+                ui.ShowCardOptionEditor(block.step, function(optionValues)
+                    block.step.optionValues = optionValues
+                    selectedFlowIndex = block.index
+                    RedrawFlow()
+                end)
+            end)
+        end
+
         local visibilityButton = CreateFrame("Button", nil, block)
         visibilityButton:SetWidth(24)
         visibilityButton:SetHeight(24)
@@ -618,7 +786,7 @@ local function CreateStepBlock(parent, step, index, fromFlow)
         block:SetAlpha(0.25)
         dragGhost.icon:SetTexture(Cat2.GetCardPrimaryIcon(block.step))
         dragGhost.name:SetText(block.step.name)
-        dragGhost.description:SetText(block.step.description)
+        dragGhost.description:SetText(GetCardDescriptionText(block.step))
         dragGhost:Show()
         UpdateDragGhost()
     end)

@@ -6,6 +6,7 @@ local card = {
     details = "切换并保持防御姿态。成功执行时会阻断本轮后续卡片。",
     sort = 10,
     category = "class",
+    exclusiveGroup = "warrior_stance",
     classes = {
         WARRIOR = 3,
     },
@@ -14,14 +15,36 @@ local card = {
     },
 }
 
+local ShapeshiftID = 0
+
 function card.RefreshRuntimeData()
+	for i = 1, 4 do
+		local _, name, _, id = GetShapeshiftFormInfo(i)
+        if name and name=="防御姿态" then
+            ShapeshiftID = i
+            break
+        end
+	end
 end
 
 function card.Execute(context)
-    if not Cat2.SetShape("防御姿态") then
-        CastSpellByName("防御姿态")
-        return true
+
+    if ShapeshiftID > 0 then
+
+		if not Cat2.GetShape(ShapeshiftID) then
+			CastShapeshiftForm(ShapeshiftID)
+			return true
+		end
+
+    else
+
+        if not Cat2.GetShapeByName("防御姿态") then
+            Cat2.Cast("防御姿态")
+            return true
+        end
+
     end
+
     return false
 end
 

@@ -4,7 +4,7 @@
 -- 由后续接入该参数的治疗技能优先选择坦克目标。
 local card = {
     id = "shared_healing_team_priority_tank",
-    name = "治疗团队 优先坦克（待测试）",
+    name = "治疗团队 优先坦克",
     description = "治疗团队成员，优先总血量，通常坦的总血量最高",
     details = "治疗团队成员，优先总血量，通常坦的总血量最高。作为被动规则，启用时影响当前流程。",
     sort = 444.6,
@@ -14,6 +14,7 @@ local card = {
     exclusiveGroup = "shared_healing_team_mode",
     category = "class",
     classes = {
+        MAGE = 1,
         DRUID = 3,
         SHAMAN = 3,
         PALADIN = 1,

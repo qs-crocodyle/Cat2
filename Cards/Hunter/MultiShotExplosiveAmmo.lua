@@ -2,8 +2,8 @@
 local card = {
     id = "hunter_multi_shot_explosive_ammo",
     name = "多重射击（爆炸弹药）",
-    description = "触发爆炸弹药时，施放多重射击",
-    details = "触发爆炸弹药时，施放多重射击。需要存在有效目标。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "目标距离不低于8码且触发爆炸弹药时，施放多重射击",
+    details = "目标距离不低于8码且触发爆炸弹药时，施放多重射击。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 55.6,
     category = "class",
     classes = {
@@ -14,7 +14,13 @@ local card = {
     },
 }
 
+local minimumDistance = 8
+local maximumDistance = 35
+
 function card.RefreshRuntimeData()
+    local minimum, maximum = Cat2.Match(Cat2.GetSpellTooltip("多重射击", "等级 1"), "(%d+)%s*%-%s*(%d+)码距离")
+    minimumDistance = tonumber(minimum) or 8
+    maximumDistance = tonumber(maximum) or 35
 end
 
 function card.Execute(context)
@@ -26,9 +32,15 @@ function card.Execute(context)
         return false
     end
 
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and (targetDistance < minimumDistance or targetDistance > maximumDistance) then
+            return false
+        end
+    end
 
     if player.buff["爆炸弹药"] and Cat2.SpellReady("多重射击") then
-        CastSpellByName("多重射击")
+        Cat2.Cast("多重射击")
         return true
     end
 

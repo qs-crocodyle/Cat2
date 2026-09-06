@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\INV_Shield_05",
     },
+    cooldown = {
+        type = "spell",
+        name = "盾牌猛击",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -31,8 +35,8 @@ function card.Execute(context)
         return false
     end
 
-    if player.power>=20 and Cat2.SpellReady("盾牌猛击") then
-        CastSpellByName("盾牌猛击")
+    if player.power>=20 and Cat2.SpellReadyOffset("盾牌猛击",1.0) then
+        Cat2.Cast("盾牌猛击")
         return true
     end
 

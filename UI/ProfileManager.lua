@@ -199,6 +199,19 @@ local function RefreshManager()
     managerWindow.visibilityButton:ApplyBaseColor()
     managerWindow.limitText:SetText(iconLimit)
     managerWindow.scaleText:SetText(FormatScale(scale))
+    managerWindow.cooldownButton = managerWindow.cooldownButton or CreateFrame("Button", nil, managerWindow, "UIPanelButtonTemplate")
+    managerWindow.cooldownButton:SetPoint("LEFT", managerWindow.lockButton, "RIGHT", 12, 0)
+    managerWindow.cooldownButton:SetSize(88, 28)
+    managerWindow.cooldownButton:SetText(showCooldown and "�ʾ��ȴ" or "������ȴ")
+    managerWindow.cooldownButton:SetScript("OnClick", function()
+        SaveLayout(managerWindow.visible, managerWindow.iconLimit, managerWindow.direction, managerWindow.scale, not managerWindow.showCooldown)
+    end)
+    if showCooldown then
+        managerWindow.cooldownButton:SetColors(0.08, 0.3, 0.18, 0.14, 0.45, 0.28, 0.04, 0.16, 0.09)
+    else
+        managerWindow.cooldownButton:SetColors(0.32, 0.07, 0.08, 0.48, 0.1, 0.12, 0.18, 0.03, 0.04)
+    end
+    managerWindow.cooldownButton:ApplyBaseColor()
     managerWindow.horizontalButton:SetBackdropColor(direction == "horizontal" and 0.12 or 0.08, direction == "horizontal" and 0.4 or 0.18, direction == "horizontal" and 0.58 or 0.27, 0.98)
     managerWindow.verticalButton:SetBackdropColor(direction == "vertical" and 0.12 or 0.08, direction == "vertical" and 0.4 or 0.18, direction == "vertical" and 0.58 or 0.27, 0.98)
     local maximumWindows = 10
@@ -208,8 +221,11 @@ local function RefreshManager()
     managerWindow.windowCount:SetText(Cat2.L("已开启快捷窗：") .. CountVisibleWindows() .. " / " .. maximumWindows)
 end
 
-local function SaveLayout(visible, iconLimit, direction, scale)
-    Cat2.SaveProfileShortcutWindowSettings(selectedProfileId, visible, iconLimit, direction, nil, nil, scale or managerWindow.scale)
+local function SaveLayout(visible, iconLimit, direction, scale, showCooldown)
+    if showCooldown == nil then
+        showCooldown = managerWindow.showCooldown
+    end
+    Cat2.SaveProfileShortcutWindowSettings(selectedProfileId, visible, iconLimit, direction, nil, nil, scale or managerWindow.scale, managerWindow.opacity, managerWindow.locked, showCooldown)
     if ui.RedrawMinimizedShortcuts then
         ui.RedrawMinimizedShortcuts()
     end

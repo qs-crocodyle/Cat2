@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_EnchantArmor",
     },
+    cooldown = {
+        type = "spell",
+        name = "气定神闲",
+    },
 }
 
 local allowUse = 0
@@ -34,8 +38,8 @@ function card.Execute(context)
         return false
     end
 
-    if Cat2.SpellReadyOffset("气定神闲",1.5) and not player.buff["气定神闲"] then
-        CastSpellByName("气定神闲")
+    if Cat2.MageCalmReady() then
+        Cat2.Cast("气定神闲")
     end
 
     return false

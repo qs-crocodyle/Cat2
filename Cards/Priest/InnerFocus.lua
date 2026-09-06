@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Frost_WindWalkOn",
     },
+    cooldown = {
+        type = "spell",
+        name = "心灵专注",
+    },
 }
 
 local allowUse = 0
@@ -29,7 +33,7 @@ function card.Execute(context)
 
 
     if Cat2.SpellReady("心灵专注") then
-        CastSpellByName("心灵专注")
+        Cat2.Cast("心灵专注")
     end
 
     return false

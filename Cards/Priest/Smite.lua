@@ -14,11 +14,22 @@ local card = {
     },
 }
 
+local distance = 30
+
 function card.RefreshRuntimeData()
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("惩击", "等级 1"), "(%d+)码距离"))
+    if not distance then distance = 30 end
 end
 
 function card.Execute(context)
-    CastSpellByName("惩击")
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > distance then
+            return false
+        end
+    end
+
+    Cat2.Cast("惩击")
     return false
 end
 

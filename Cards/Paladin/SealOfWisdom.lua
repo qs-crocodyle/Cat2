@@ -55,7 +55,7 @@ function card.Execute(context)
 
 
     if not player.buff["智慧圣印"] then
-        CastSpellByName("智慧圣印")
+        Cat2.Cast("智慧圣印")
         return true
     end
 

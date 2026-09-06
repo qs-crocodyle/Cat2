@@ -21,7 +21,7 @@ end
 function card.Execute(context)
 
     if not Cat2.PlayerInformation.temporary.buff["蝰蛇守护"] then
-        CastSpellByName("蝰蛇守护")
+        Cat2.Cast("蝰蛇守护")
     end
 
 end

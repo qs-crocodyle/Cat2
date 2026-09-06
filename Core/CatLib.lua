@@ -24,6 +24,36 @@ local function GetChatFrameByName(frameName)
     return nil
 end
 
+-- 获取聊天框架（支持模糊匹配名称）
+function Cat2.GetChatFrameByName(frameName)
+    if type(frameName) ~= "string" or frameName == "" then
+        return nil
+    end
+
+    local requestedName = string.lower(frameName)
+    for i = 1, NUM_CHAT_WINDOWS do
+        local name = GetChatWindowInfo(i)
+        if name and (name == frameName or string.lower(name) == requestedName) then
+            return _G["ChatFrame"..i]
+        end
+    end
+    return nil
+end
+
+-- ���԰�ԭʼ�ı�д��ָ����撰������չ��ڣ����ڲ�����ʱ�ɵ��÷������Ƿ���ˡ�
+function Cat2.AddMessageToChatFrame(str, frameName)
+    if not str then
+        return false
+    end
+    local chat = Cat2.GetChatFrameByName(frameName)
+    if not chat then
+        return false
+    end
+    chat:AddMessage(str)
+    return true
+end
+
+
 -- 将调试信息打印在Cat频道窗口里
 function Cat2.Msg(str)
 
@@ -31,7 +61,7 @@ function Cat2.Msg(str)
         return
     end
 
-	local chat = GetChatFrameByName("Cat")
+	local chat = Cat2.GetChatFrameByName("Cat")
 	if not chat then chat = GetChatFrameByName("CAT") end
 	if not chat then chat = GetChatFrameByName("cat") end
 

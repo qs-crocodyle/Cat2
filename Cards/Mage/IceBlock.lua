@@ -2,8 +2,8 @@
 local card = {
     id = "mage_ice_block",
     name = "寒冰屏障",
-    description = "生命<15%，危急时施放寒冰屏障",
-    details = "生命<15%，危急时施放寒冰屏障。会检查战斗状态。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "生命<|cff6bc7e0{triggerPercent}%|r，危急时施放寒冰屏障",
+    details = "生命低于卡片设定值时施放寒冰屏障。会检查战斗状态。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 90,
     category = "class",
     classes = {
@@ -12,14 +12,31 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Frost_Frost",
     },
+    cooldown = {
+        type = "spell",
+        name = "寒冰屏障",
+    },
+    optionSchema = {
+        {
+            key = "triggerPercent",
+            type = "number",
+            label = "触发生命",
+            shortLabel = "血",
+            unit = "%",
+            default = 15,
+            minimum = 1,
+            maximum = 99,
+        },
+    },
 }
 
 function card.RefreshRuntimeData()
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 15
 
     -- 必须战斗中才有意义
     if not player.inCombat then
@@ -32,8 +49,8 @@ function card.Execute(context)
     end
 
     -- 生命值
-    if player.percentHealth < 15.0 then
-        CastSpellByName("寒冰屏障")
+    if player.percentHealth < triggerPercent then
+        Cat2.Cast("寒冰屏障")
         return true
     end
 

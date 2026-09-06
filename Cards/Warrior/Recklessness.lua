@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_CriticalStrike",
     },
+    cooldown = {
+        type = "spell",
+        name = "鲁莽",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -31,12 +35,12 @@ function card.Execute(context)
         return false
     end
 
-    if not Cat2.SetShape("狂暴姿态") then
+    if not Cat2.GetShapeByName("狂暴姿态") then
         return false
     end
 
     if Cat2.SpellReady("鲁莽") then
-        Cat2.CastWithNampower("鲁莽")
+        Cat2.Cast("鲁莽")
         return true
     end
 

@@ -20,6 +20,7 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Druid_Enrage",
     },
+    cooldown = { type = "spell", name = "狂怒" },
 }
 
 -- 插件启动时注册卡片后调用一次。
@@ -42,7 +43,7 @@ function card.Execute(context)
 
 
     if not player.buff["血之狂暴"] and Cat2.SpellReady("狂怒") and player.inCombat then
-        CastSpellByName("狂怒")
+        Cat2.Cast("狂怒")
     end
 
     return false

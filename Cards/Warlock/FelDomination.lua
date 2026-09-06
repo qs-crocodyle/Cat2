@@ -8,6 +8,7 @@ local card = {
     category = "class",
     classes = { WARLOCK = 2 },
     icons = { "Interface\\Icons\\Spell_Nature_RemoveCurse" },
+    cooldown = { type = "spell", name = "恶魔支配" },
 }
 
 local allowUse = 0
@@ -26,7 +27,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("恶魔支配") then
-        CastSpellByName("恶魔支配")
+        Cat2.Cast("恶魔支配")
     end
 
     return false

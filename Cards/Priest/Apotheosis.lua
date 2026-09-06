@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_SurgeofLight",
     },
+    cooldown = {
+        type = "spell",
+        name = "超凡入圣",
+    },
 }
 
 local allowUse = 0
@@ -31,11 +35,10 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("超凡入圣") then
-        CastSpellByName("超凡入圣")
+        Cat2.Cast("超凡入圣")
     end
 
     return false
 end
 
 Cat2.RegisterCard(card)
-

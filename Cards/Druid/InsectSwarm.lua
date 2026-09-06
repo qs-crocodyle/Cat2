@@ -7,9 +7,9 @@ local card = {
     -- 卡片标题下方显示的简短说明。
     description = "施放自然持续伤害",
     -- 预留给后续详情面板或 Tooltip 的完整功能说明。
-    details = "施放自然持续伤害。需要存在有效目标。成功执行时会阻断本轮后续卡片。",
+    details = "施放自然持续伤害。需要存在有效目标；目标自然免疫时不会施放。成功执行时会阻断本轮后续卡片。",
     -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
-    sort = 110,
+    sort = 112,
     -- 仅能是 common、item、class 三种分类之一。
     category = "class",
     canStopSequence = true,
@@ -36,9 +36,13 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标自然免疫时，不再尝试施放自然伤害技能
+    if Cat2.IsNatureImmune() then
+        return false
+    end
 
     if not Cat2.GetInsectSwarmDot() then
-        CastSpellByName("虫群")
+        Cat2.Cast("虫群")
         return true
     end
 

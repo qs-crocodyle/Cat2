@@ -21,6 +21,7 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_FaerieFire",
     },
+    cooldown = { type = "spell", name = "精灵之火（野性）" },
 }
 
 -- 插件启动时注册卡片后调用一次。
@@ -35,6 +36,13 @@ function card.Execute(context)
         return false
     end
 
+    if context.parameters.faerieFireFeralTargetCombatOnly and not player.targetInCombat then
+        return false
+    end
+
+    if context.parameters.faerieFireFeralMeleeOnly and not Cat2.TargetDistance() then
+        return false
+    end
 
     if not player.buff["熊形态"] and not player.buff["巨熊形态"] and not player.buff["猎豹形态"] then
         return false
@@ -42,7 +50,7 @@ function card.Execute(context)
 
     if Cat2.SpellReady("精灵之火（野性）") then
         if not player.targetBuff["精灵之火"] and not player.targetBuff["精灵之火（野性）"] then
-            CastSpellByName("精灵之火（野性）")
+            Cat2.Cast("精灵之火（野性）")
             return true
         end
     end

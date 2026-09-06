@@ -27,6 +27,9 @@ frame:RegisterEvent("SPELLS_CHANGED")
 frame:RegisterEvent("UNIT_CASTEVENT")
 frame:RegisterEvent("RAW_COMBATLOG")
 
+-- Nampower 的光环移除事件；未安装时安全降级为原生技能冷却判断。
+pcall(frame.RegisterEvent, frame, "BUFF_REMOVED_SELF")
+
 
 -- 等待技能反馈的等待时间
 local BLEENCHECKDELAY = 0.3
@@ -40,6 +43,27 @@ local ViperDelayTime = {}
 
 -- 割伤 激活时间
 local HunterGoreTimer = 0
+
+-- 与气定神闲相同：在假死光环结束时记录冷却，而不是在施放时开始计时。
+-- 不放进 ResetData，避免假死脱战或切换场景清掉尚未结束的冷却。
+local HUNTER_FEIGN_DEATH_SPELL_ID = 5384
+local HunterFeignDeathReadyAt = 0
+
+local function RecordHunterFeignDeathCooldown()
+    local tooltip = Cat2.GetSpellTooltip("假死")
+    local seconds = tonumber(Cat2.Match(tooltip, "(%d+%.?%d*)%s*秒%s*冷却时间"))
+    if not seconds then
+        local minutes = tonumber(Cat2.Match(tooltip, "(%d+%.?%d*)%s*分钟%s*冷却时间"))
+        if minutes then
+            seconds = minutes * 60
+        end
+    end
+    -- 假死基础冷却30秒；Tooltip不可用或格式不匹配时仍保留冷却保护。
+    if not seconds or seconds <= 0 then
+        seconds = 30
+    end
+    HunterFeignDeathReadyAt = GetTime() + seconds
+end
 
 -- 自动射击状态
 local HunterAutoShot = 0
@@ -208,6 +232,14 @@ local function OnEvent()
 
         HunterAutoShot = 0
 
+    elseif event == "BUFF_REMOVED_SELF" then
+        -- arg3为技能ID；新版arg7=1表示真正移除，2只是层数变化。
+        -- 兼容尚未提供arg7的旧版Nampower，但不能因层数变化重启冷却。
+        if tonumber(arg3) == HUNTER_FEIGN_DEATH_SPELL_ID
+        and (arg7 == nil or tonumber(arg7) == 1) then
+            RecordHunterFeignDeathCooldown()
+        end
+
     ---------------------------
     -- SuperWoW事件 -----------
     ---------------------------
@@ -284,6 +316,19 @@ end
 
 -- 设置事件处理函数
 frame:SetScript("OnEvent", OnEvent)
+
+
+-- 假死专用施放门禁：Buff存在时不可重复施放，移除后须同时满足本地与原生冷却。
+function Cat2.HunterFeignDeathReady()
+    local player = Cat2.PlayerInformation.temporary
+    if player.buff and player.buff["假死"] then
+        return false
+    end
+    if GetTime() < HunterFeignDeathReadyAt then
+        return false
+    end
+    return Cat2.SpellReady("假死") == true
+end
 
 
 

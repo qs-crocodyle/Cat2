@@ -27,12 +27,12 @@ function card.Execute(context)
     end
 
     -- 防御姿态 无效
-    if Cat2.SetShape("防御姿态") then
+    if Cat2.GetShapeByName("防御姿态") then
         return false
     end
 
     if player.power>=10 and not player.targetBuff["断筋"] then
-        CastSpellByName("断筋")
+        Cat2.Cast("断筋")
         return true
     end
 

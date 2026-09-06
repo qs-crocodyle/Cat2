@@ -2,8 +2,8 @@
 local card = {
     id = "warrior_mortal_strike",
     name = "致死打击",
-    description = "冷却好时，施放致死打击",
-    details = "冷却好时，施放致死打击。需要存在有效目标。会检查当前资源。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "怒气达到|cff6bc7e0{rageThreshold}|r且冷却好时，施放致死打击",
+    details = "怒气达到卡片设定值且冷却好时，施放致死打击。未单独设置时使用默认值30。需要存在有效目标。会检查当前资源。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 100,
     category = "class",
     classes = {
@@ -12,22 +12,38 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Warrior_SavageBlow",
     },
+    cooldown = {
+        type = "spell",
+        name = "致死打击",
+    },
+    optionSchema = {
+        {
+            key = "rageThreshold",
+            type = "number",
+            label = "怒气阈值",
+            shortLabel = "怒",
+            default = 30,
+            minimum = 30,
+            maximum = 100,
+        },
+    },
 }
 
 function card.RefreshRuntimeData()
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local rageThreshold = context:GetStepOption(step, "rageThreshold") or 30
 
     -- 没有目标时无需继续。
     if not player.targetExists then
         return false
     end
 
-    if player.power>=30 and Cat2.SpellReady("致死打击") then
-        CastSpellByName("致死打击")
+    if player.power>=rageThreshold and Cat2.SpellReady("致死打击") then
+        Cat2.Cast("致死打击")
         return true
     end
 

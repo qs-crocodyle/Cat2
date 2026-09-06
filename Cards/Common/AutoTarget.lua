@@ -1,72 +1,166 @@
--- 卡片数据定义。
+-- 自动锁敌（近战）：SuperWoW可用时选择最近的正面近处敌人，否则降级使用原生锁敌。
 local card = {
-    -- 稳定唯一标识；用于后续保存流程与跨版本迁移。
     id = "common_auto_target",
-    -- 界面中显示的卡片标题。
-    name = "自动锁敌",
-    -- 卡片标题下方显示的简短说明。
+    name = "自动锁敌（近战）",
     description = "选择近处敌对目标，且敌人在你正面。",
-    -- 预留给后续详情面板或 Tooltip 的完整功能说明。
-    details = "选择近处敌对目标，且敌人在你正面。仅对可攻击目标生效。会检查目标距离。会检查与目标的相对位置。",
-    -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
+    details = "选择最近的近处敌对目标，并检查正面与视野。死亡目标会被放弃；其他情况下没有合格替代目标时保留当前目标。切换或清除目标后会立即刷新角色数据并继续本轮流程。无SuperWoW时降级为原生最近目标：不保证近战距离、正面、视野及小动物过滤。",
+    exclusiveGroup = "common_auto_target",
     sort = 20,
-    -- 仅能是 common、item、class 三种分类之一。
     category = "common",
-    -- 魔兽客户端图标纹理路径。
     icons = {
         "Interface\\Icons\\Ability_Hunter_SniperShot",
     },
 }
 
--- 插件启动时注册卡片后调用一次。
+local EXECUTION_INTERVAL = 0.1
+local nextExecutionTime = 0
+
+-- 自动锁敌各分支共享的战斗状态门禁，由被动卡片控制。
+function Cat2.IsAutoTargetCandidateAllowed(unit, context)
+    return not context.parameters.autoTargetIgnoreOutOfCombat
+        or UnitAffectingCombat(unit)
+end
+
+local function RefreshPlayerDataAfterTargetChange()
+    if Cat2.RefreshPlayerTemporaryInformation then
+        Cat2.RefreshPlayerTemporaryInformation()
+    end
+end
+
+local function IsBasicValidEnemy(unit, context)
+    return UnitExists(unit)
+        and UnitCanAttack("player", unit)
+        and not UnitIsDeadOrGhost(unit)
+        and Cat2.IsAutoTargetCandidateAllowed(unit, context)
+end
+
+local function GetValidNearbyEnemyDistance(unit, context)
+    if not IsBasicValidEnemy(unit, context) or UnitCreatureType(unit) == "小动物" then
+        return nil
+    end
+    if UnitXP("behind", unit, "player") or not UnitXP("inSight", "player", unit) then
+        return nil
+    end
+    local dist = UnitXP("distanceBetween", "player", unit)
+    if not dist or dist >= 6 then
+        return nil
+    end
+    return dist
+end
+
+-- 对象表可能尚未记录刚进入视野的敌人；用UnitXP直接扫描可见对象补充一次。
+-- 接口本身没有6码上限，若结果不合格则恢复原目标，避免无候选时误切。
+local function TryTargetNearestUnitXPEnemy(context)
+    local oldTargetExists, oldTargetGUID = UnitExists("target")
+    local succeeded, selected = pcall(UnitXP, "target", "nearestEnemy")
+    if not succeeded or not selected then
+        return false
+    end
+
+    local newTargetExists, newTargetGUID = UnitExists("target")
+    if newTargetExists and newTargetGUID ~= oldTargetGUID and GetValidNearbyEnemyDistance("target", context) then
+        return newTargetGUID
+    end
+
+    if oldTargetExists and oldTargetGUID then
+        TargetUnit(oldTargetGUID)
+    elseif newTargetExists then
+        ClearTarget()
+    end
+    return false
+end
+
 function card.RefreshRuntimeData()
 end
 
--- 返回后续流程执行器读取的动作描述。
 function card.Execute(context)
+    local currentTime = GetTime()
+    if currentTime < nextExecutionTime then
+        return false
+    end
+    nextExecutionTime = currentTime + EXECUTION_INTERVAL
 
-	local isClear = 0
-	local target = UnitExists("target")
+    local player = Cat2.PlayerInformation.temporary
 
-	-- 是否存在目标
-	if not target then
-		isClear = 1
-	else
+    if Cat2.UnitXP and Cat2.SuperWoW then
+        if player.targetExists and GetValidNearbyEnemyDistance("target", context) then
+            return false
+        end
 
-		-- 目标是否超出近战距离
-		if target and not Cat2.TargetDistance() then
-			if Cat2.ScanNearbyEnemies() > 0 then
-				isClear = 1
-			end
-		end
+        local count, _, list = Cat2.ScanNearbyEnemies(6)
+        local nearestDistance = nil
+        local nearestTarget = nil
+        if count > 0 then
+            for key, value in pairs(list) do
+                local dist = GetValidNearbyEnemyDistance(key, context)
+                if dist and (not nearestDistance or dist < nearestDistance) then
+                    nearestDistance = dist
+                    nearestTarget = key
+                end
+            end
+        end
 
-		-- UnitXP存在，增加一个机制
-		if Cat2.UnitXP and target then
-			-- 目标在你背后
-			if UnitXP("behind", "target", "player") then
-				isClear = 1
-			end
-		end
+        -- 切换前再次检查，缩小候选单位在扫描后死亡造成的竞态窗口。
+        if nearestTarget and not UnitIsDeadOrGhost(nearestTarget) then
+            local oldTargetExists, oldTargetGUID = UnitExists("target")
+            TargetUnit(nearestTarget)
+            local newTargetExists, newTargetGUID = UnitExists("target")
+            if newTargetExists and newTargetGUID ~= oldTargetGUID and GetValidNearbyEnemyDistance("target", context) then
+                RefreshPlayerDataAfterTargetChange()
+                return false
+            end
+            -- TargetUnit可能因候选失效而静默失败；未确认切换时恢复原目标。
+            if oldTargetExists and oldTargetGUID then
+                TargetUnit(oldTargetGUID)
+            elseif newTargetExists then
+                ClearTarget()
+            end
+        end
 
-		-- 目标是否可以攻击
-		if not UnitCanAttack("player", "target") then
-			ClearTarget()
-			isClear = 1
-		end
+        if TryTargetNearestUnitXPEnemy(context) then
+            RefreshPlayerDataAfterTargetChange()
+            return false
+        end
 
-		-- 目标是否死亡
-		if UnitIsDeadOrGhost("target") then
-			ClearTarget()
-			isClear = 1
-		end
+        if player.targetExists then
+            if UnitIsDeadOrGhost("target") then
+                ClearTarget()
+                RefreshPlayerDataAfterTargetChange()
+            end
+            -- 活着但不合格且没有替代目标时继续保留，并允许后续卡片执行。
+            return false
+        end
 
-	end
-
-    -- 如果当前目标不存在/已死亡/不可攻击
-    if isClear==1 then
-		TargetNearestEnemy()
+        -- UnitXP补扫不可用时降级为原生锁敌；不合格结果立即清除。
+        TargetNearestEnemy()
+        if UnitExists("target") and not GetValidNearbyEnemyDistance("target", context) then
+            ClearTarget()
+        end
+        RefreshPlayerDataAfterTargetChange()
+        return false
     end
 
+    -- 无SuperWoW时只能依赖原生最近目标；有效旧目标不主动改选。
+    if IsBasicValidEnemy("target", context) then
+        return false
+    end
+    if player.targetExists then
+        if UnitIsDeadOrGhost("target") then
+            ClearTarget()
+            TargetNearestEnemy()
+            if UnitExists("target") and not IsBasicValidEnemy("target", context) then
+                ClearTarget()
+            end
+            RefreshPlayerDataAfterTargetChange()
+        end
+        return false
+    end
+    TargetNearestEnemy()
+    if UnitExists("target") and not IsBasicValidEnemy("target", context) then
+        ClearTarget()
+    end
+    RefreshPlayerDataAfterTargetChange()
+    return false
 end
 
 Cat2.RegisterCard(card)

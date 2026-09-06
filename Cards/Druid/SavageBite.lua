@@ -21,6 +21,7 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Racial_Cannibalize",
     },
+    cooldown = { type = "spell", name = "野蛮撕咬" },
 }
 
 local savagebitePower = 30
@@ -44,7 +45,7 @@ function card.Execute(context)
 
 
     if player.power>=savagebitePower and Cat2.SpellReady("野蛮撕咬") then
-        CastSpellByName("野蛮撕咬")
+        Cat2.Cast("野蛮撕咬")
         return true
     end
 

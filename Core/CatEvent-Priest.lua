@@ -44,9 +44,6 @@ local HolyFireDelayTime = {}
 -- 等待技能反馈的等待时间
 local BLEENCHECKDELAY = 0.2
 
--- 引导法术持续状态
-local ChanneledDuration = 0
-local ChanneledTimer = 0
 
 -- 鞭笞 阶段
 local MindFlayCount = 0
@@ -69,8 +66,6 @@ local function OnEvent()
 
     -- 离开战斗事件，重置参数
     if event == "PLAYER_REGEN_ENABLED" then
-        ChanneledDuration = 0
-        ChanneledTimer = 0
         MindFlayCount = 0
 
     -- 进入游戏世界刷新常量值
@@ -79,8 +74,6 @@ local function OnEvent()
         PainDelayTime = {}
         VampiricCheck = {}
         VampiricDelayTime = {}
-        ChanneledDuration = 0
-        ChanneledTimer = 0
         MindFlayCount = 0
 
     -- 玩家死亡，重置参数
@@ -89,14 +82,12 @@ local function OnEvent()
         PainDelayTime = {}
         VampiricCheck = {}
         VampiricDelayTime = {}
-        ChanneledDuration = 0
-        ChanneledTimer = 0
         MindFlayCount = 0
 
     -- 施法事件处理，读条类，读条也要处理GCD
     elseif event == "SPELLCAST_START" then
 
-        if arg1 == "神圣之火" or arg1 == "Holy Fire" then
+        if arg1 == "神圣之火" then
             CastHolyFireTimer=GetTime()+(arg2/1000)+0.3
         end
 
@@ -111,16 +102,11 @@ local function OnEvent()
         CastHolyFireTimer = -1
 
     elseif event == "SPELLCAST_CHANNEL_START" then
-        ChanneledDuration = arg1
-        ChanneledTimer = GetTime()
         MindFlayCount = 0
 
     elseif event == "SPELLCAST_CHANNEL_UPDATE" then
-        ChanneledDuration = arg1
 
     elseif event == "SPELLCAST_CHANNEL_STOP" then
-        ChanneledDuration = 0
-        ChanneledTimer = 0
         MindFlayCount = 0
 
     elseif event == "CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE" then
@@ -397,28 +383,6 @@ end
 
 
 
--- 获取引导时间
-function Cat2.GetPriestChanneledDuration()
-    return ChanneledDuration
-end
-
--- 获取引导持续剩余时间
-function Cat2.GetPriestChanneled()
-
-    -- 安全边界检查
-    if ChanneledDuration and ChanneledDuration==0 then
-        return 0
-    end
-
-    local timer = GetTime()-ChanneledTimer
-
-    if timer > ChanneledDuration then
-        return 0
-    end
-
-
-    return ChanneledDuration/1000 - timer
-end
 
 -- 获取鞭笞阶段
 function Cat2.GetPriestMindFlayCount()

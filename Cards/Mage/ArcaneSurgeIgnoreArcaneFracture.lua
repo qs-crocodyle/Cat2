@@ -5,6 +5,7 @@ local card = {
     description = "奥术溃裂存在时，忽略奥术涌动",
     details = "奥术溃裂存在时，忽略奥术涌动。作为被动规则，启用时影响当前流程。",
     sort = 31,
+    exclusiveGroup = "mage_arcane_surge_fracture_policy",
     behavior = "passive",
     unique = true,
     category = "class",

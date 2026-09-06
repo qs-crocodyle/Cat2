@@ -30,7 +30,7 @@ Cat2.AutoAttackLockTimer = 0
 function Cat2.StopAttack()
 
 	if Cat2.AutoAttack then
-		CastSpellByName("攻击")
+		Cat2.Cast("攻击")
 	end
 
 end

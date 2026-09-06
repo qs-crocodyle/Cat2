@@ -16,7 +16,10 @@ local card = {
     },
 }
 
+local Dagger = false
+
 function card.RefreshRuntimeData()
+    Dagger = Cat2.IsMainHandDagger()
 end
 
 -- 复刻撕碎的核心判断；背刺使用固定60能量门槛。
@@ -28,17 +31,17 @@ function card.Execute(context)
     end
 
     -- 确认主手武器，必须是匕首
-    if not Cat2.IsMainHandDagger() then
+    if not Dagger then
 
         if player.power >= 40 then
-            CastSpellByName("邪恶攻击")
+            Cat2.Cast("邪恶攻击")
             return true
         end
 
     else
 
         if player.behind and player.power >= 60 then
-            CastSpellByName("背刺")
+            Cat2.Cast("背刺")
             return true
         end
 

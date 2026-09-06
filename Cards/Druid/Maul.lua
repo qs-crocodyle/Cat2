@@ -5,9 +5,9 @@ local card = {
     -- 界面中显示的卡片标题。
     name = "槌击",
     -- 卡片标题下方显示的简短说明。
-    description = "强化下一次熊形态攻击",
+    description = "野蛮撕咬可用时保留|cff6bc7e0{savageBiteReserveRage}|r怒气施放槌击",
     -- 预留给后续详情面板或 Tooltip 的完整功能说明。
-    details = "强化下一次熊形态攻击。需要存在有效目标。会检查当前资源。仅在技能可用时尝试执行。",
+    details = "强化下一次熊形态攻击；野蛮撕咬可用时按卡片设定值保留怒气。需要存在有效目标。会检查当前资源。仅在技能可用时尝试执行。",
     -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
     sort = 310,
     -- 仅能是 common、item、class 三种分类之一。
@@ -19,6 +19,17 @@ local card = {
     -- 魔兽客户端图标纹理路径。
     icons = {
         "Interface\\Icons\\Ability_Druid_Maul",
+    },
+    optionSchema = {
+        {
+            key = "savageBiteReserveRage",
+            type = "number",
+            label = "撕咬保留怒气",
+            shortLabel = "怒",
+            default = 30,
+            minimum = 0,
+            maximum = 100,
+        },
     },
 }
 
@@ -33,9 +44,10 @@ function card.RefreshRuntimeData()
 end
 
 -- 返回后续流程执行器读取的动作描述。
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local savageBiteReserveRage = context:GetStepOption(step, "savageBiteReserveRage") or 30
 
     -- 没目标就无需继续
     if not player.targetExists then
@@ -44,12 +56,12 @@ function card.Execute(context)
 
 
     if Cat2.SpellReady("野蛮撕咬") then
-        if player.power>=maulPower+30 then
-            CastSpellByName("槌击")
+        if player.power>=maulPower+savageBiteReserveRage then
+            Cat2.Cast("槌击")
         end
     else
         if player.power>=maulPower then
-            CastSpellByName("槌击")
+            Cat2.Cast("槌击")
         end
     end
 

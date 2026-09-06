@@ -36,6 +36,11 @@ function card.Execute(context)
         return false
     end
 
+    local ripOnlyBoss = context and context.parameters and context.parameters.druidRipOnlyBoss
+    if ripOnlyBoss and not Cat2.IsBossTarget() then
+        return false
+    end
+
 
     -- 不吃流血忽略
     if not player.targetBleed then
@@ -48,8 +53,19 @@ function card.Execute(context)
         return false
     end
 
-    if (player.power>=30 or player.buff["节能施法"]) and not Cat2.GetRipDot() and player.targetCombo==4 then
-        CastSpellByName("撕扯")
+    local rip = Cat2.GetRipDot()
+
+	-- 撕扯保险
+    if Cat2.SuperWoW and Cat2.PlayerInformation.basic.level==60 then
+	    if rip and Cat2.GetDruidRipJumpTimer()-GetTime() < -0.5 then
+		    Cat2.ResetRipDot(player.targetGUID)
+            rip = false
+		    DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("撕扯续杯失败，重置计时！"))
+	    end
+    end
+
+    if (player.power>=30 or player.buff["节能施法"]) and not rip and player.targetCombo==4 then
+        Cat2.Cast("撕扯")
         return true
     end
 

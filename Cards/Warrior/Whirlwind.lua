@@ -2,8 +2,8 @@
 local card = {
     id = "warrior_whirlwind",
     name = "旋风斩",
-    description = "冷却好时，施放旋风斩",
-    details = "冷却好时，施放旋风斩。需要存在有效目标。会检查目标距离。会检查当前资源。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "怒气达到|cff6bc7e0{rageThreshold}|r且冷却好时，施放旋风斩",
+    details = "怒气达到卡片设定值且冷却好时，施放旋风斩。默认需要25怒气；满足装备减耗条件且未单独覆写参数时，自动降低为20怒气。需要存在有效目标。会检查目标距离。会检查当前资源。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 100,
     category = "class",
     classes = {
@@ -11,6 +11,21 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Ability_Whirlwind",
+    },
+    optionSchema = {
+        {
+            key = "rageThreshold",
+            type = "number",
+            label = "怒气阈值",
+            shortLabel = "怒",
+            default = 25,
+            minimum = 20,
+            maximum = 100,
+        },
+    },
+    cooldown = {
+        type = "spell",
+        name = "旋风斩",
     },
 }
 
@@ -33,27 +48,37 @@ function card.RefreshRuntimeData()
 
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    -- 未覆写参数时沿用技能实际消耗：基础 25，装备减耗后为 20。
+    local rageThreshold = powerWhirlwind
+    if type(step) == "table" and type(step.optionValues) == "table" and step.optionValues.rageThreshold ~= nil then
+        rageThreshold = context:GetStepOption(step, "rageThreshold") or powerWhirlwind
+    end
 
     -- 没有目标时无需继续。
     if not player.targetExists then
         return false
     end
 
-    if not Cat2.SetShape("狂暴姿态") then
+    if not Cat2.GetShapeByName("狂暴姿态") then
         return false
     end
 
-    -- 目标未在 8 码范围
+    -- 目标未在 7 码范围
     if not Cat2.TargetDistance("target",7) then
         return false
     end
 
 
-    if player.power>=powerWhirlwind and Cat2.SpellReadyOffset("旋风斩") then
-        CastSpellByName("旋风斩")
+    local requiredRage = powerWhirlwind
+    if rageThreshold > requiredRage then
+        requiredRage = rageThreshold
+    end
+
+    if player.power>=requiredRage and Cat2.SpellReadyOffset("旋风斩") then
+        Cat2.Cast("旋风斩")
         return true
     end
 

@@ -1,10 +1,12 @@
--- 精灵之火（仅目标战斗）卡片；目标进入战斗后才执行原卡逻辑。
+-- 精灵之火（仅目标战斗）被动规则。
 local card = {
     id = "druid_faerie_fire_target_combat",
     name = "精灵之火（仅目标战斗）",
-    description = "目标处于战斗中时降低其护甲",
-    details = "仅在目标处于战斗中时降低目标护甲。需要存在有效目标。成功执行时会阻断本轮后续卡片。",
-    sort = 141,
+    description = "两张精灵之火仅对战斗中的目标生效",
+    details = "启用后，精灵之火与精灵之火（清晰预兆）仅在目标已进入战斗时执行。作为被动规则，启用时影响当前流程。",
+    sort = 142,
+    behavior = "passive",
+    unique = true,
     category = "class",
     classes = {
         DRUID = 1,
@@ -17,28 +19,13 @@ local card = {
 function card.RefreshRuntimeData()
 end
 
-function card.Execute(context)
-    local player = Cat2.PlayerInformation.temporary
+-- 被动卡先于普通卡应用，因此不依赖在流程中的排列位置。
+function card.Apply(context)
+    context.parameters.faerieFireTargetCombatOnly = true
+end
 
-    if not player.targetExists then
-        return false
-    end
-
-    if not player.targetInCombat then
-        return false
-    end
-
-    -- 形态保护
-    if player.buff["熊形态"] or player.buff["巨熊形态"] or player.buff["猎豹形态"] then
-        return false
-    end
-
-    if not player.targetBuff["精灵之火"] and not player.targetBuff["精灵之火（野性）"] then
-        CastSpellByName("精灵之火")
-        return true
-    end
-
-    return false
+function card.Validate(context)
+    return true
 end
 
 Cat2.RegisterCard(card)

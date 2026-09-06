@@ -3,7 +3,7 @@ local card = {
     id = "priest_shadow_word_pain",
     name = "暗言术：痛",
     description = "对目标保持并施放暗言术：痛",
-    details = "对目标保持并施放暗言术：痛。需要存在有效目标。成功执行时会阻断本轮后续卡片。",
+    details = "对目标保持并施放暗言术：痛。需要存在有效目标；目标暗影免疫时不会施放。成功执行时会阻断本轮后续卡片。",
     sort = 20,
     category = "class",
     classes = {
@@ -14,6 +14,7 @@ local card = {
     },
 }
 
+local distance = 30
 
 function card.RefreshRuntimeData()
 
@@ -22,6 +23,9 @@ function card.RefreshRuntimeData()
     if Cat2.CheckInventoryItemName(14,"休眠腐化之眼") then PainDuration=PainDuration+3 end
 
     Cat2.SetPainDuration(PainDuration)
+
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("暗言术：痛", "等级 1"), "(%d+)码距离"))
+    if not distance then distance = 30 end
 end
 
 function card.Execute(context)
@@ -33,8 +37,20 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标暗影免疫时，不再尝试施放暗影伤害技能。
+    if Cat2.IsShadowImmune() then
+        return false
+    end
+
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > distance then
+            return false
+        end
+    end
+
     if not Cat2.GetPainDot() then
-        CastSpellByName("暗言术：痛")
+        Cat2.Cast("暗言术：痛")
         return true
     end
 

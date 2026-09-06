@@ -3,7 +3,7 @@ local card = {
     id = "mage_pyroblast_spell_combo_4",
     name = "炎爆术（四层法术连击）",
     description = "当4层法术连击时，施放炎爆术",
-    details = "当4层法术连击时，施放炎爆术。需要存在有效目标。成功执行时会阻断本轮后续卡片。",
+    details = "当4层法术连击时，施放炎爆术。需要存在有效目标；目标火焰免疫时不会施放。成功执行时会阻断本轮后续卡片。",
     sort = 54,
     category = "class",
     classes = {
@@ -15,9 +15,13 @@ local card = {
 }
 
 local allowUse = 0
+local range = 35
 
 function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(2,8)
+    local fallbackRange = 35 + (Cat2.IsTalentLearned(2,3)*3)
+    range = tonumber(Cat2.Match(Cat2.GetSpellTooltip("炎爆术", "等级 1"), "(%d+)码距离"))
+    if not range then range = fallbackRange end
 end
 
 function card.Execute(context)
@@ -28,6 +32,17 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标火焰免疫时，不再尝试施放火焰伤害技能。
+    if Cat2.IsFireImmune() then
+        return false
+    end
+
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > range then
+            return false
+        end
+    end
 
     -- 不存在这个天赋
     if allowUse==0 then
@@ -37,7 +52,7 @@ function card.Execute(context)
     if GetTime()-Cat2.GetMageCastPyroblastTimer()>0 then
 
         if Cat2.GetBuffApplications("Interface\\Icons\\Ability_Mage_Firestarter")>=4 then
-            Cat2.CastWithoutNampower("炎爆术")
+            Cat2.Cast("炎爆术")
             return true
         end
 

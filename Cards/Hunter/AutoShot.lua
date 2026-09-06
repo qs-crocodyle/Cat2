@@ -20,7 +20,7 @@ end
 function Cat2.AutoShot()
 
 	if Cat2.GetAutoShot()==0 then
-		CastSpellByName("自动射击")
+		Cat2.Cast("自动射击")
 	end
 
 end
@@ -28,13 +28,21 @@ end
 function Cat2.StopShot()
 
 	if Cat2.GetAutoShot()==1 then
-		CastSpellByName("自动射击")
+		Cat2.Cast("自动射击")
 	end
 
 end
 
 
 function card.Execute(context)
+
+    local player = Cat2.PlayerInformation.temporary
+
+    -- 没目标就无需继续
+    if not player.targetExists then
+        return false
+    end
+
     Cat2.AutoShot()
 end
 

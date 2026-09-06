@@ -27,6 +27,7 @@ Core\CatEvent-Hunter.lua
 Core\CatEvent-Mage.lua
 Core\CatEvent-Warlock.lua
 Core\CardRegistry.lua
++Core\CardCooldown.lua
 
 Cards\Common\AutoAttack.lua
 Cards\Common\AutoAttackPet.lua

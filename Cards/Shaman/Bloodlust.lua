@@ -12,6 +12,7 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_BloodLust",
     },
+    cooldown = { type = "spell", name = "嗜血" },
 }
 
 local allowUse = 0
@@ -35,7 +36,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("嗜血") and Cat2.TargetDistance() then
-        CastSpellByName("嗜血")
+        Cat2.Cast("嗜血")
         return true
     end
 

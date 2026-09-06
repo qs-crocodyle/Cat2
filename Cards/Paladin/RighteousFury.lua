@@ -20,7 +20,7 @@ end
 function card.Execute(context)
 
     if not Cat2.PlayerInformation.temporary.buff["正义之怒"] then
-        CastSpellByName("正义之怒")
+        Cat2.Cast("正义之怒")
     end
 
 end

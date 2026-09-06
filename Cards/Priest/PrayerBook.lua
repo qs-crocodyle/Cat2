@@ -2,8 +2,8 @@
 local card = {
     id = "priest_prayer_book",
     name = "祈祷之书",
-    description = "施放祈祷之书",
-    details = "施放祈祷之书。",
+    description = "快速治疗和强效治疗术交替使用",
+    details = "快速治疗和强效治疗术交替使用，已发挥祈祷之书的作用。",
     sort = 45,
     category = "class",
     classes = {

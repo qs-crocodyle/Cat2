@@ -2,8 +2,8 @@
 local card = {
     id = "hunter_scatter_shot",
     name = "驱散射击",
-    description = "技能就绪时施放驱散射击",
-    details = "技能就绪时施放驱散射击。需要存在有效目标。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "目标距离不低于8码且技能就绪时，施放驱散射击",
+    details = "目标距离不低于8码且技能就绪时，施放驱散射击。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 57,
     category = "class",
     classes = {
@@ -11,6 +11,10 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Ability_GolemStormBolt",
+    },
+    cooldown = {
+        type = "spell",
+        name = "驱散射击",
     },
 }
 
@@ -26,9 +30,15 @@ function card.Execute(context)
         return false
     end
 
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance < 8 then
+            return false
+        end
+    end
 
     if Cat2.SpellReady("驱散射击") then
-        CastSpellByName("驱散射击")
+        Cat2.Cast("驱散射击")
         return true
     end
 

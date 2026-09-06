@@ -57,7 +57,7 @@ function card.Execute(context)
 
 
     if player.power>=clawPower or player.buff["节能施法"] then
-        CastSpellByName("爪击")
+        Cat2.Cast("爪击")
         return true
     end
 

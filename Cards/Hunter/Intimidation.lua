@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Devour",
     },
+    cooldown = {
+        type = "spell",
+        name = "胁迫",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -31,7 +35,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("胁迫") then
-        CastSpellByName("胁迫")
+        Cat2.Cast("胁迫")
         return true
     end
 

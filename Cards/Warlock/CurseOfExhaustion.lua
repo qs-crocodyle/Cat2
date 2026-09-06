@@ -16,9 +16,14 @@ local card = {
 }
 
 local allowUse = 0
+local distance = 30
 
 function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(1,9)
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("疲劳诅咒", "等级 1"), "(%d+)码距离"))
+    if not distance then
+        distance = 30
+    end
 end
 
 function card.Execute(context)
@@ -34,13 +39,20 @@ function card.Execute(context)
         return false
     end
 
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > distance then
+            return false
+        end
+    end
+
     local onlyBoss = context and context.parameters and context.parameters.warlockMajorCurseOnlyBoss
     if onlyBoss and not Cat2.IsBossTarget() then
         return false
     end
 
     if not player.targetBuff["疲劳诅咒"] then
-        CastSpellByName("疲劳诅咒")
+        Cat2.Cast("疲劳诅咒")
         return true
     end
 

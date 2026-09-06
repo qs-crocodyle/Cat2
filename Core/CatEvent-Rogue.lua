@@ -27,7 +27,7 @@ local RogueSliceDuration = 0
 local RogueSliceTalent = 0
 
 -- 当前连击点
-local RogueCombo = 1
+local RogueCombo = 0
 
 -- 割裂buff持续时间
 local RogueBloodyDuration = 0
@@ -56,12 +56,19 @@ local SliceTimer = 0
 -- 割裂buff
 local BloodyTimer = 0
 
+-- 割裂DOT监测
+local RuptureCheck = {}
+local RuptureDelayTime = {}
+local RuptureDuration = 16
+
+
 -- 毒伤buff
 local EnvenomTimer = 0
 
 
 local ExposeArmorCheck = {}
 local ExposeArmorDelayTime = {}
+
 
 
 -- 等待技能反馈的等待时间
@@ -109,7 +116,7 @@ local function OnEvent()
             -- 仅监控自己放出的技能
             if arg1 == Cat2.PlayerInformation.basic.guid then
 
-                --MPMsg(arg4)
+                --print(arg4)
                 -- 冷血id 14177
 
                 -- 突袭
@@ -118,11 +125,19 @@ local function OnEvent()
 
                 -- 割裂
                 elseif arg4== 11275 then
+                    if Cat2.IsTalentLearned(1, 10)==1 then RogueBloodyTalent=4 
+                    elseif Cat2.IsTalentLearned(1, 10)==2 then RogueBloodyTalent=6 end
                     RogueBloodyDuration = 6+(RogueCombo*2) + RogueBloodyTalent
                     BloodyTimer = GetTime()
 
+                    -- 切割dot
+                    RuptureDelayTime[arg2] = GetTime()
+                    RuptureDuration = 6+RogueCombo*2
+
                 -- 血腥气息
                 elseif arg4==52529 or arg4 == 52530 then
+                    if Cat2.IsTalentLearned(1, 10)==1 then RogueBloodyTalent=4 
+                    elseif Cat2.IsTalentLearned(1, 10)==2 then RogueBloodyTalent=6 end
                     RogueBloodyDuration = 6+(RogueCombo*2) + RogueBloodyTalent
                     BloodyTimer = GetTime()
 
@@ -136,6 +151,7 @@ local function OnEvent()
                 elseif arg4 == 6774 then
                     -- 计算应该持续时间
                     RogueSliceDuration = 6+(RogueCombo*3)
+                    RogueSliceTalent = 1+Cat2.IsTalentLearned(1, 6)*0.15
                     if RogueSliceTalent>0 then
                         RogueSliceDuration = RogueSliceDuration * RogueSliceTalent
                     end
@@ -191,6 +207,17 @@ local function OnEvent()
                         ExposeArmorDelayTime[targetGUID] = nil
                     end
                 end
+
+            -- 割裂
+            elseif string.find( arg2, "你的割裂.*招架.*" ) or string.find( arg2, "你的割裂.*躲闪.*" ) or string.find( arg2, "你的割裂.*格挡.*" ) or string.find( arg2, "你的割裂.*没有击中.*" ) then
+                local targetGUID = Cat2.MatchGUID(arg2)
+                if targetGUID and RuptureDelayTime[targetGUID] then 
+                    local timer = GetTime() - RuptureDelayTime[targetGUID]
+                    if timer <= BLEENCHECKDELAY then
+                        RuptureDelayTime[targetGUID] = nil
+                    end
+                end
+
             end
 
         end
@@ -331,6 +358,55 @@ end
 
 
 
+-- 获取当前目标是否有割裂效果
+-- 注：SuperWow支持更加准确
+-- return 存在返回真
+
+local function GetRuptureDOTCheck( guid, value )
+
+    if RuptureCheck[guid] then
+        local timer = GetTime() - RuptureCheck[guid]
+        if timer < (RuptureDuration-value) then
+            return true
+        end
+    end
+
+    return false
+end
+
+function Cat2.GetRuptureDot(value)
+
+    value = value or 0
+
+    -- 检测是否有SuperWow模组
+    if not Cat2.SuperWoW or Cat2.PlayerInformation.basic.level<60 then
+        return Cat2.PlayerInformation.temporary.targetBuff["割裂"]
+    end
+
+    -- 获取目标GUID，并确保其存在
+    local a,guid=UnitExists("target")
+    if not guid then
+        return false
+    end
+
+    if RuptureDelayTime[guid] then 
+        local timer = GetTime() - RuptureDelayTime[guid]
+        -- 0.2秒监测期里
+        if timer <= BLEENCHECKDELAY then
+            -- 还在等待认证期
+            return true
+        else
+            -- 已经过了认证期
+            RuptureCheck[guid] = RuptureDelayTime[guid]
+        end
+    end
+
+    return GetRuptureDOTCheck(guid, value)
+end
+
+
+
+
 
 function Cat2.RogueColdBloodReady()
     if not Cat2.PlayerInformation.temporary.buff["冷血"] then
@@ -373,4 +449,130 @@ function Cat2.RogueSurpriseStrike()
 
 	return false
 end
+
+
+local PostionNametip = CreateFrame("GameTooltip", "Cat2PostionNametip", nil, "GameTooltipTemplate")
+
+-- 检查主手毒药类型
+function Cat2.GetMainHandPostion()
+	PostionNametip:SetOwner(UIParent, "ANCHOR_NONE")
+    PostionNametip:ClearLines()
+    PostionNametip:SetInventoryItem("player", 16)   -- 主手
+    -- 扫描 Tooltip 文本
+    for i = 2, PostionNametip:NumLines() do
+        local line = _G["Cat2PostionNametipTextLeft"..i]
+        if line then
+            local text = line:GetText() or ""
+            if string.find(text, "毒药") then
+                return text
+            end
+        end
+    end
+
+    return nil
+end
+
+
+-- 检查副手毒药类型
+function Cat2.GetOffHandPostion()
+	PostionNametip:SetOwner(UIParent, "ANCHOR_NONE")
+    PostionNametip:ClearLines()
+    PostionNametip:SetInventoryItem("player", 17)   -- 副手
+    -- 扫描 Tooltip 文本
+    for i = 2, PostionNametip:NumLines() do
+        local line = _G["Cat2PostionNametipTextLeft"..i]
+        if line then
+            local text = line:GetText() or ""
+            if string.find(text, "毒药") then
+                return text
+            end
+        end
+    end
+
+    return nil
+end
+
+
+-- 切换包里武器，根据毒药来进行选择
+function Cat2.RogueSwitchWeapon(postion, inventory)
+
+    local speed_bag,speed_slot
+    local speed = 0
+    local dps = 0
+    local weapon_dps = 0
+
+	PostionNametip:SetOwner(UIParent, "ANCHOR_NONE")
+	local bag, slot
+    for bag = 0, 4 do
+        for slot = 1, GetContainerNumSlots(bag) do
+            local itemLink = GetContainerItemLink(bag, slot)
+            if itemLink then
+                PostionNametip:ClearLines()
+                PostionNametip:SetBagItem(bag, slot)
+
+                -- 扫描 Tooltip 文本
+                for i = 2, PostionNametip:NumLines() do
+
+                    -- 先找到有毒药的武器
+                    local line = _G["Cat2PostionNametipTextLeft"..i]
+                    if line then
+                        local text = line:GetText() or ""
+
+                        local local_dps = Cat2.Match(text, "每秒伤害(%d+%.?%d*)")
+                        if local_dps then
+                            weapon_dps = Cat2.ToNumber(local_dps)
+                        end
+
+                        if string.find(text, postion) then
+                            local _, _, name = string.find(itemLink, "%[(.-)%]")
+                            --print(name)
+
+                            -- 判断武器攻速
+                            for j = 2, 6 do
+                                local right = _G["Cat2PostionNametipTextRight"..j]
+                                if right then
+                                    local text_right = right:GetText() or ""
+
+                                    local Value = Cat2.ToNumber(Cat2.Match(text_right, "速度 (%d+%.?%d*)"))
+                                    --print(Value)
+                                    if Value and Value>0 then
+                                        
+                                        --MPMsg(name.."speed "..speed.." - "..Value)
+                                        --MPMsg(name.."dps "..dps.." - "..weapon_dps)
+                                        --MPMsg("bag="..bag.."  slot="..slot)
+                                        if speed < Value then
+                                            speed = Value
+                                            speed_bag = bag
+                                            speed_slot = slot
+                                            dps = weapon_dps
+                                        elseif speed == Value then
+                                            -- 攻速一样的情况下，看秒伤
+                                            if weapon_dps and dps < weapon_dps then
+                                                speed = Value
+                                                speed_bag = bag
+                                                speed_slot = slot
+                                                dps = weapon_dps
+                                            end
+                                        end
+                                        break
+                                    end
+                                end
+                            end
+
+
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if speed_bag and speed_slot then
+        PickupContainerItem(speed_bag, speed_slot)
+		EquipCursorItem(inventory)
+    end
+end
+
+
+
 

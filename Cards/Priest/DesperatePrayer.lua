@@ -4,8 +4,8 @@
 local card = {
     id = "priest_desperate_prayer",
     name = "绝望祷言",
-    description = "根据|cffb87ff0[被动卡]|r规则，血量低于15%危急时施放绝望祷言",
-    details = "根据|cffb87ff0[被动卡]|r规则，血量低于15%危急时施放绝望祷言。需要存在有效目标。仅对可攻击目标生效。会检查战斗状态。会检查相关生命值。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "根据|cffb87ff0[被动卡]|r规则，血量低于|cff6bc7e0{triggerPercent}%|r时施放绝望祷言",
+    details = "根据|cffb87ff0[被动卡]|r规则，血量低于卡片设定值时施放绝望祷言。未单独设置时使用默认值15%。需要存在有效目标。仅对可攻击目标生效。会检查战斗状态、相关生命值与技能可用性。成功执行时会阻断本轮后续卡片。",
     sort = 130,
     category = "class",
     classes = {
@@ -13,6 +13,21 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Spell_Holy_Restoration",
+    },
+    cooldown = {
+        type = "spell",
+        name = "绝望祷言",
+    },
+    optionSchema = {
+        {
+            key = "triggerPercent",
+            type = "number",
+            label = "触发血量",
+            unit = "%",
+            default = 15,
+            minimum = 1,
+            maximum = 99,
+        },
     },
 }
 
@@ -23,7 +38,7 @@ end
 local healTargetDelay = {}
 
 -- 判断目标是否处于危急状态，并在条件满足时施放绝望祷言。
-function card.Health(unit, member, context)
+function card.Health(unit, member, context, triggerPercent)
 
     if not unit then
         return false
@@ -48,7 +63,7 @@ function card.Health(unit, member, context)
     end
 
     local percentHealth = health / maximumHealth * 100
-    if percentHealth > 14.9 then
+    if percentHealth >= triggerPercent then
         return false
     end
 
@@ -87,9 +102,10 @@ function card.Health(unit, member, context)
     return false
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 15
     if not player.inCombat then
         return false
     end
@@ -107,22 +123,22 @@ function card.Execute(context)
         and not context:IsCardActive("shared_healing_target")
         and not context:IsCardActive("shared_healing_self")
         and not context:IsCardActive("shared_healing_party") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r")
+        DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r"))
         return false
     end
 
     local targetFirst = context.parameters.HealingTarget
-    if targetFirst and player.targetExists and card.Health("target") then
+    if targetFirst and player.targetExists and card.Health("target", nil, context, triggerPercent) then
         return true
     end
 
     local targetTarget = context.parameters.HealingTargetTarget
-    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget") then
+    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget", nil, context, triggerPercent) then
         return true
     end
 
     local selfFirst = context.parameters.HealingSelf
-    if selfFirst and card.Health("player") then
+    if selfFirst and card.Health("player", nil, context, triggerPercent) then
         return true
     end
 
@@ -130,7 +146,7 @@ function card.Execute(context)
     if partyFirst then
         local partyMembers = context:GetTeamMembers("party", "health")
         for _, member in ipairs(partyMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return true
             end
         end
@@ -140,7 +156,7 @@ function card.Execute(context)
     if randomTeam then
         local groupMembers = context:GetTeamMembers("group", "random")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return true
             end
         end
@@ -150,7 +166,7 @@ function card.Execute(context)
     if teamFirst then
         local groupMembers = context:GetTeamMembers("group", "health")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return true
             end
         end
@@ -160,7 +176,7 @@ function card.Execute(context)
     if tankFirst then
         local groupMembers = context:GetTeamMembers("group", "maxHealth")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return true
             end
         end

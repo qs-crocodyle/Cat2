@@ -16,6 +16,7 @@ local card = {
     category = "class",
     -- 同一张卡在不同职业中归入各自对应的治疗天赋系。
     classes = {
+        MAGE = 1,
         DRUID = 3,
         SHAMAN = 3,
         PALADIN = 1,

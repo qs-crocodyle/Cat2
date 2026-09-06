@@ -2,8 +2,8 @@
 local card = {
     id = "warrior_last_stand",
     name = "破釜沉舟",
-    description = "生命<15%，危急时施放破釜沉舟",
-    details = "生命<15%，危急时施放破釜沉舟。会检查战斗状态。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "生命低于|cff6bc7e0{triggerPercent}%|r时施放破釜沉舟",
+    details = "生命低于卡片设定值时施放破釜沉舟。会检查战斗状态。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 160,
     category = "class",
     classes = {
@@ -12,13 +12,30 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_AshesToAshes",
     },
+    cooldown = {
+        type = "spell",
+        name = "破釜沉舟",
+    },
+    optionSchema = {
+        {
+            key = "triggerPercent",
+            type = "number",
+            label = "触发生命",
+            shortLabel = "血",
+            unit = "%",
+            default = 15,
+            minimum = 1,
+            maximum = 99,
+        },
+    },
 }
 
 function card.RefreshRuntimeData()
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 15
 
     if not player.inCombat then
         return false
@@ -29,8 +46,8 @@ function card.Execute(context)
         return false
     end
 
-    if player.percentHealth < 15.0 then
-        CastSpellByName("破釜沉舟")
+    if player.percentHealth < triggerPercent then
+        Cat2.Cast("破釜沉舟")
         return true
     end
 

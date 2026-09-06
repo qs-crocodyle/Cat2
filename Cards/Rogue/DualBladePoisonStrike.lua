@@ -45,7 +45,7 @@ function card.Execute(context)
     end
 
     if player.power >= 45 then
-        CastSpellByName("双刃毒袭")
+        Cat2.Cast("双刃毒袭")
         return true
     end
 

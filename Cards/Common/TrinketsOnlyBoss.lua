@@ -1,9 +1,9 @@
 -- 饰品仅对强敌开启的被动卡片。
 local card = {
     id = "common_trinkets_only_boss",
-    name = "饰品/爆发 仅强敌时",
-    description = "饰品和爆发仅在强敌阶段启用",
-    details = "饰品和爆发仅在强敌阶段启用。作为被动规则，启用时影响当前流程。",
+    name = "饰品/天赋 仅强敌时",
+    description = "饰品和天赋仅在强敌阶段启用",
+    details = "饰品和天赋仅在强敌阶段启用。作为被动规则，启用时影响当前流程。",
     sort = 44,
     behavior = "passive",
     unique = true,

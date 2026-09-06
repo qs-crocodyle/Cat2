@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_BlessingOfProtection",
     },
+    cooldown = {
+        type = "spell",
+        name = "神圣之盾",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -36,7 +40,7 @@ function card.Execute(context)
         return false
     end
 
-    CastSpellByName("神圣之盾")
+    Cat2.Cast("神圣之盾")
     return true
 end
 

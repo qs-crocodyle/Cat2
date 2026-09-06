@@ -9,6 +9,11 @@ local card = {
     icons = {
         "Interface\\Icons\\INV_Jewelry_TrinketPVP_01",
     },
+    -- 快捷窗CD字段示例：装备栏上饰品槽固定为13，不需要写入流程保存数据。
+    cooldown = {
+        type = "inventory",
+        slot = 13,
+    },
 }
 
 function card.RefreshRuntimeData()

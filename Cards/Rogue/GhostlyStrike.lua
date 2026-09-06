@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Shadow_Curse",
     },
+    cooldown = {
+        type = "spell",
+        name = "鬼魅攻击",
+    },
 }
 
 local ghostPower = 40
@@ -41,7 +45,7 @@ function card.Execute(context)
 
 
     if player.power>=ghostPower and Cat2.SpellReady("鬼魅攻击") then
-        CastSpellByName("鬼魅攻击")
+        Cat2.Cast("鬼魅攻击")
         return true
     end
 

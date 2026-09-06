@@ -2,9 +2,10 @@
 local card = {
     id = "warrior_heroic_strike_alt",
     name = "自动 英勇打击/顺劈斩",
-    description = "怒气>50，周围敌人数自动施放英勇打击/顺劈斩",
-    details = "怒气>50，周围敌人数自动施放英勇打击/顺劈斩。需要存在有效目标。会检查当前资源。",
+    description = "怒气达到|cff6bc7e0{rageThreshold}|r，至少2个敌人时顺劈",
+    details = "怒气达到卡片设定值时，周围至少2个敌人则施放顺劈斩，否则施放英勇打击。需要存在有效目标。会检查当前资源。",
     sort = 92,
+    exclusiveGroup = "warrior_heroic_strike_cleave",
     category = "class",
     classes = {
         WARRIOR = 2,
@@ -12,6 +13,17 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Rogue_Ambush",
         "Interface\\Icons\\Ability_Warrior_Cleave",
+    },
+    optionSchema = {
+        {
+            key = "rageThreshold",
+            type = "number",
+            label = "怒气阈值",
+            shortLabel = "怒",
+            default = 50,
+            minimum = 1,
+            maximum = 100,
+        },
     },
 }
 
@@ -21,7 +33,7 @@ function card.RefreshRuntimeData()
     powerHeroice = 15 - Cat2.IsTalentLearned(1, 1)
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
     local player = Cat2.PlayerInformation.temporary
 
     -- 没有目标时无需继续。
@@ -32,17 +44,13 @@ function card.Execute(context)
 
     local nearby = Cat2.ScanNearbyEnemies(7)
 
-    local rageThreshold = context.parameters.warriorRageThreshold
-    -- 队列中没有启用怒气阈值被动卡时，使用默认值
-    if rageThreshold == nil then
-        rageThreshold = 50
-    end
+    local rageThreshold = context:GetStepOption(step, "rageThreshold") or 50
 
     if player.power >= rageThreshold then
-        if nearby>1 then
-            Cat2.CastWithoutNampower("顺劈斩")
+        if nearby>=2 then
+            Cat2.Cast("顺劈斩")
         else
-            Cat2.CastWithoutNampower("英勇打击")
+            Cat2.Cast("英勇打击")
         end
     end
 end

@@ -3,7 +3,7 @@ local card = {
     id = "mage_fire_blast",
     name = "火焰冲击",
     description = "冷却时，施放火焰冲击",
-    details = "冷却时，施放火焰冲击。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    details = "冷却时，施放火焰冲击。需要存在有效目标；目标火焰免疫时不会施放。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 20,
     category = "class",
     classes = {
@@ -12,12 +12,18 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Fire_Fireball",
     },
+    cooldown = {
+        type = "spell",
+        name = "火焰冲击",
+    },
 }
 
 local range = 20
 
 function card.RefreshRuntimeData()
-    range = 20 + (Cat2.IsTalentLearned(2,3)*3)
+    local fallbackRange = 20 + (Cat2.IsTalentLearned(2,3)*3)
+    range = tonumber(Cat2.Match(Cat2.GetSpellTooltip("火焰冲击", "等级 1"), "(%d+)码距离"))
+    if not range then range = fallbackRange end
 end
 
 function card.Execute(context)
@@ -28,15 +34,21 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标火焰免疫时，不再尝试施放火焰伤害技能。
+    if Cat2.IsFireImmune() then
+        return false
+    end
 
-    -- 有效距离
-    if Cat2.TargetDistance("target",range) then
-
-        if Cat2.SpellReady("火焰冲击") then
-            CastSpellByName("火焰冲击")
-            return true
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > range then
+            return false
         end
+    end
 
+    if Cat2.SpellReady("火焰冲击") then
+        Cat2.Cast("火焰冲击")
+        return true
     end
 
     return false

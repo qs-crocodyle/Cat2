@@ -9,6 +9,10 @@ local card = {
     icons = {
         "Interface\\Icons\\INV_Jewelry_TrinketPVP_02",
     },
+    cooldown = {
+        type = "inventory",
+        slot = 14,
+    },
 }
 
 function card.RefreshRuntimeData()

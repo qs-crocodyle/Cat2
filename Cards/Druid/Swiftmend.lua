@@ -5,9 +5,9 @@ local card = {
     -- 界面中显示的卡片标题。
     name = "迅捷治愈",
     -- 卡片标题下方显示的简短说明。
-    description = "根据|cffb87ff0[被动卡]|r规则，血量最低施放救急治疗",
+    description = "根据|cffb87ff0[被动卡]|r规则，血量<|cff6bc7e0{triggerPercent}%|r时施放救急治疗",
     -- 预留给后续详情面板或 Tooltip 的完整功能说明。
-    details = "根据|cffb87ff0[被动卡]|r规则，血量最低施放救急治疗。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。仅在技能可用时尝试执行。",
+    details = "根据|cffb87ff0[被动卡]|r规则，血量低于卡片设定值时施放救急治疗。未单独设置时使用默认值70%。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。仅在技能可用时尝试执行。",
     -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
     sort = 230,
     -- 仅能是 common、item、class 三种分类之一。
@@ -20,20 +20,34 @@ local card = {
     icons = {
         "Interface\\Icons\\INV_Relics_IdolofRejuvenation",
     },
+    cooldown = { type = "spell", name = "迅捷治愈" },
+    optionSchema = {
+        {
+            key = "triggerPercent",
+            type = "number",
+            label = "触发血量",
+            unit = "%",
+            default = 70,
+            minimum = 1,
+            maximum = 99,
+        },
+    },
 }
 
 local allowUse = 0
+local SwiftmendMaxLevel = 0
 
 -- 插件启动时注册卡片后调用一次。
 function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(3,6)
+    SwiftmendMaxLevel = Cat2.GetHighestRankOfSpell("迅捷治愈")
 end
 
 
 
 local HealTargetDelay = {}
 
-function card.Health(unit, member, context)
+function card.Health(unit, member, context, triggerPercent)
 
     if not unit then
         return false
@@ -62,7 +76,7 @@ function card.Health(unit, member, context)
 
     local percentHealth = health/maxHealth * 100
 
-    if percentHealth > 69.9 then
+    if percentHealth >= triggerPercent then
         return false
     end
 
@@ -96,8 +110,7 @@ function card.Health(unit, member, context)
     -- 读触
 
     -- 先确保技能已学
-    local SwiftmendLevel = Cat2.GetHighestRankOfSpell("迅捷治愈")
-    if SwiftmendLevel>0 then
+    if SwiftmendMaxLevel>0 then
 
         if (Cat2.Buff("愈合",unit) or Cat2.Buff("回春术",unit)) and Cat2.SpellReady("迅捷治愈") then
             return Cat2.CastSpellWithoutTarget("迅捷治愈", unit, 1)
@@ -110,8 +123,9 @@ function card.Health(unit, member, context)
 end
 
 -- 返回后续流程执行器读取的动作描述。
-function card.Execute(context)
+function card.Execute(context, step)
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 70
 
     -- 不存在这个天赋
     if allowUse==0 then
@@ -131,7 +145,7 @@ function card.Execute(context)
     and not context:IsCardActive("shared_healing_target") 
     and not context:IsCardActive("shared_healing_self") 
     and not context:IsCardActive("shared_healing_party") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r")
+        DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r"))
         return false
     end
 
@@ -139,7 +153,7 @@ function card.Execute(context)
     -- 目标
     local TargetFirst = context and context.parameters and context.parameters.HealingTarget
     if TargetFirst and player.targetExists then
-        if card.Health("target") then
+        if card.Health("target", nil, context, triggerPercent) then
             return
         end
     end
@@ -147,7 +161,7 @@ function card.Execute(context)
     -- 目标 的 目标
     local TargetTarget = context and context.parameters and context.parameters.HealingTargetTarget
     if TargetTarget and player.targetExists and UnitExists("targettarget") then
-        if card.Health("targettarget") then
+        if card.Health("targettarget", nil, context, triggerPercent) then
             return
         end
     end
@@ -155,7 +169,7 @@ function card.Execute(context)
     -- 自己
     local SelfFirst = context and context.parameters and context.parameters.HealingSelf
     if SelfFirst then
-        if card.Health("player") then
+        if card.Health("player", nil, context, triggerPercent) then
             return
         end
     end
@@ -165,7 +179,7 @@ function card.Execute(context)
     if PartyFirst then
         local sortedMembers = context:GetTeamMembers("party", "health")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return
             end
         end
@@ -177,7 +191,7 @@ function card.Execute(context)
         local sortedMembers = context:GetTeamMembers("group", "random")
             
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return
             end
         end
@@ -188,7 +202,7 @@ function card.Execute(context)
     if ScanTeam then
         local sortedMembers = context:GetTeamMembers("group", "health")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return
             end
         end
@@ -199,7 +213,7 @@ function card.Execute(context)
     if TankFirst then
         local sortedMembers = context:GetTeamMembers("group", "maxHealth")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent) then
                 return
             end
         end

@@ -54,7 +54,7 @@ function card.Execute(context)
     -- 执行圣印卡片内容
 
     if not player.buff["光明圣印"] then
-        CastSpellByName("光明圣印")
+        Cat2.Cast("光明圣印")
         return true
     end
 

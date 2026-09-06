@@ -3,7 +3,7 @@ local card = {
     id = "shaman_flame_shock_lava_followup",
     name = "熔岩爆裂 保持 烈焰震击",
     description = "通过烈焰震击，续杯火震DOT，需SuperWoW",
-    details = "通过烈焰震击，续杯火震DOT，需SuperWoW。需要存在有效目标。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    details = "通过烈焰震击，续杯火震DOT，需SuperWoW。需要存在有效目标；目标火焰免疫时不会施放。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 26,
     category = "class",
     classes = {
@@ -13,9 +13,18 @@ local card = {
         "Interface\\Icons\\Spell_Fire_FlameShock",
         "Interface\\Icons\\Spell_Fire_MeteorStorm",
     },
+    cooldown = { type = "spell", name = "熔岩爆裂" },
 }
 
+local flameShockDistance = 30
+local lavaBurstDistance = 36
+
 function card.RefreshRuntimeData()
+    flameShockDistance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("烈焰震击", "等级 1"), "(%d+)码距离"))
+    if not flameShockDistance then flameShockDistance = 30 end
+
+    lavaBurstDistance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("熔岩爆裂", "等级 1"), "(%d+)码距离"))
+    if not lavaBurstDistance then lavaBurstDistance = 36 end
 end
 
 function card.Execute(context)
@@ -27,6 +36,10 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标火焰免疫时，不再尝试施放火焰伤害技能。
+    if Cat2.IsFireImmune() then
+        return false
+    end
 
     -- 要考虑弹道时间
     if Cat2.GetBeginLavaBurstCastTimer()-GetTime() > 0.0 then
@@ -40,13 +53,13 @@ function card.Execute(context)
         -- 有unitxp模组，用于射程过滤
         if Cat2.UnitXP then
             local range = UnitXP("distanceBetween", "player", "target")
-            if range>30 then
+            if range>flameShockDistance then
                 return false
             end
         end
 
         if Cat2.SpellReadyOffset("烈焰震击",1.5) then
-            CastSpellByName("烈焰震击")
+            Cat2.Cast("烈焰震击")
             return true
         end
 
@@ -57,12 +70,12 @@ function card.Execute(context)
             -- 有unitxp模组，用于射程过滤
             if Cat2.UnitXP then
                 local range = UnitXP("distanceBetween", "player", "target")
-                if range>36 then
+                if range>lavaBurstDistance then
                     return false
                 end
             end
 
-            Cat2.CastWithoutNampower("熔岩爆裂")
+            Cat2.Cast("熔岩爆裂")
             return true
         end
 

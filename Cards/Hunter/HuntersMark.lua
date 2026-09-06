@@ -3,7 +3,7 @@ local card = {
     id = "hunter_hunters_mark",
     name = "猎人印记",
     description = "对目标施放并保持猎人印记",
-    details = "对目标施放并保持猎人印记。需要存在有效目标。成功执行时会阻断本轮后续卡片。",
+    details = "对目标施放并保持猎人印记。需要存在有效目标；目标奥术免疫时不会施放。成功执行时会阻断本轮后续卡片。",
     sort = 20,
     category = "class",
     classes = {
@@ -26,9 +26,13 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标奥术免疫时，不再尝试施放猎人印记。
+    if Cat2.IsArcaneImmune() then
+        return false
+    end
 
     if not player.targetBuff["猎人印记"] then
-        CastSpellByName("猎人印记")
+        Cat2.Cast("猎人印记")
         return true
     end
 

@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_Excorcism",
     },
+    cooldown = {
+        type = "spell",
+        name = "神圣愤怒",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -28,7 +32,7 @@ function card.Execute(context)
 
 
     if Cat2.SpellReady("神圣愤怒") and Cat2.TargetDistance("target",15) then
-        CastSpellByName("神圣愤怒")
+        Cat2.Cast("神圣愤怒")
         return true
     end
 

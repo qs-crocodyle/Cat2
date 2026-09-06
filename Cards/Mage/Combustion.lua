@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Fire_SealOfFire",
     },
+    cooldown = {
+        type = "spell",
+        name = "燃烧",
+    },
 }
 
 local allowUse = 0
@@ -33,8 +37,14 @@ function card.Execute(context)
         return false
     end
 
+    -- 加入“五层易伤后”被动卡时，燃烧及其分支统一等待当前目标达到五层。
+    if context.parameters.mageCombustionAfterFiveVulnerability
+        and not Cat2.HasFiveFireVulnerabilityStacks(player.targetGUID) then
+        return false
+    end
+
     if Cat2.SpellReady("燃烧") then
-        CastSpellByName("燃烧")
+        Cat2.Cast("燃烧")
     end
 
     return false

@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Druid_FerociousBite",
     },
+    cooldown = {
+        type = "spell",
+        name = "狂野怒火",
+    },
 }
 
 local allowUse = 0
@@ -38,7 +42,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("狂野怒火") and player.inCombat then
-        CastSpellByName("狂野怒火")
+        Cat2.Cast("狂野怒火")
     end
 
     return false

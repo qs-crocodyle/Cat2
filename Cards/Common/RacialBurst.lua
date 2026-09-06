@@ -1,4 +1,33 @@
--- 种族天赋爆发卡：具体种族技能选择与施放条件留待后续实现。
+-- 种族天赋爆发卡：根据玩家种族选择感知、血性狂怒或狂暴。
+local function GetRacialBurstSpellName()
+    local raceFile = Cat2.PlayerInformation.basic.raceFile
+    if raceFile == "Human" then
+        return "感知"
+    end
+    if raceFile == "Orc" then
+        return "血性狂怒"
+    end
+    if raceFile == "Troll" then
+        return "狂暴"
+    end
+    return nil
+end
+
+-- 快捷窗只显示当前角色实际拥有的种族技能CD；其他种族不显示CD数字。
+local function GetRacialBurstCooldown()
+    local spellName = GetRacialBurstSpellName()
+    if not spellName or not Cat2.GetSpellID then
+        return nil
+    end
+
+    local spellBookIndex = Cat2.GetSpellID(spellName)
+    if not spellBookIndex or spellBookIndex == 0 then
+        return nil
+    end
+
+    return GetSpellCooldown(spellBookIndex, "spell")
+end
+
 local card = {
     id = "common_racial_burst",
     name = "自动种族天赋（爆发）",
@@ -8,6 +37,12 @@ local card = {
     category = "common",
     icons = {
         "Interface\\Icons\\Racial_Troll_Berserk",
+    },
+    cooldown = {
+        type = "custom",
+        cacheKey = "spell:player_racial_burst",
+        filterGlobalCooldown = true,
+        GetCooldown = GetRacialBurstCooldown,
     },
 }
 
@@ -40,18 +75,21 @@ function card.Execute(context)
     end
 
 	-- 开启 人类-感知
-	if player.raceFile=="Human" then
-		if Cat2.SpellReady("感知") then CastSpellByName("感知") end
+	if Cat2.PlayerInformation.basic.raceFile=="Human" then
+		if Cat2.SpellReadyOffset("感知",1.0) then
+            Cat2.Cast("感知")
+            return true -- 感知有GCD
+        end
 	end
 
 	-- 开启 兽人-血性狂怒
-	if player.raceFile=="Orc" then
-		if Cat2.SpellReady("血性狂怒") then CastSpellByName("血性狂怒") end
+	if Cat2.PlayerInformation.basic.raceFile=="Orc" then
+		if Cat2.SpellReady("血性狂怒") then Cat2.Cast("血性狂怒") end
 	end
 		
 	-- 开启 巨魔-狂暴
-	if player.raceFile=="Troll" then
-		if Cat2.SpellReady("狂暴") then CastSpellByName("狂暴") end
+	if Cat2.PlayerInformation.basic.raceFile=="Troll" then
+		if Cat2.SpellReady("狂暴") then Cat2.Cast("狂暴") end
 	end
 
 end

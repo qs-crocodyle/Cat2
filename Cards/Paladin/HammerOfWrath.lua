@@ -14,7 +14,11 @@ local card = {
     },
 }
 
+local distance = 30
+
 function card.RefreshRuntimeData()
+    distance = tonumber(Cat2.Match(Cat2.GetSpellTooltip("愤怒之锤", "等级 1"), "(%d+)码距离"))
+    if not distance then distance = 30 end
 end
 
 function card.Execute(context)
@@ -26,9 +30,15 @@ function card.Execute(context)
         return false
     end
 
+    if Cat2.UnitXP then
+        local targetDistance = UnitXP("distanceBetween", "player", "target")
+        if targetDistance and targetDistance > distance then
+            return false
+        end
+    end
 
-    if Cat2.SpellReady("愤怒之锤") and Cat2.TargetDistance("target",30) and player.targetPercentHealth < 19.95 then
-        CastSpellByName("愤怒之锤")
+    if Cat2.SpellReady("愤怒之锤") and player.targetPercentHealth < 19.95 then
+        Cat2.Cast("愤怒之锤")
         return true
     end
 

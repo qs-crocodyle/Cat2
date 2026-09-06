@@ -20,7 +20,7 @@ end
 function card.Execute(context)
 
     if not Cat2.PlayerInformation.temporary.buff["强击光环"] then
-        CastSpellByName("强击光环")
+        Cat2.Cast("强击光环")
     end
 
 end

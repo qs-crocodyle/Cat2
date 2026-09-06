@@ -2,8 +2,8 @@
 local card = {
     id = "hunter_frost_trap",
     name = "冰霜陷阱",
-    description = "近战距离时，施放冰霜陷阱，需SuperWoW",
-    details = "近战距离时，施放冰霜陷阱，需SuperWoW。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。",
+    description = "目标战斗中且在近战距离时，施放冰霜陷阱，需SuperWoW",
+    details = "目标处于战斗中且在近战距离时，施放冰霜陷阱，需SuperWoW。仅在技能可用时尝试执行。",
     sort = 100,
     exclusiveGroup = "hunter_trap",
     category = "class",
@@ -12,6 +12,10 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Spell_Frost_ChainsOfIce",
+    },
+    cooldown = {
+        type = "spell",
+        name = "冰霜陷阱",
     },
 }
 
@@ -27,12 +31,17 @@ function card.Execute(context)
         return false
     end
 
+    -- 目标尚未进入战斗时不提前放置陷阱。
+    if not player.targetInCombat then
+        return false
+    end
+
 
     -- 8码内
     if Cat2.TargetDistance() then
         if Cat2.SpellReady("冰霜陷阱") then
-            CastSpellByName("冰霜陷阱")
-            return false
+            Cat2.Cast("冰霜陷阱")
+            return true
         end
     end
 

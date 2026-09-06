@@ -4,8 +4,8 @@
 local card = {
     id = "priest_power_word_shield",
     name = "真言术：盾",
-    description = "根据|cffb87ff0[被动卡]|r规则，为低血量友方施放真言术：盾",
-    details = "根据|cffb87ff0[被动卡]|r规则，为低血量友方施放真言术：盾。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
+    description = "根据|cffb87ff0[被动卡]|r规则，血量<|cff6bc7e0{triggerPercent}%|r时施放",
+    details = "根据|cffb87ff0[被动卡]|r规则，血量低于卡片设定值时，在设定等级区间内施放真言术：盾。默认触发血量为99%。护盾没有按缺血量选级的旧数据表，因此优先尝试区间内最高可用等级。成功执行时会阻断本轮后续卡片。",
     sort = 5,
     category = "class",
     classes = {
@@ -14,16 +14,28 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_PowerWordShield",
     },
+    cooldown = {
+        type = "spell",
+        name = "真言术：盾",
+    },
+    optionSchema = {
+        { key = "triggerPercent", type = "number", label = "触发血量", unit = "%", default = 100, minimum = 1, maximum = 100 },
+        { key = "minimumRank", type = "number", label = "最小等级", default = 1, minimum = 1, maximum = 10 },
+        { key = "maximumRank", type = "number", label = "最大等级", default = 10, minimum = 1, maximum = 10 },
+    },
 }
 
+local PriestPowerWordShieldMaxLevel = 10
+
 function card.RefreshRuntimeData()
+    PriestPowerWordShieldMaxLevel = Cat2.GetHighestRankOfSpell("真言术：盾")
 end
 
 -- 记录短时间内已处理的目标，避免同一轮或连续触发时重复套盾。
 local healTargetDelay = {}
 
 -- 判断目标是否适合施放真言术：盾，并在条件满足时完成施放。
-function card.Health(unit, member, context)
+function card.Health(unit, member, context, triggerPercent, minimumRank, maximumRank)
 
     if not unit then
         return false
@@ -48,7 +60,7 @@ function card.Health(unit, member, context)
     end
 
     local percentHealth = health / maximumHealth * 100
-    if percentHealth > 99.9 then
+    if percentHealth >= triggerPercent then
         return false
     end
 
@@ -80,20 +92,31 @@ function card.Health(unit, member, context)
         return false
     end
 
-    if Cat2.GetHighestRankOfSpell("真言术：盾") > 0 and Cat2.SpellReady("真言术：盾") then
-        local castResult = Cat2.CastSpellWithoutTarget("真言术：盾", unit, 1)
-        if castResult and targetName then
-            healTargetDelay[targetName] = GetTime() + 1
+    if PriestPowerWordShieldMaxLevel > 0 and Cat2.SpellReady("真言术：盾") then
+        -- 护盾卡没有现有的护盾量/耗蓝等级表；在有效区间中从高到低尝试可施放等级。
+        for rank = maximumRank, minimumRank, -1 do
+            local castResult = Cat2.CastSpellWithoutTarget("真言术：盾(等级 "..rank..")", unit, 1)
+            if castResult then
+                if targetName then
+                    healTargetDelay[targetName] = GetTime() + 1
+                end
+                return true
+            end
         end
-        return castResult
     end
 
     return false
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 99
+    local minimumRank = context:GetStepOption(step, "minimumRank") or 1
+    local maximumRank = context:GetStepOption(step, "maximumRank") or 10
+    if maximumRank > PriestPowerWordShieldMaxLevel then maximumRank = PriestPowerWordShieldMaxLevel end
+    if minimumRank > PriestPowerWordShieldMaxLevel then minimumRank = PriestPowerWordShieldMaxLevel end
+    if minimumRank > maximumRank then minimumRank, maximumRank = maximumRank, minimumRank end
 
     if player.gcd > 0.2 then
         return false
@@ -109,22 +132,22 @@ function card.Execute(context)
         and not context:IsCardActive("shared_healing_target")
         and not context:IsCardActive("shared_healing_self")
         and not context:IsCardActive("shared_healing_party") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r")
+        DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r"))
         return false
     end
 
     local targetFirst = context.parameters.HealingTarget
-    if targetFirst and player.targetExists and card.Health("target") then
+    if targetFirst and player.targetExists and card.Health("target", nil, context, triggerPercent, minimumRank, maximumRank) then
         return true
     end
 
     local targetTarget = context.parameters.HealingTargetTarget
-    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget") then
+    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget", nil, context, triggerPercent, minimumRank, maximumRank) then
         return true
     end
 
     local selfFirst = context.parameters.HealingSelf
-    if selfFirst and card.Health("player") then
+    if selfFirst and card.Health("player", nil, context, triggerPercent, minimumRank, maximumRank) then
         return true
     end
 
@@ -132,7 +155,7 @@ function card.Execute(context)
     if partyFirst then
         local partyMembers = context:GetTeamMembers("party", "health")
         for _, member in ipairs(partyMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end
@@ -142,7 +165,7 @@ function card.Execute(context)
     if randomTeam then
         local groupMembers = context:GetTeamMembers("group", "random")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end
@@ -152,7 +175,7 @@ function card.Execute(context)
     if teamFirst then
         local groupMembers = context:GetTeamMembers("group", "health")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end
@@ -162,7 +185,7 @@ function card.Execute(context)
     if tankFirst then
         local groupMembers = context:GetTeamMembers("group", "maxHealth")
         for _, member in ipairs(groupMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return true
             end
         end

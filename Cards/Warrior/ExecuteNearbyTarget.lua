@@ -4,7 +4,7 @@
 local card = {
     id = "warrior_execute_nearby_target",
     name = "斩杀 周围可斩目标",
-    description = "周围目标血量满足斩杀时，尝试对其施放斩杀",
+    description = "周围目标血量进入斩杀线时，尝试对其施放斩杀",
     details = "周围目标血量满足斩杀时，尝试对其施放斩杀。仅对可攻击目标生效。会检查当前资源和相关生命值。启用“斩杀时中断读条”后，施放前会中断猛击读条。",
     sort = 98,
     category = "class",
@@ -29,7 +29,12 @@ function card.RefreshRuntimeData()
 end
 
 function card.Execute(context)
+
     local player = Cat2.PlayerInformation.temporary
+
+    if Cat2.GetShapeByName("防御姿态") then
+        return false
+    end
 
     local count,_,list = Cat2.ScanNearbyEnemies()
     if count>0 then

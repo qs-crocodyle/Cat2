@@ -12,6 +12,7 @@ local card = {
     exclusiveGroup = "shared_healing_team_mode",
     category = "class",
     classes = {
+        MAGE = 1,
         DRUID = 3,
         SHAMAN = 3,
         PALADIN = 1,

@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Hunter_KillCommand",
     },
+    cooldown = {
+        type = "spell",
+        name = "杀戮命令",
+    },
 }
 
 local allowUse = 0
@@ -41,7 +45,7 @@ function card.Execute(context)
     -- 暴击时间检测
     if Cat2.GetHunterGoreAllow() then
         if Cat2.SpellReady("杀戮命令") then
-            CastSpellByName("杀戮命令")
+            Cat2.Cast("杀戮命令")
             return true
         end
     end

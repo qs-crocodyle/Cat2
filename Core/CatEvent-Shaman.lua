@@ -32,27 +32,31 @@ local BeginLavaBurstCastTimer = 0
 
 local EarthTotemTimer = 0
 local EarthTotemDuration = 0
-local EarthTotemName = ""
+local EarthTotemName = nil
 local EarthTotemX = 0
 local EarthTotemY = 0
+local EarthTotemGUID = nil
 
 local FireTotemTimer = 0
 local FireTotemDuration = 0
-local FireTotemName = ""
+local FireTotemName = nil
 local FireTotemX = 0
 local FireTotemY = 0
+local FireTotemGUID = nil
 
 local WaterTotemTimer = 0
 local WaterTotemDuration = 0
-local WaterTotemName = ""
+local WaterTotemName = nil
 local WaterTotemX = 0
 local WaterTotemY = 0
+local WaterTotemGUID = nil
 
 local AirTotemTimer = 0
 local AirTotemDuration = 0
-local AirTotemName = ""
+local AirTotemName = nil
 local AirTotemX = 0
 local AirTotemY = 0
+local AirTotemGUID = nil
 
 -- 等待技能反馈的等待时间
 local BLEENCHECKDELAY = 0.2
@@ -61,6 +65,7 @@ local function ResetData()
     FlameShockCheck = {}
     FlameShockDelayTime = {}
     BeginLavaBurstCastTimer = 0
+
 end
 
 local function OnEvent()
@@ -76,32 +81,37 @@ local function OnEvent()
 
         EarthTotemTimer = 0
         EarthTotemDuration = 0
-        EarthTotemName = ""
+        EarthTotemName = nil
         EarthTotemX = 0
         EarthTotemY = 0
+        EarthTotemGUID = nil
 
         FireTotemTimer = 0
         FireTotemDuration = 0
-        FireTotemName = ""
+        FireTotemName = nil
         FireTotemX = 0
         FireTotemY = 0
+        FireTotemGUID = nil
 
         WaterTotemTimer = 0
         WaterTotemDuration = 0
-        WaterTotemName = ""
+        WaterTotemName = nil
         WaterTotemX = 0
         WaterTotemY = 0
+        WaterTotemGUID = nil
 
         AirTotemTimer = 0
         AirTotemDuration = 0
-        AirTotemName = ""
+        AirTotemName = nil
         AirTotemX = 0
         AirTotemY = 0
+        AirTotemGUID = nil
+
 
     -- 施法事件处理，读条类，读条也要处理GCD
     elseif event == "SPELLCAST_START" then
 
-        if arg1 == "熔岩爆裂" or arg1 == "Lava Burst" then 
+        if arg1 == "熔岩爆裂" then 
             BeginLavaBurstCastTimer = GetTime()+4.0
         end
 
@@ -137,113 +147,117 @@ local function OnEvent()
             FireTotemTimer = 0
             WaterTotemTimer = 0
             AirTotemTimer = 0
+            EarthTotemName = nil
+            FireTotemName = nil
+            WaterTotemName = nil
+            AirTotemName = nil
         end
 
         if not Cat2.SuperWoW then
             local totemName = Cat2.Match(arg1, "你施放了(.+)。") or Cat2.Match(arg1 or "", "You cast (.+)%.")
 
-            if totemName=="地缚图腾" or totemName=="Earthbind Totem" then
+            if totemName=="地缚图腾" then
                 EarthTotemDuration = 45
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "地缚图腾"
-            elseif totemName=="石爪图腾" or totemName=="Stoneclaw Totem" then
+            elseif totemName=="石爪图腾" then
                 EarthTotemDuration = 15
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "石爪图腾"
-            elseif totemName=="大地之力图腾" or totemName=="Strength of Earth Totem" then
+            elseif totemName=="大地之力图腾" then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "大地之力图腾"
-            elseif totemName=="石肤图腾" or totemName=="Stoneskin Totem" then
+            elseif totemName=="石肤图腾" then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "石肤图腾"
-            elseif totemName=="战栗图腾" or totemName=="Tremor Totem" then
+            elseif totemName=="战栗图腾" then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "战栗图腾"
 
-            elseif totemName=="火焰新星图腾" or totemName=="Fire Nova Totem" then
+            elseif totemName=="火焰新星图腾" then
                 FireTotemDuration = 5
                 FireTotemTimer = GetTime()
                 FireTotemName = "火焰新星图腾"
 
-            elseif totemName=="灼热图腾" or totemName=="Searing Totem" then
+            elseif totemName=="灼热图腾" then
                 FireTotemDuration = 55
                 FireTotemTimer = GetTime()
                 FireTotemName = "灼热图腾"
 
-            elseif totemName=="熔岩图腾" or totemName=="Magma Totem" then
+            elseif totemName=="熔岩图腾" then
                 FireTotemDuration = 20
                 FireTotemTimer = GetTime()
                 FireTotemName = "熔岩图腾"
 
-            elseif totemName=="抗寒图腾" or totemName=="Frost Resistance Totem" then
+            elseif totemName=="抗寒图腾" then
                 FireTotemDuration = 120
                 FireTotemTimer = GetTime()
                 FireTotemName = "抗寒图腾"
 
-            elseif totemName=="火舌图腾" or totemName=="Flametongue Totem" then
+            elseif totemName=="火舌图腾" then
                 FireTotemDuration = 120
                 FireTotemTimer = GetTime()
                 FireTotemName = "火舌图腾"
 
-            elseif totemName=="抗火图腾" or totemName=="Fire Resistance Totem" then
+            elseif totemName=="抗火图腾" then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "抗火图腾"
 
-            elseif totemName=="治疗之泉图腾" or totemName=="Healing Stream Totem" then
+            elseif totemName=="治疗之泉图腾" then
                 WaterTotemDuration = 60
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "治疗之泉图腾"
 
-            elseif totemName=="法力之泉图腾" or totemName=="Mana Spring Totem" then
+            elseif totemName=="法力之泉图腾" then
                 WaterTotemDuration = 60
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "法力之泉图腾"
 
-            elseif totemName=="清毒图腾" or totemName=="Poison Cleansing Totem" then
+            elseif totemName=="清毒图腾" then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "清毒图腾"
 
-            elseif totemName=="祛病图腾" or totemName=="Disease Cleansing Totem" then
+            elseif totemName=="祛病图腾" then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "祛病图腾"
 
-            elseif totemName=="岗哨图腾" or totemName=="Sentry Totem" then
+            elseif totemName=="岗哨图腾" then
                 AirTotemDuration = 300
                 AirTotemTimer = GetTime()
                 AirTotemName = "岗哨图腾"
 
-            elseif totemName=="根基图腾" or totemName=="Grounding Totem" then
+            elseif totemName=="根基图腾" then
                 AirTotemDuration = 45
                 AirTotemTimer = GetTime()
                 AirTotemName = "根基图腾"
 
-            elseif totemName=="自然抗性图腾" or totemName=="Nature Resistance Totem" then
+            elseif totemName=="自然抗性图腾" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "自然抗性图腾"
 
-            elseif totemName=="风之优雅图腾" or totemName=="Grace of Air Totem" then
+            elseif totemName=="风之优雅图腾" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风之优雅图腾"
 
-            elseif totemName=="风墙图腾" or totemName=="Windwall Totem" then
+            elseif totemName=="风墙图腾" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风墙图腾"
 
-            elseif totemName=="风怒图腾" or totemName=="Windfury Totem" then
+            elseif totemName=="风怒图腾" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风怒图腾"
 
-            elseif totemName=="宁静之风图腾" or totemName=="Tranquil Air Totem" then
+            elseif totemName=="宁静之风图腾" then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "宁静之风图腾"
@@ -271,6 +285,10 @@ local function OnEvent()
                     WaterTotemTimer = 0
                     AirTotemTimer = 0
 
+                    EarthTotemName = nil
+                    FireTotemName = nil
+                    WaterTotemName = nil
+                    AirTotemName = nil
 
                 ----------------
                 -- 大地图腾
@@ -281,30 +299,35 @@ local function OnEvent()
                     EarthTotemDuration = 45
                     EarthTotemTimer = GetTime()
                     EarthTotemName = "地缚图腾"
+                    EarthTotemX,EarthTotemY = UnitPosition("player")
 
                 -- 石爪图腾
                 elseif arg4 == 5730 or arg4==6390 or arg4==6391 or arg4==6392 or arg4==10427 or arg4==10428 then
                     EarthTotemDuration = 15
                     EarthTotemTimer = GetTime()
                     EarthTotemName = "石爪图腾"
+                    EarthTotemX,EarthTotemY = UnitPosition("player")
 
                 -- 大地之力图腾
                 elseif arg4 == 8075 or arg4==8160 or arg4==8161 or arg4==10442 or arg4==25361 then
                     EarthTotemDuration = 120
                     EarthTotemTimer = GetTime()
                     EarthTotemName = "大地之力图腾"
+                    EarthTotemX,EarthTotemY = UnitPosition("player")
 
                 -- 石肤图腾
                 elseif arg4 == 8071 or arg4==8154 or arg4==8155 or arg4==10406 or arg4==10407 or arg4==10408 then
                     EarthTotemDuration = 120
                     EarthTotemTimer = GetTime()
                     EarthTotemName = "石肤图腾"
+                    EarthTotemX,EarthTotemY = UnitPosition("player")
 
                 -- 战栗图腾
                 elseif arg4 == 8143 then
                     EarthTotemDuration = 120
                     EarthTotemTimer = GetTime()
                     EarthTotemName = "战栗图腾"
+                    EarthTotemX,EarthTotemY = UnitPosition("player")
 
                 ----------------
                 -- 火焰图腾
@@ -315,54 +338,65 @@ local function OnEvent()
                     FireTotemDuration = 5
                     FireTotemTimer = GetTime()
                     FireTotemName = "火焰新星图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 -- 灼热图腾
                 elseif arg4==3599 then-- arg4==6363 or arg4==6364 or arg4==6365 or arg4==10437 or arg4==10438 then
                     FireTotemDuration = 30
                     FireTotemTimer = GetTime()
                     FireTotemName = "灼热图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 elseif arg4==6363 then--  arg4==6364 or arg4==6365 or arg4==10437 or arg4==10438 then
                     FireTotemDuration = 35
                     FireTotemTimer = GetTime()
                     FireTotemName = "灼热图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 elseif arg4==6364 then--   arg4==6365 or arg4==10437 or arg4==10438 then
                     FireTotemDuration = 40
                     FireTotemTimer = GetTime()
                     FireTotemName = "灼热图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 elseif arg4==6365 then--   arg4==10437 or arg4==10438 then
                     FireTotemDuration = 45
                     FireTotemTimer = GetTime()
                     FireTotemName = "灼热图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
+
                 elseif arg4==10437 then--   arg4==10438 then
                     FireTotemDuration = 50
                     FireTotemTimer = GetTime()
                     FireTotemName = "灼热图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 elseif arg4==10438 then
                     FireTotemDuration = 55
                     FireTotemTimer = GetTime()
                     FireTotemName = "灼热图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 -- 熔岩图腾
                 elseif arg4==8190 or arg4==10585 or arg4==10586 or arg4==10587 then
                     FireTotemDuration = 20
                     FireTotemTimer = GetTime()
                     FireTotemName = "熔岩图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 -- 抗寒图腾
                 elseif arg4==8181 or arg4==10478 or arg4==10479 then
                     FireTotemDuration = 120
                     FireTotemTimer = GetTime()
                     FireTotemName = "抗寒图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
                 -- 火舌图腾
                 elseif arg4==8227 or arg4==8249 or arg4==10526 or arg4==16387 then
                     FireTotemDuration = 120
                     FireTotemTimer = GetTime()
                     FireTotemName = "火舌图腾"
+                    FireTotemX,FireTotemY = UnitPosition("player")
 
 
 
@@ -375,30 +409,35 @@ local function OnEvent()
                     WaterTotemDuration = 120
                     WaterTotemTimer = GetTime()
                     WaterTotemName = "抗火图腾"
+                    WaterTotemX,WaterTotemY = UnitPosition("player")
 
                 -- 治疗之泉图腾
                 elseif arg4==5394 or arg4==6375 or arg4==6377 or arg4==10462 or arg4==10463 then
                     WaterTotemDuration = 60
                     WaterTotemTimer = GetTime()
                     WaterTotemName = "治疗之泉图腾"
+                    WaterTotemX,WaterTotemY = UnitPosition("player")
 
                 -- 法力之泉图腾
                 elseif arg4==5675 or arg4==10495 or arg4==10496 or arg4==10497 then
                     WaterTotemDuration = 60
                     WaterTotemTimer = GetTime()
                     WaterTotemName = "法力之泉图腾"
+                    WaterTotemX,WaterTotemY = UnitPosition("player")
 
                 -- 清毒图腾
                 elseif arg4==8166 then
                     WaterTotemDuration = 120
                     WaterTotemTimer = GetTime()
                     WaterTotemName = "清毒图腾"
+                    WaterTotemX,WaterTotemY = UnitPosition("player")
 
                 -- 祛病图腾
                 elseif arg4==8170 then
                     WaterTotemDuration = 120
                     WaterTotemTimer = GetTime()
                     WaterTotemName = "祛病图腾"
+                    WaterTotemX,WaterTotemY = UnitPosition("player")
 
                 ----------------
                 -- 空气图腾
@@ -409,42 +448,49 @@ local function OnEvent()
                     AirTotemDuration = 300
                     AirTotemTimer = GetTime()
                     AirTotemName = "岗哨图腾"
+                    AirTotemX,AirTotemY = UnitPosition("player")
 
                 -- 根基图腾
                 elseif arg4 == 8177 then
                     AirTotemDuration = 45
                     AirTotemTimer = GetTime()
                     AirTotemName = "根基图腾"
+                    AirTotemX,AirTotemY = UnitPosition("player")
 
                 -- 自然抗性图腾
                 elseif arg4==10595 or arg4==10600 or arg4==10601 then
                     AirTotemDuration = 120
                     AirTotemTimer = GetTime()
                     AirTotemName = "自然抗性图腾"
+                    AirTotemX,AirTotemY = UnitPosition("player")
 
                 -- 风之优雅图腾
                 elseif arg4==8835 or arg4==10627 or arg4==25359 then
                     AirTotemDuration = 120
                     AirTotemTimer = GetTime()
                     AirTotemName = "风之优雅图腾"
+                    AirTotemX,AirTotemY = UnitPosition("player")
 
                 -- 风墙图腾
                 elseif arg4==15107 or arg4==15111 or arg4==15112 then
                     AirTotemDuration = 120
                     AirTotemTimer = GetTime()
                     AirTotemName = "风墙图腾"
+                    AirTotemX,AirTotemY = UnitPosition("player")
 
                 -- 风怒图腾
                 elseif arg4==8512 then
                     AirTotemDuration = 120
                     AirTotemTimer = GetTime()
                     AirTotemName = "风怒图腾"
+                    AirTotemX,AirTotemY = UnitPosition("player")
 
                 -- 宁静之风图腾
                 elseif arg4==25908 then
                     AirTotemDuration = 120
                     AirTotemTimer = GetTime()
                     AirTotemName = "宁静之风图腾"
+                    AirTotemX,AirTotemY = UnitPosition("player")
 
 
                 -- 烈焰震击
@@ -505,8 +551,75 @@ local function OnEvent()
 
 end
 
+
+local nameframe_interval = 0.2  -- 轮询间隔（秒）
+local nameframe_elapsed = 0
+
+
+local TotemTooltip = CreateFrame("GameTooltip", "Cat2TotemTooltip", UIParent, "GameTooltipTemplate")
+
+local function PushTotem(inGUID)
+
+    -- 校验参数
+    if not inGUID or not UnitExists(inGUID) then
+        return
+    end
+
+    -- 合法性
+    if UnitCanAttack("player", inGUID) or UnitIsDead(inGUID) then
+        return
+    end
+
+    SetMouseoverUnit(inGUID)
+    TotemTooltip:SetOwner(UIParent, "ANCHOR_NONE") -- 隐藏锚点
+	TotemTooltip:ClearLines()
+    TotemTooltip:SetUnit("mouseover")
+    --TotemTooltip:SetUnit(inGUID)
+
+    for i = 1, TotemTooltip:NumLines() do
+        local leftLine = _G["Cat2TotemTooltipTextLeft"..i] 
+
+        local leftText = leftLine and leftLine:GetText()
+
+            print(leftText)
+
+    end
+end
+
+local function NameFramePollingFunction()
+
+    if not Cat2.SuperWoW then
+        return
+    end
+
+    -- 收集NamePlate
+    local childs = { WorldFrame:GetChildren() }
+    local parentcount = WorldFrame:GetNumChildren()
+	for i=1, parentcount do
+		plate = childs[i]
+		if plate:GetObjectType() ~= NAMEPLATE_FRAMETYPE then 
+            if plate:GetName(1) then
+                PushTotem(plate:GetName(1))
+			end
+		end
+	end
+
+end
+
+local function OnUpdate()
+
+    nameframe_elapsed = nameframe_elapsed + arg1
+    if nameframe_elapsed >= nameframe_interval then
+        nameframe_elapsed = 0  -- 重置计时器
+        --NameFramePollingFunction()
+    end
+
+end
+
+
 -- 设置事件处理函数
 frame:SetScript("OnEvent", OnEvent)
+--frame:SetScript("OnUpdate", OnUpdate)
 
 
 function Cat2.EarthTotem()
@@ -664,6 +777,74 @@ end
 function Cat2.GetBeginLavaBurstCastTimer()
     return BeginLavaBurstCastTimer
 end
+
+
+
+function Cat2.EarthTotemOutside()
+
+    if not EarthTotemName then
+        return 0
+    end
+
+    local px, py, pz = UnitPosition("player")
+
+    local dx = EarthTotemX - px
+    local dy = EarthTotemY - py
+
+    local positionDistance = math.sqrt(dx * dx + dy * dy)
+
+    return positionDistance-3
+end
+
+function Cat2.FireTotemOutside()
+
+    if not FireTotemName then
+        return 0
+    end
+
+    local px, py, pz = UnitPosition("player")
+
+    local dx = FireTotemX - px
+    local dy = FireTotemY - py
+
+    local positionDistance = math.sqrt(dx * dx + dy * dy)
+
+    return positionDistance-3
+end
+
+function Cat2.WaterTotemOutside()
+
+    if not WaterTotemName then
+        return 0
+    end
+
+    local px, py, pz = UnitPosition("player")
+
+    local dx = WaterTotemX - px
+    local dy = WaterTotemY - py
+
+    local positionDistance = math.sqrt(dx * dx + dy * dy)
+
+    return positionDistance-3
+end
+
+function Cat2.AirTotemOutside()
+
+    if not AirTotemName then
+        return 0
+    end
+
+    local px, py, pz = UnitPosition("player")
+
+    local dx = AirTotemX - px
+    local dy = AirTotemY - py
+
+    local positionDistance = math.sqrt(dx * dx + dy * dy)
+
+    return positionDistance-3
+end
+
+
 
 
 

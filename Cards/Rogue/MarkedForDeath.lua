@@ -20,6 +20,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Creature_Cursed_02",
     },
+    cooldown = {
+        type = "spell",
+        name = "死亡标记",
+    },
 }
 
 local allowUse = 0
@@ -45,7 +49,7 @@ function card.Execute(context)
     end
 
     if player.power>=40 and Cat2.SpellReady("死亡标记") and not player.buff["利用弱点"] and Cat2.TargetDistance() then
-        CastSpellByName("死亡标记")
+        Cat2.Cast("死亡标记")
     end
 
     return false

@@ -21,7 +21,7 @@ end
 function card.Execute(context)
 
     if not string.find(Cat2.GetShamanEnchantName(),"石化武器") then
-        CastSpellByName("石化武器")
+        Cat2.Cast("石化武器")
         return true
     end
 

@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Shadow_AntiShadow",
     },
+    cooldown = {
+        type = "spell",
+        name = "伺机待发",
+    },
 }
 
 local allowUse = 0
@@ -40,7 +44,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("伺机待发") and not Cat2.SpellReady("死亡标记") and not player.buff["利用弱点"] then
-        CastSpellByName("伺机待发")
+        Cat2.Cast("伺机待发")
         return true
     end
 

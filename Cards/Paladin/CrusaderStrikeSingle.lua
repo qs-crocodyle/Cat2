@@ -13,6 +13,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Holy_CrusaderStrike",
     },
+    cooldown = {
+        type = "spell",
+        name = "十字军打击",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -26,7 +30,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("十字军打击") and Cat2.TargetDistance() then
-        CastSpellByName("十字军打击")
+        Cat2.Cast("十字军打击")
         return true
     end
 

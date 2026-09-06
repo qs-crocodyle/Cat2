@@ -45,11 +45,11 @@ function card.Execute(context)
 
     if Cat2.SpellReady("野蛮撕咬") then
         if player.power>=swipePower+30 then
-            CastSpellByName("挥击")
+            Cat2.Cast("挥击")
         end
     else
         if player.power>=swipePower then
-            CastSpellByName("挥击")
+            Cat2.Cast("挥击")
         end
     end
 

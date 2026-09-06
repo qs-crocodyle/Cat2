@@ -2,8 +2,8 @@
 local card = {
     id = "rogue_adrenaline_rush",
     name = "冲动",
-    description = "技能冷却后，能量<40时施放冲动",
-    details = "技能冷却后，能量<40时施放冲动。需要存在有效目标。会检查目标距离。会检查当前资源。仅在技能可用时尝试执行。",
+    description = "技能冷却后，能量低于|cff6bc7e0{energyThreshold}|r时施放冲动",
+    details = "技能冷却后，能量低于卡片设定值时施放冲动。需要存在有效目标。会检查目标距离。会检查当前资源。仅在技能可用时尝试执行。",
     sort = 90,
     category = "class",
     classes = {
@@ -11,6 +11,21 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Spell_Shadow_ShadowWordDominate",
+    },
+    cooldown = {
+        type = "spell",
+        name = "冲动",
+    },
+    optionSchema = {
+        {
+            key = "energyThreshold",
+            type = "number",
+            label = "触发能量",
+            shortLabel = "能",
+            default = 40,
+            minimum = 1,
+            maximum = 99,
+        },
     },
 }
 
@@ -20,9 +35,10 @@ function card.RefreshRuntimeData()
     allowUse = Cat2.IsTalentLearned(2,18)
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local energyThreshold = context:GetStepOption(step, "energyThreshold") or 40
 
     if not player.targetExists then
         return false
@@ -34,8 +50,8 @@ function card.Execute(context)
         return false
     end
 
-    if player.power<40 and Cat2.SpellReady("冲动") and Cat2.TargetDistance() then
-        CastSpellByName("冲动")
+    if player.power < energyThreshold and Cat2.SpellReady("冲动") and Cat2.TargetDistance() then
+        Cat2.Cast("冲动")
     end
 
     return false

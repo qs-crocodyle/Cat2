@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Warrior_Revenge",
     },
+    cooldown = {
+        type = "spell",
+        name = "复仇",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -26,12 +30,12 @@ function card.Execute(context)
         return false
     end
 
-    if not Cat2.SetShape("防御姿态") then
+    if not Cat2.GetShapeByName("防御姿态") then
         return false
     end
 
     if player.power>=5 and Cat2.SpellReadyOffset("复仇",1.5) and Cat2.WarriorCounterAttack() then
-        CastSpellByName("复仇")
+        Cat2.Cast("复仇")
         return true
     end
 

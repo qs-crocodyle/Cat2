@@ -3,8 +3,9 @@
 -- 不写入函数、技能名称和描述；导入端后续只需按卡片 ID 从注册中心恢复运行时信息。
 Cat2 = Cat2 or {}
 
-local exportPrefix = "CAT2:3:"
-local legacyExportPrefix = "CAT2:2:"
+local exportPrefix = "CAT2:4:"
+local legacyExportPrefix3 = "CAT2:3:"
+local legacyExportPrefix2 = "CAT2:2:"
 local base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 local base64Lookup = nil
 
@@ -29,6 +30,56 @@ local function PackUnsigned32(value)
     local byte3 = math.floor(value / 256)
     local byte4 = value - byte3 * 256
     return string.char(byte1, byte2, byte3, byte4)
+end
+
+local function SerializeOptionValues(values)
+    if type(values) ~= "table" then
+        return string.char(0)
+    end
+    local keys = {}
+    for optionKey, value in pairs(values) do
+        local valueType = type(value)
+        if type(optionKey) == "string" and string.len(optionKey) <= 63 and
+            (valueType == "number" or valueType == "boolean" or valueType == "string") then
+            table.insert(keys, optionKey)
+        end
+    end
+    table.sort(keys)
+    local optionTotal = table.getn(keys)
+    if optionTotal > 16 then
+        return nil, "卡片参数数量超出导出限制"
+    end
+    local output = { string.char(optionTotal) }
+    local optionIndex = 1
+    while optionIndex <= optionTotal do
+        local optionKey = keys[optionIndex]
+        local value = values[optionKey]
+        local valueType = type(value)
+        table.insert(output, string.char(string.len(optionKey)))
+        table.insert(output, optionKey)
+        if valueType == "number" then
+            local textValue = tostring(value)
+            if value ~= value or string.len(textValue) > 32 then
+                return nil, "卡片数字参数无效"
+            end
+            table.insert(output, string.char(1))
+            table.insert(output, string.char(string.len(textValue)))
+            table.insert(output, textValue)
+        elseif valueType == "boolean" then
+            table.insert(output, string.char(2))
+            table.insert(output, string.char(value and 1 or 0))
+        else
+            local packedLength = PackUnsigned16(string.len(value))
+            if not packedLength or string.len(value) > 255 then
+                return nil, "卡片文本参数超出导出限制"
+            end
+            table.insert(output, string.char(3))
+            table.insert(output, packedLength)
+            table.insert(output, value)
+        end
+        optionIndex = optionIndex + 1
+    end
+    return table.concat(output)
 end
 
 -- Adler-32 用于后续导入时识别复制不完整或文本被修改的情况。
@@ -91,7 +142,7 @@ local function SerializeProfile(profile, classFile)
 
     local output = {
         "C2",
-        string.char(3),
+        string.char(4),
         packedClassLength,
         classFile,
         packedProfileNameLength,
@@ -118,6 +169,11 @@ local function SerializeProfile(profile, classFile)
         table.insert(output, packedIdLength)
         table.insert(output, step.id)
         table.insert(output, string.char(flags))
+        local packedOptions, optionError = SerializeOptionValues(step.optionValues)
+        if not packedOptions then
+            return nil, optionError
+        end
+        table.insert(output, packedOptions)
         stepIndex = stepIndex + 1
     end
     return table.concat(output)
@@ -409,7 +465,7 @@ local function DeserializeProfile(data)
         return nil, "配置版本不受支持"
     end
     local formatVersion = ReadByte()
-    if formatVersion ~= 2 and formatVersion ~= 3 then
+    if formatVersion ~= 2 and formatVersion ~= 3 and formatVersion ~= 4 then
         return nil, "配置版本不受支持"
     end
     local classLength = ReadUnsigned16()
@@ -443,10 +499,52 @@ local function DeserializeProfile(data)
         if not cardId or cardId == "" or string.len(cardId) > 255 or not flags or flags > 3 then
             return nil, "卡片配置数据无效"
         end
+        local optionValues = {}
+        if formatVersion >= 4 then
+            local optionTotal = ReadByte()
+            if not optionTotal or optionTotal > 16 then
+                return nil, "卡片参数数据无效"
+            end
+            local optionIndex = 1
+            while optionIndex <= optionTotal do
+                local keyLength = ReadByte()
+                local optionKey = keyLength and ReadString(keyLength) or nil
+                local valueType = ReadByte()
+                if not optionKey or optionKey == "" or not valueType then
+                    return nil, "卡片参数数据不完整"
+                end
+                if valueType == 1 then
+                    local valueLength = ReadByte()
+                    local textValue = valueLength and ReadString(valueLength) or nil
+                    local numericValue = textValue and tonumber(textValue) or nil
+                    if not numericValue then
+                        return nil, "卡片数字参数无效"
+                    end
+                    optionValues[optionKey] = numericValue
+                elseif valueType == 2 then
+                    local booleanValue = ReadByte()
+                    if booleanValue ~= 0 and booleanValue ~= 1 then
+                        return nil, "卡片开关参数无效"
+                    end
+                    optionValues[optionKey] = booleanValue == 1
+                elseif valueType == 3 then
+                    local valueLength = ReadUnsigned16()
+                    local textValue = valueLength and ReadString(valueLength) or nil
+                    if not textValue or valueLength > 255 then
+                        return nil, "卡片文本参数无效"
+                    end
+                    optionValues[optionKey] = textValue
+                else
+                    return nil, "卡片参数类型不受支持"
+                end
+                optionIndex = optionIndex + 1
+            end
+        end
         table.insert(steps, {
             id = cardId,
             enabled = Remainder(flags, 2) == 1 and 1 or 0,
-            minimizedVisible = flags >= 2 and 1 or 0
+            minimizedVisible = flags >= 2 and 1 or 0,
+            optionValues = optionValues
         })
         stepIndex = stepIndex + 1
     end
@@ -473,8 +571,10 @@ function Cat2.ImportConfigurationText(text)
     local matchedPrefix = nil
     if string.sub(cleaned, 1, string.len(exportPrefix)) == exportPrefix then
         matchedPrefix = exportPrefix
-    elseif string.sub(cleaned, 1, string.len(legacyExportPrefix)) == legacyExportPrefix then
-        matchedPrefix = legacyExportPrefix
+    elseif string.sub(cleaned, 1, string.len(legacyExportPrefix3)) == legacyExportPrefix3 then
+        matchedPrefix = legacyExportPrefix3
+    elseif string.sub(cleaned, 1, string.len(legacyExportPrefix2)) == legacyExportPrefix2 then
+        matchedPrefix = legacyExportPrefix2
     end
     if not matchedPrefix then
         return nil, "这不是 Cat2 配置文本，或配置版本不受支持"

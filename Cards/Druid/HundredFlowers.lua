@@ -9,7 +9,7 @@ local card = {
     -- 预留给后续详情面板或 Tooltip 的完整功能说明。
     details = "树形态下，允许连续覆盖愈合。作为被动规则，启用时影响当前流程。",
     -- 同一分类内按升序排列；建议留出间隙以便新增卡片。
-    sort = 459,
+    sort = 221,
     behavior = "passive",
     unique = true,
     -- 仅能是 common、item、class 三种分类之一。

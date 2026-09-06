@@ -26,13 +26,13 @@ function card.Execute(context)
         return false
     end
 
-    if Cat2.SetShape("狂暴姿态") then
+    if Cat2.GetShapeByName("狂暴姿态") then
         return false
     end
 
 
     if player.power>=10 and not Cat2.WarriorRend() then
-        CastSpellByName("撕裂")
+        Cat2.Cast("撕裂")
         return true
     end
 

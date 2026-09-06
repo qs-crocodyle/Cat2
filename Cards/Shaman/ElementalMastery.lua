@@ -12,6 +12,7 @@ local card = {
     icons = {
         "Interface\\Icons\\Spell_Nature_WispHeal",
     },
+    cooldown = { type = "spell", name = "元素掌握" },
 }
 
 local allowUse = 0
@@ -35,7 +36,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("元素掌握") then
-        CastSpellByName("元素掌握")
+        Cat2.Cast("元素掌握")
     end
 
     return false

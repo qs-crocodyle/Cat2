@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_ThunderBolt",
     },
+    cooldown = {
+        type = "spell",
+        name = "震荡猛击",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -27,7 +31,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("震荡猛击") then
-        CastSpellByName("震荡猛击")
+        Cat2.Cast("震荡猛击")
         return true
     end
 

@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Hunter_RunningShot",
     },
+    cooldown = {
+        type = "spell",
+        name = "急速射击",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -27,7 +31,7 @@ function card.Execute(context)
 
 
     if Cat2.SpellReady("急速射击") and player.inCombat then
-        CastSpellByName("急速射击")
+        Cat2.Cast("急速射击")
     end
 
     return false

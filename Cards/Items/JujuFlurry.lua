@@ -9,6 +9,10 @@ local card = {
     icons = {
         "Interface\\Icons\\INV_Misc_MonsterScales_17",
     },
+    cooldown = {
+        type = "item",
+        name = "魂能之速",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -28,6 +32,11 @@ function card.Execute(context)
         if not Cat2.IsBossTarget() then
             return false
         end
+    end
+
+    local melee = context and context.parameters and context.parameters.burstOnlyMelee
+    if melee and not Cat2.TargetDistance() then
+        return false
     end
 
     if player.inCombat then

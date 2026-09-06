@@ -2,8 +2,8 @@
 local card = {
     id = "shaman_lesser_healing_wave",
     name = "次级治疗波",
-    description = "根据|cffb87ff0[被动卡]|r规则，自适配等级施放次级治疗波",
-    details = "根据|cffb87ff0[被动卡]|r规则，自适配等级施放次级治疗波。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。",
+    description = "根据|cffb87ff0[被动卡]|r规则，血量<|cff6bc7e0{triggerPercent}%|r时自适配等级施放",
+    details = "根据|cffb87ff0[被动卡]|r规则，血量低于卡片设定值时，在设定等级区间内自适配等级施放次级治疗波。默认触发血量为99%。需要存在有效目标。仅对可攻击目标生效。会检查相关生命值。",
     sort = 20,
     category = "class",
     classes = {
@@ -11,6 +11,43 @@ local card = {
     },
     icons = {
         "Interface\\Icons\\Spell_Nature_HealingWaveLesser",
+    },
+    castProfile = {
+        spellNames = {
+            "次级治疗波",
+        },
+        tags = {
+            healing = true,
+            singleTarget = true,
+            fullHealthCancelable = true,
+        },
+    },
+    optionSchema = {
+        {
+            key = "triggerPercent",
+            type = "number",
+            label = "触发血量",
+            unit = "%",
+            default = 99,
+            minimum = 1,
+            maximum = 99,
+        },
+        {
+            key = "minimumRank",
+            type = "number",
+            label = "最小等级",
+            default = 1,
+            minimum = 1,
+            maximum = 6,
+        },
+        {
+            key = "maximumRank",
+            type = "number",
+            label = "最大等级",
+            default = 6,
+            minimum = 1,
+            maximum = 6,
+        },
     },
 }
 
@@ -41,7 +78,7 @@ end
 
 local HealTargetDelay = {}
 
-function card.Health(unit, member, context)
+function card.Health(unit, member, context, triggerPercent, minimumRank, maximumRank)
     if not unit then
         return false
     end
@@ -61,6 +98,10 @@ function card.Health(unit, member, context)
     end
 
     local healthDeficit = maxHealth-health
+    local percentHealth = health / maxHealth * 100
+    if percentHealth >= triggerPercent then
+        return false
+    end
     if healthDeficit < 10 then
         return false
     end
@@ -93,23 +134,35 @@ function card.Health(unit, member, context)
     end
 
     if ShamanLesserHealingWaveMaxLevel>0 then
-        for i = ShamanLesserHealingWaveMaxLevel, 1, -1 do
-            if ShamanLesserHealingWaveEffect[i] < healthDeficit then
-                if Cat2.PlayerInformation.temporary.mana >= ShamanLesserHealingWave[i] then
-                    return Cat2.CastSpellWithoutTarget("次级治疗波(等级 "..i..")", unit, 1)
-                end
-                return Cat2.CastSpellWithoutTarget("次级治疗波(等级 1)", unit, 1)
+        for i = maximumRank, minimumRank, -1 do
+            if ShamanLesserHealingWaveEffect[i] < healthDeficit and Cat2.PlayerInformation.temporary.mana >= ShamanLesserHealingWave[i] then
+                return Cat2.CastSpellWithoutTarget("次级治疗波(等级 "..i..")", unit, 1)
             end
         end
-        return Cat2.CastSpellWithoutTarget("次级治疗波(等级 1)", unit, 1)
+        if Cat2.PlayerInformation.temporary.mana >= ShamanLesserHealingWave[minimumRank] then
+            return Cat2.CastSpellWithoutTarget("次级治疗波(等级 "..minimumRank..")", unit, 1)
+        end
     end
 
     return false
 end
 
-function card.Execute(context)
+function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
+    local triggerPercent = context:GetStepOption(step, "triggerPercent") or 99
+    local minimumRank = context:GetStepOption(step, "minimumRank") or 1
+    local maximumRank = context:GetStepOption(step, "maximumRank") or 6
+
+    if maximumRank > ShamanLesserHealingWaveMaxLevel then
+        maximumRank = ShamanLesserHealingWaveMaxLevel
+    end
+    if minimumRank > ShamanLesserHealingWaveMaxLevel then
+        minimumRank = ShamanLesserHealingWaveMaxLevel
+    end
+    if minimumRank > maximumRank then
+        minimumRank, maximumRank = maximumRank, minimumRank
+    end
 
     if player.gcd > 0.2 then
         return false
@@ -125,22 +178,22 @@ function card.Execute(context)
     and not context:IsCardActive("shared_healing_target") 
     and not context:IsCardActive("shared_healing_self") 
     and not context:IsCardActive("shared_healing_party") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r")
+        DEFAULT_CHAT_FRAME:AddMessage(Cat2.L("|cffffb347治疗技能缺少 |cffb87ff0[治疗指向]|r |cffffb347的被动卡|r"))
         return false
     end
 
     local targetFirst = context and context.parameters and context.parameters.HealingTarget
-    if targetFirst and player.targetExists and card.Health("target") then
+    if targetFirst and player.targetExists and card.Health("target", nil, context, triggerPercent, minimumRank, maximumRank) then
         return
     end
 
     local targetTarget = context and context.parameters and context.parameters.HealingTargetTarget
-    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget") then
+    if targetTarget and player.targetExists and UnitExists("targettarget") and card.Health("targettarget", nil, context, triggerPercent, minimumRank, maximumRank) then
         return
     end
 
     local selfFirst = context and context.parameters and context.parameters.HealingSelf
-    if selfFirst and card.Health("player") then
+    if selfFirst and card.Health("player", nil, context, triggerPercent, minimumRank, maximumRank) then
         return
     end
 
@@ -148,7 +201,7 @@ function card.Execute(context)
     if partyFirst then
         local sortedMembers = context:GetTeamMembers("party", "health")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return
             end
         end
@@ -159,7 +212,7 @@ function card.Execute(context)
     if RandomScanTeam then
         local sortedMembers = context:GetTeamMembers("group", "random")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return
             end
         end
@@ -170,7 +223,7 @@ function card.Execute(context)
     if ScanTeam then
         local sortedMembers = context:GetTeamMembers("group", "health")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return
             end
         end
@@ -181,7 +234,7 @@ function card.Execute(context)
     if TankFirst then
         local sortedMembers = context:GetTeamMembers("group", "maxHealth")
         for i, member in ipairs(sortedMembers) do
-            if card.Health(member.unit, member, context) then
+            if card.Health(member.unit, member, context, triggerPercent, minimumRank, maximumRank) then
                 return
             end
         end

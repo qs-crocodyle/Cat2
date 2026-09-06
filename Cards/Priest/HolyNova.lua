@@ -23,7 +23,7 @@ function card.Execute(context)
     local nearby = Cat2.ScanNearbyEnemies(8)
 
     if nearby>=3 then
-        CastSpellByName("神圣新星")
+        Cat2.Cast("神圣新星")
         return true
     end
 

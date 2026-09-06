@@ -12,6 +12,10 @@ local card = {
     icons = {
         "Interface\\Icons\\Ability_Rogue_Sprint",
     },
+    cooldown = {
+        type = "spell",
+        name = "拦截",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -26,7 +30,7 @@ function card.Execute(context)
         return false
     end
 
-    if not Cat2.SetShape("狂暴姿态") then
+    if not Cat2.GetShapeByName("狂暴姿态") then
         return false
     end
 
@@ -37,7 +41,7 @@ function card.Execute(context)
 
 
     if player.power>=10 and Cat2.SpellReady("拦截") then
-        CastSpellByName("拦截")
+        Cat2.Cast("拦截")
         return true
     end
 

@@ -13,6 +13,10 @@ local card = {
     icons = {
         "Interface\\Icons\\INV_Sword_01",
     },
+    cooldown = {
+        type = "spell",
+        name = "神圣打击",
+    },
 }
 
 function card.RefreshRuntimeData()
@@ -26,7 +30,7 @@ function card.Execute(context)
     end
 
     if Cat2.SpellReady("神圣打击") and Cat2.TargetDistance() then
-        CastSpellByName("神圣打击")
+        Cat2.Cast("神圣打击")
         return true
     end
 
