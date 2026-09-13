@@ -21,7 +21,7 @@ local function CardSupportsCurrentPlayer(card)
     if not card then
         return false
     end
-    if card.category == "common" or card.category == "item" then
+    if card.category == "common" or card.category == "logic" or card.category == "item" then
         return true
     end
 

@@ -42,7 +42,7 @@ local function CardSupportsCurrentPlayer(card)
     if not card then
         return false
     end
-    if card.category == "common" or card.category == "item" then
+    if card.category == "common" or card.category == "logic" or card.category == "item" then
         return true
     end
     return Cat2.GetCardSpecializationForClass(card, GetPlayerClassFile()) ~= nil
@@ -404,7 +404,7 @@ Cat2.RegisterCastInterruptRule("targetHealthAtLeast", function(castState, rule)
     return false
 end)
 
-monitorFrame:RegisterEvent("UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(monitorFrame, "UNIT_CASTEVENT")
 monitorFrame:SetScript("OnEvent", function()
     if event ~= "UNIT_CASTEVENT" or arg1 ~= GetPlayerGuid() then
         return

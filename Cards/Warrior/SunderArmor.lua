@@ -6,6 +6,7 @@ local card = {
     details = "怒气达到卡片设定值时无限施放破甲攻击，适合作为填充，默认需要30怒气。需要存在有效目标。会检查当前资源。成功执行时会阻断本轮后续卡片。",
     sort = 20,
     category = "class",
+    exclusiveGroup = "warrior_sunder_armor",
     classes = {
         WARRIOR = 3,
     },

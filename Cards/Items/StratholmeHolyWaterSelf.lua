@@ -7,6 +7,7 @@ local card = {
     details = "物品冷却完成时，以自己为投掷位置使用斯坦索姆圣水。需要 UnitXP 202607 以上版本支持；成功执行时会阻断本轮后续卡片。",
     sort = 1001,
     category = "item",
+    exclusiveGroup = "stratholme_holy_water",
     canStopSequence = true,
     icons = {
         "Interface\\Icons\\INV_Potion_75",

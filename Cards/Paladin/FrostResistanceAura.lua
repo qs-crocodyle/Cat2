@@ -6,6 +6,7 @@ local card = {
     details = "切换并保持冰霜抗性光环。",
     sort = 62,
     category = "class",
+    exclusiveGroup = "paladin_aura",
     classes = {
         PALADIN = 2,
     },

@@ -6,6 +6,7 @@ local card = {
     details = "怒气达到卡片设定值时，对目标仅实施一次破甲攻击，默认需要10怒气；需要SuperWoW模组。需要存在有效目标。会检查当前资源。成功执行时会阻断本轮后续卡片。",
     sort = 21,
     category = "class",
+    exclusiveGroup = "warrior_sunder_armor",
     classes = {
         WARRIOR = 3,
     },

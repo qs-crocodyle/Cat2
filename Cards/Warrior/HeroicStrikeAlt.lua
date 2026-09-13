@@ -42,7 +42,8 @@ function card.Execute(context, step)
     end
 
 
-    local nearby = Cat2.ScanNearbyEnemies(7)
+    -- 被动开启时只统计正面敌人，否则保持原来的附近敌人数。
+    local nearby = Cat2.GetEligibleCleaveEnemyCount(context, 7)
 
     local rageThreshold = context:GetStepOption(step, "rageThreshold") or 50
 
@@ -50,6 +51,7 @@ function card.Execute(context, step)
         if nearby>=2 then
             Cat2.Cast("顺劈斩")
         else
+            -- 顺劈条件不足时继续使用英勇打击。
             Cat2.Cast("英勇打击")
         end
     end

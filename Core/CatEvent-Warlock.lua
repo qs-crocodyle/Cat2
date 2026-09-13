@@ -20,11 +20,11 @@ frame:RegisterEvent("SPELLCAST_CHANNEL_UPDATE")
 frame:RegisterEvent("SPELLCAST_CHANNEL_STOP")
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+Cat2.RegisterOptionalEvent(frame, "UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(frame, "RAW_COMBATLOG")
 
 -- Nampower专有事件
-frame:RegisterEvent("SPELL_CHANNEL_START")
+Cat2.RegisterOptionalEvent(frame, "SPELL_CHANNEL_START")
 
 
 
@@ -134,8 +134,8 @@ local function GetNampowerChanneledSpellName()
         return nil
     end
 
-    local success, castInfo = pcall(GetCastInfo)
-    if not success or type(castInfo)~="table" or castInfo.castType~=3 then
+    local castInfo = GetCastInfo()
+    if type(castInfo)~="table" or castInfo.castType~=3 then
         return nil
     end
 
@@ -276,6 +276,7 @@ local function OnEvent()
     -- buff获得
     elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
 
+        -- TODO[SUSPECT] "Release"/"Life Channel"/"Mana Channel" 英文匹配文本未经客户端验证；确认无误后应改走 Cat2.L
         if string.find( arg1, "获得了释放潜力的效果" ) or string.find( arg1 or "", "gain the effect of Release" ) then
             if string.find( arg1, UnitName("player") ) then
                 PotentialTimer = GetTime()
@@ -434,7 +435,7 @@ local function OnEvent()
             --message(arg2)
 
             -- 痛苦诅咒
-            if string.find( arg2, "你的痛苦诅咒被.*抵抗.*" ) or string.find( arg2 or "", "Your Curse of Agony was resisted" ) then
+            if string.find( arg2, "你的痛苦诅咒被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("痛苦诅咒") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and CurseAgonyDelayTime[targetGUID] then 
                     local timer = GetTime() - CurseAgonyDelayTime[targetGUID]
@@ -442,7 +443,7 @@ local function OnEvent()
                         CurseAgonyDelayTime[targetGUID] = nil
                     end
                 end
-            elseif string.find( arg2, "你的腐蚀术被.*抵抗.*" ) or string.find( arg2 or "", "Your Corruption was resisted" ) then
+            elseif string.find( arg2, "你的腐蚀术被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("腐蚀术") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and CorruptionDelayTime[targetGUID] then 
                     local timer = GetTime() - CorruptionDelayTime[targetGUID]
@@ -450,7 +451,7 @@ local function OnEvent()
                         CorruptionDelayTime[targetGUID] = nil
                     end
                 end
-            elseif string.find( arg2, "你的生命虹吸被.*抵抗.*" ) or string.find( arg2 or "", "Your Siphon Life was resisted" ) then
+            elseif string.find( arg2, "你的生命虹吸被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("生命虹吸") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and SiphonLifeDelayTime[targetGUID] then 
                     local timer = GetTime() - SiphonLifeDelayTime[targetGUID]
@@ -458,7 +459,7 @@ local function OnEvent()
                         SiphonLifeDelayTime[targetGUID] = nil
                     end
                 end
-            elseif string.find( arg2, "你的献祭被.*抵抗.*" ) or string.find( arg2 or "", "Your Immolate was resisted" ) then
+            elseif string.find( arg2, "你的献祭被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("献祭") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and ImmolateDelayTime[targetGUID] then 
                     local timer = GetTime() - ImmolateDelayTime[targetGUID]

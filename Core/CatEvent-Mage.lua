@@ -7,7 +7,7 @@ local frame = CreateFrame("Frame")
 
 -- Nampower 结构化事件在不支持它们的客户端中可能不是合法事件，使用保护注册安全降级。
 local function RegisterOptionalEvent(eventName)
-    pcall(frame.RegisterEvent, frame, eventName)
+    Cat2.RegisterOptionalEvent(frame, eventName)
 end
 
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -25,11 +25,12 @@ frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_SELF")
 
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+RegisterOptionalEvent("UNIT_CASTEVENT")
+RegisterOptionalEvent("SPELL_GO_SELF")
+RegisterOptionalEvent("RAW_COMBATLOG")
 
 -- Nampower专有事件
-frame:RegisterEvent("BUFF_REMOVED_SELF")
+RegisterOptionalEvent("BUFF_REMOVED_SELF")
 RegisterOptionalEvent("SPELL_DAMAGE_EVENT_SELF")
 RegisterOptionalEvent("SPELL_DAMAGE_EVENT_OTHER")
 RegisterOptionalEvent("AURA_CAST_ON_OTHER")
@@ -89,13 +90,72 @@ local function GetMageSpellNameByID(spellID)
 end
 
 -- Nampower 4+ 可直接提供当前引导技能 ID，作为无 SuperWoW 时的首选来源。
+-- 三种烈焰风暴落点卡共用状态，只由完成施法事件推进。
+local FlamestrikeAlternationEnabled = false
+local FlamestrikeLastSuccessTime = nil
+local FlamestrikeLastSuccessRank = nil
+local FlamestrikeRequestedRank = nil
+
+function Cat2.GetAlternatingFlamestrikeName(context)
+    local enabled = context and context.parameters
+        and context.parameters.mageFlamestrikeAlternateRanks
+    if not enabled then
+        FlamestrikeAlternationEnabled = false
+        FlamestrikeLastSuccessTime = nil
+        FlamestrikeLastSuccessRank = nil
+        FlamestrikeRequestedRank = nil
+        return "烈焰风暴"
+    end
+    FlamestrikeAlternationEnabled = true
+
+    -- 从技能书选出真正学会的两个最高等级，兼容缺失中间等级的情况。
+    local highest, second = 0, 0
+    local index = 1
+    while true do
+        local name, rankText = GetSpellName(index, "spell")
+        if not name then break end
+        if name == "烈焰风暴" then
+            local _, _, number = string.find(rankText or "", "(%d+)")
+            local rank = tonumber(number) or 1
+            if rank > highest then
+                second, highest = highest, rank
+            elseif rank < highest and rank > second then
+                second = rank
+            end
+        end
+        index = index + 1
+    end
+    local rank = highest
+    if FlamestrikeLastSuccessTime and GetTime() - FlamestrikeLastSuccessTime < 10
+        and FlamestrikeLastSuccessRank == highest and second > 0 then
+        rank = second
+    end
+    FlamestrikeRequestedRank = rank
+    return Cat2.GetRankedSpellName("烈焰风暴", rank) or "烈焰风暴"
+end
+
+local function RecordFlamestrikeSuccess(spellID)
+    if not FlamestrikeAlternationEnabled then return end
+    local name, rankText
+    if type(GetSpellNameAndRankForId) == "function" then
+        name, rankText = GetSpellNameAndRankForId(spellID)
+    end
+    if not name and type(SpellInfo) == "function" then
+        name, rankText = SpellInfo(spellID)
+    end
+    if name ~= "烈焰风暴" then return end
+    local _, _, number = string.find(tostring(rankText or ""), "(%d+)")
+    FlamestrikeLastSuccessRank = tonumber(number) or FlamestrikeRequestedRank
+    FlamestrikeLastSuccessTime = GetTime()
+end
+
 local function GetNampowerMageChanneledSpellName()
     if type(GetCastInfo) ~= "function" then
         return nil
     end
 
-    local success, castInfo = pcall(GetCastInfo)
-    if not success or type(castInfo) ~= "table" or castInfo.castType ~= 3 then
+    local castInfo = GetCastInfo()
+    if type(castInfo) ~= "table" or castInfo.castType ~= 3 then
         return nil
     end
 
@@ -393,7 +453,7 @@ local function OnEvent()
 
     elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
 
-        if string.find( arg1, "你获得了法术连击的效果.*" ) or string.find( arg1 or "", "You gain the effect of Hot Streak" ) then
+        if string.find( arg1, "你获得了法术连击的效果.*" ) or string.find( arg1 or "", "You gain the effect of " .. Cat2.L.Buff("法术连击") ) then
             local number = Cat2.ExtractNumber(arg1) 
             if number then
                 MagePyromaniac = Cat2.ToNumber(number)
@@ -407,6 +467,12 @@ local function OnEvent()
     ---------------------------
 
     -- 施法、攻击事件处理
+    elseif event == "SPELL_GO_SELF" then
+        -- 同时安装两个扩展时只采用一个成功来源，避免重复推进/刷新计时。
+        if not Cat2.SuperWoW then
+            RecordFlamestrikeSuccess(arg2)
+        end
+
     elseif event == "UNIT_CASTEVENT" then
 
         -- 施法事件监测
@@ -424,6 +490,7 @@ local function OnEvent()
 
             -- 仅监控自己放出的技能
             if arg1 == Cat2.PlayerInformation.basic.guid then
+                RecordFlamestrikeSuccess(arg4)
 
                 --print(arg4)
 
@@ -523,7 +590,7 @@ if string.find( arg2, ".*抵抗.*" ) or string.find( arg2 or "", "resisted" ) th
             end
 
             -- 灼烧
-            if string.find( arg2, "你的灼烧被.*抵抗.*" ) or string.find( arg2 or "", "Your Scorch was resisted" ) then
+            if string.find( arg2, "你的灼烧被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("灼烧") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and ScorchDelayTime[targetGUID] then 
                     local timer = GetTime() - ScorchDelayTime[targetGUID]
@@ -534,7 +601,7 @@ if string.find( arg2, ".*抵抗.*" ) or string.find( arg2 or "", "resisted" ) th
             end
 
             -- 火焰冲击
-            if string.find( arg2, "你的火焰冲击被.*抵抗.*" ) or string.find( arg2 or "", "Your Fire Blast was resisted" ) then
+            if string.find( arg2, "你的火焰冲击被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("火焰冲击") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and FireBlastDelayTime[targetGUID] then 
                     local timer = GetTime() - FireBlastDelayTime[targetGUID]

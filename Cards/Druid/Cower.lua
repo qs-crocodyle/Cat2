@@ -3,7 +3,7 @@ local card = {
     id = "druid_cower",
     name = "畏缩",
     description = "猎豹形态下，仇恨>|cff6bc7e0{threatPercent}%|r时施放畏缩",
-    details = "猎豹形态下，畏缩冷却完成且自身仇恨高于卡片设定值时施放。默认仇恨门槛为80%；暂无有效仇恨数据时按原后备逻辑处理。",
+    details = "猎豹形态下，目标存在、存活且可攻击，畏缩冷却完成、能量足够且自身仇恨高于卡片设定值时施放。默认仇恨门槛为80%；无法获取有效仇恨数据时跳过，继续后续卡片。",
     sort = 423.3,
     category = "class",
     canStopSequence = true,
@@ -41,26 +41,20 @@ function card.Execute(context, step)
         return false
     end
 
-    -- 获取仇恨值
-    local Threat = Cat2.GetHatredFromTWT()
+    if not UnitExists("target") or UnitIsDeadOrGhost("target")
+        or not UnitCanAttack("player", "target") then
+        return false
+    end
 
-    if Threat == -1 then
+    -- 无有效仇恨数据时放行后续卡片，不再尝试后备施法。
+    local threat = Cat2.GetHatredFromTWT()
+    if type(threat) ~= "number" or not (threat > threatPercent) then
+        return false
+    end
 
-        -- 暂无有效目标、队伍或服务端仇恨数据。
-        if player.power>=20 and Cat2.SpellReady("畏缩") then
-            Cat2.Cast("畏缩")
-            return true
-        end
-
-    else
-
-        if Threat>threatPercent then
-            if player.power>=20 and Cat2.SpellReady("畏缩") then
-                Cat2.Cast("畏缩")
-                return true
-            end
-        end
-
+    if player.power >= 20 and Cat2.SpellReady("畏缩") then
+        Cat2.Cast("畏缩")
+        return true
     end
 
     return false

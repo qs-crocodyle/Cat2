@@ -15,8 +15,8 @@ frame:RegisterEvent("UNIT_ENERGY")
 frame:RegisterEvent("PLAYER_COMBO_POINTS")
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+Cat2.RegisterOptionalEvent(frame, "UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(frame, "RAW_COMBATLOG")
 
 
 
@@ -228,7 +228,7 @@ local function OnEvent()
         if arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
             -- 扫击
-            if string.find( arg2, "你的扫击.*招架.*" ) or string.find( arg2, "你的扫击.*躲闪.*" ) or string.find( arg2, "你的扫击.*格挡.*" ) or string.find( arg2, "你的扫击.*没有击中.*" ) or ( string.find(arg2 or "", "Your Rake") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
+            if string.find( arg2, "你的扫击.*招架.*" ) or string.find( arg2, "你的扫击.*躲闪.*" ) or string.find( arg2, "你的扫击.*格挡.*" ) or string.find( arg2, "你的扫击.*没有击中.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("扫击")) and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and RateDelayTime[targetGUID] then 
                     local timer = GetTime() - RateDelayTime[targetGUID]
@@ -238,7 +238,7 @@ local function OnEvent()
                 end
 
             -- 撕扯
-            elseif string.find( arg2, "你的撕扯.*招架.*" ) or string.find( arg2, "你的撕扯.*躲闪.*" ) or string.find( arg2, "你的撕扯.*格挡.*" ) or string.find( arg2, "你的撕扯.*没有击中.*" ) or ( string.find(arg2 or "", "Your Rip") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
+            elseif string.find( arg2, "你的撕扯.*招架.*" ) or string.find( arg2, "你的撕扯.*躲闪.*" ) or string.find( arg2, "你的撕扯.*格挡.*" ) or string.find( arg2, "你的撕扯.*没有击中.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("撕扯")) and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and RipDelayTime[targetGUID] then 
                     local timer = GetTime() - RipDelayTime[targetGUID]
@@ -247,13 +247,13 @@ local function OnEvent()
                     end
                 end
 
-            elseif string.find( arg2, "你的凶猛撕咬.*招架.*" ) or string.find( arg2, "你的凶猛撕咬.*躲闪.*" ) or string.find( arg2, "你的凶猛撕咬.*格挡.*" ) or string.find( arg2, "你的凶猛撕咬.*没有击中.*" ) or ( string.find(arg2 or "", "Your Ferocious Bite") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
+            elseif string.find( arg2, "你的凶猛撕咬.*招架.*" ) or string.find( arg2, "你的凶猛撕咬.*躲闪.*" ) or string.find( arg2, "你的凶猛撕咬.*格挡.*" ) or string.find( arg2, "你的凶猛撕咬.*没有击中.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("凶猛撕咬")) and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 Refill = false
                 RefillGUID = 0
                 RefillTimer = 0
 
             -- 月火术
-            elseif string.find( arg2, "你的月火术被.*抵抗.*" ) or string.find( arg2 or "", "Your Moonfire was resisted" ) then
+            elseif string.find( arg2, "你的月火术被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("月火术") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and MoonfireDelayTime[targetGUID] then 
                     local timer = GetTime() - MoonfireDelayTime[targetGUID]
@@ -263,7 +263,7 @@ local function OnEvent()
                 end
 
             -- 虫群
-            elseif string.find( arg2, "你的虫群被.*抵抗.*" ) or string.find( arg2 or "", "Your Insect Swarm was resisted" ) then
+            elseif string.find( arg2, "你的虫群被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("虫群") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and InsectSwarmDelayTime[targetGUID] then 
                     local timer = GetTime() - InsectSwarmDelayTime[targetGUID]
@@ -352,10 +352,10 @@ end
 -- 注：SuperWow支持更加准确
 -- return 存在返回真
 
-local function GetRakeDotCheck( guid )
+local function GetRakeDotCheck( guid, value )
     if RateCheck[guid] then
         local timer = GetTime() - RateCheck[guid]
-        if timer <= DruidRakeDuration then
+        if timer <= (DruidRakeDuration-value) then
             return true
         else
             RateCheck[guid] = nil
@@ -369,7 +369,10 @@ function Cat2.ResetRakeDot(guid)
     RateCheck[guid] = nil
 end
 
-function Cat2.GetRakeDot()
+function Cat2.GetRakeDot(unit, value)
+    unit = unit or "target"
+    value = value or 0
+
 
     -- 检测是否有SuperWow模组
     if not Cat2.SuperWoW or Cat2.PlayerInformation.basic.level<60 then
@@ -377,7 +380,7 @@ function Cat2.GetRakeDot()
     end
 
     -- 获取目标GUID，并确保其存在
-    local a,guid=UnitExists("target")
+    local a,guid=UnitExists(unit)
     if not guid then
         return false
     end
@@ -395,7 +398,7 @@ function Cat2.GetRakeDot()
         end
     end
 
-    return GetRakeDotCheck(guid)
+    return GetRakeDotCheck(guid, value)
 end
 
 
@@ -404,10 +407,10 @@ end
 -- 注：SuperWow支持更加准确
 -- return 存在返回真
 
-local function GetRipDotCheck( guid )
+local function GetRipDotCheck( guid, value )
     if RipCheck[guid] then
         local timer = GetTime() - RipCheck[guid]
-        if timer < DruidRipDuration then
+        if timer < (DruidRipDuration-value) then
             return true
         else
             RipCheck[guid] = nil
@@ -421,7 +424,9 @@ function Cat2.ResetRipDot(guid)
     RipCheck[guid] = nil
 end
 
-function Cat2.GetRipDot()
+function Cat2.GetRipDot(unit, value)
+    unit = unit or "target"
+    value = value or 0
 
     -- 检测是否有SuperWow模组
     if not Cat2.SuperWoW or Cat2.PlayerInformation.basic.level<60 then
@@ -429,7 +434,7 @@ function Cat2.GetRipDot()
     end
 
     -- 获取目标GUID，并确保其存在
-    local a,guid=UnitExists("target")
+    local a,guid=UnitExists(unit)
     if not guid then
         return false
     end
@@ -447,7 +452,7 @@ function Cat2.GetRipDot()
         end
     end
 
-    return GetRipDotCheck(guid)
+    return GetRipDotCheck(guid, value)
 end
 
 
@@ -456,10 +461,10 @@ end
 -- 注：SuperWow支持更加准确
 -- return 存在返回真
 
-local function GetRavageDotCheck( guid )
+local function GetRavageDotCheck( guid, value )
     if RavageCheck[guid] then
         local timer = GetTime() - RavageCheck[guid]
-        if timer < DruidRavageDuration then
+        if timer < (DruidRavageDuration-value) then
             return true
         else
             RavageCheck[guid] = nil
@@ -469,7 +474,9 @@ local function GetRavageDotCheck( guid )
     return false
 end
 
-function Cat2.GetRavageDot()
+function Cat2.GetRavageDot(unit, value)
+    unit = unit or "target"
+    value = value or 0
 
     -- 检测是否有SuperWow模组
     if not Cat2.SuperWoW or Cat2.PlayerInformation.basic.level<60 then
@@ -477,7 +484,7 @@ function Cat2.GetRavageDot()
     end
 
     -- 获取目标GUID，并确保其存在
-    local a,guid=UnitExists("target")
+    local a,guid=UnitExists(unit)
     if not guid then
         return false
     end
@@ -495,7 +502,7 @@ function Cat2.GetRavageDot()
         end
     end
 
-    return GetRavageDotCheck(guid)
+    return GetRavageDotCheck(guid, value)
 end
 
 

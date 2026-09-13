@@ -6,6 +6,7 @@ local card = {
     details = "仅对强敌目标生效。怒气达到卡片设定值后，目标身上的破甲攻击不足五层时继续施放；达到五层后，在持续时间剩余不超过五秒时补一次以刷新持续时间，默认需要30怒气；需要SuperWoW模组。需要存在有效目标。会检查当前资源。成功执行时会阻断本轮后续卡片。",
     sort = 22.5,
     category = "class",
+    exclusiveGroup = "warrior_sunder_armor",
     classes = {
         WARRIOR = 3,
     },

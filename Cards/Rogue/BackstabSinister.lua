@@ -5,6 +5,7 @@ local card = {
     description = "自动判断，被后背刺/正面邪恶打击",
     details = "自动判断，自适应主手武器，被后背刺/正面邪恶打击。需要存在有效目标。会检查当前资源。会检查与目标的相对位置。成功执行时会阻断本轮后续卡片。",
     sort = 31,
+    exclusiveGroup = "rogue_backstab_sinister",
     category = "class",
     canStopSequence = true,
     classes = {

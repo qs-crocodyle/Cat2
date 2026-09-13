@@ -7,7 +7,7 @@ local frame = CreateFrame("Frame")
 
 -- Nampower 结构化事件在未安装 Nampower 的客户端中可能不是合法事件，保护注册以便安全降级。
 local function RegisterOptionalEvent(eventName)
-    pcall(frame.RegisterEvent, frame, eventName)
+    Cat2.RegisterOptionalEvent(frame, eventName)
 end
 
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -27,8 +27,8 @@ frame:RegisterEvent("SPELLCAST_FAILED")
 
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+RegisterOptionalEvent("UNIT_CASTEVENT")
+RegisterOptionalEvent("RAW_COMBATLOG")
 
 -- Nampower专有事件。乱舞状态由近战暴击与后续挥击次数推算，不依赖 Aura 槽位。
 RegisterOptionalEvent("AUTO_ATTACK_SELF")
@@ -106,14 +106,8 @@ local function GetWarriorSpellData(spellId)
     local spellName
     local damageClass
     if type(GetSpellRecField) == "function" then
-        local nameOk, name = pcall(GetSpellRecField, spellId, "name")
-        if nameOk then
-            spellName = name
-        end
-        local classOk, value = pcall(GetSpellRecField, spellId, "dmgClass")
-        if classOk then
-            damageClass = tonumber(value)
-        end
+        spellName = GetSpellRecField(spellId, "name")
+        damageClass = tonumber(GetSpellRecField(spellId, "dmgClass"))
     end
     if not spellName and type(GetSpellNameAndRankForId) == "function" then
         spellName = GetSpellNameAndRankForId(spellId)
@@ -213,7 +207,7 @@ local function OnEvent()
             OverpowerTimerNoSW = GetTime()
         elseif string.find( arg1, ".*压制.*" ) or string.find( arg1 or "", "Overpower" ) then
             OverpowerTimerNoSW = 0
-        elseif string.find( arg1, ".*你的反击对.*" ) or string.find( arg1 or "", "Your Revenge" ) then        --这里要完整，反击有个同名反击风暴
+        elseif string.find( arg1, ".*你的反击对.*" ) or string.find( arg1 or "", Cat2.L.Spell("复仇") ) then        --这里要完整，反击有个同名反击风暴
             CounterTimerNoSW = 0
         end
 
@@ -234,7 +228,7 @@ local function OnEvent()
         end
 
     elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
-        if string.find( arg1, "你获得了战斗怒吼的效果.*" ) or string.find( arg1 or "", "You gain the effect of Battle Shout" ) then
+        if string.find( arg1, "你获得了战斗怒吼的效果.*" ) or string.find( arg1 or "", "You gain the effect of " .. Cat2.L.Spell("战斗怒吼") ) then
             BattleShoutTimer = GetTime()
         end
 
@@ -332,7 +326,7 @@ elseif string.find( arg1, ".*你格挡开了.*" ) or string.find( arg1 or "", "Y
             end
 
         elseif arg1 == "CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE" then
-            if string.find( arg2, "你的撕裂.*" ) or string.find( arg2, ".*your 撕裂.*" ) or string.find( arg2 or "", "Your Rend" ) then
+            if string.find( arg2, "你的撕裂.*" ) or string.find( arg2, ".*your 撕裂.*" ) or string.find( arg2 or "", Cat2.L.Spell("撕裂") ) then
                 local targetGUID = Cat2.MatchGUID(arg2) 
                 if targetGUID then
                     RendCheck[targetGUID] = GetTime()

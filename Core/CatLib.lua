@@ -71,6 +71,14 @@ function Cat2.Msg(str)
 	end
 end
 
+-- 可选扩展事件在未安装对应模组时可能不是合法事件。
+-- 统一保护注册，失败时仅关闭对应能力，不中断当前文件继续加载。
+function Cat2.RegisterOptionalEvent(frame, eventName)
+	if not frame or type(eventName) ~= "string" or eventName == "" then
+		return false
+	end
+	return pcall(frame.RegisterEvent, frame, eventName)
+end
 
 
 -- 获取天赋参数
@@ -113,7 +121,7 @@ function Cat2.SwitchDistantTarget(value)
     local list = {}
     local count = 0
 
-    _,count,_,_,list = Cat2.ScanNearbyEnemiesCount()
+    count,_,list = Cat2.ScanNearbyEnemies()
 
     if count==0 then
         --pirnt("周围没有敌人")
@@ -215,31 +223,132 @@ function Cat2.GetSpellCooldown(spell)
 	return time
 end
 
+-- 返回技能自身的剩余冷却时间，并过滤旧客户端把公共冷却作为技能冷却返回的情况。
+-- 未学习、已经就绪、只有公共冷却时统一返回0。
+function Cat2.GetSpellIndependentCooldown(spell)
+	local spellId = Cat2.GetSpellID(spell)
+	if not spellId or spellId == 0 then
+		return 0
+	end
+
+	local startTime, duration = GetSpellCooldown(spellId, "spell")
+	if not startTime or not duration or duration <= 0 then
+		return 0
+	end
+
+	local gcdMaximum = Cat2.GCDMax and Cat2.GCDMax() or 0
+	if gcdMaximum > 0 and duration <= gcdMaximum + 0.2 then
+		return 0
+	end
+
+	local remaining = duration - (GetTime() - startTime)
+	if remaining < 0 then
+		remaining = 0
+	end
+	return remaining
+end
+
+-- 技能是否处于自身的真实冷却中；公共冷却不算。
+function Cat2.SpellOnCooldown(spell)
+	return Cat2.GetSpellIndependentCooldown(spell) > 0
+end
+
 -- 获取技能是否存在
 -- name技能名称
 -- return 获取成立返id
-function Cat2.GetSpellID(name, rank)
-	name = Cat2.L.Spell(name)
-	if rank then
-		rank = Cat2.L.Rank(rank)
-	end
-	local i = 0
-	local spellName = " "
-	while spellName ~= nil do
-		i = i + 1
-		spellName, spellRank = GetSpellName(i, "spell")
+-- 技能书运行时索引。技能书位置本身会在学习技能、洗天赋等操作后变化，
+-- 因此只缓存“技能名称 -> 当前技能书位置”，冷却时间仍然每次向游戏 API 查询。
+local spellBookCache = {
+	dirty = true,
+	firstByName = {},
+	byNameAndRank = {},
+	highestByName = {},
+}
 
-		if rank then
-			if spellName==name and spellRank== rank then
-				return i
+-- 事件回调只负责标脏；下一次真正查询技能时再统一扫描，避免连续事件重复重建。
+function Cat2.InvalidateSpellBookCache()
+	spellBookCache.dirty = true
+end
+
+-- 1.12/Turtle ??????????????????????????????????????????
+-- ??????????????????????????????????????????????????????
+local maximumSpellBookEntries = 300
+
+local function RebuildSpellBookCache()
+	local firstByName = {}
+	local byNameAndRank = {}
+	local highestByName = {}
+	local spellIndex = 1
+
+	while spellIndex <= maximumSpellBookEntries do
+		local spellName, spellRank = GetSpellName(spellIndex, "spell")
+		if not spellName or spellName == "" then
+			break
+		end
+
+		-- GetSpellID(name) 原先返回从前往后遇到的第一个位置，继续保持该契约。
+		if not firstByName[spellName] then
+			firstByName[spellName] = spellIndex
+		end
+
+		if spellRank ~= nil then
+			local ranks = byNameAndRank[spellName]
+			if not ranks then
+				ranks = {}
+				byNameAndRank[spellName] = ranks
 			end
-		else
-			if spellName==name then
-				return i
+			-- 理论上同名同等级不会重复；保留首项可兼容旧版顺序行为。
+			if ranks[spellRank] == nil then
+				ranks[spellRank] = spellIndex
 			end
 		end
+
+		local rankNumber = 1
+		if spellRank and spellRank ~= "" then
+			local _, _, rankText = string.find(spellRank, "(%d+)")
+			if rankText then
+				rankNumber = tonumber(rankText) or 1
+			end
+		end
+		local highest = highestByName[spellName]
+		if not highest or rankNumber > highest.rank then
+			highestByName[spellName] = {
+				rank = rankNumber,
+				index = spellIndex,
+				rankText = spellRank,
+			}
+		end
+
+		spellIndex = spellIndex + 1
 	end
-	return 0
+
+	spellBookCache.firstByName = firstByName
+	spellBookCache.byNameAndRank = byNameAndRank
+	spellBookCache.highestByName = highestByName
+	-- 若调用发生得过早、技能书尚未就绪，则保持脏状态，避免永久缓存一份空技能书。
+	spellBookCache.dirty = spellIndex == 1
+end
+
+local function EnsureSpellBookCache()
+	if spellBookCache.dirty then
+		RebuildSpellBookCache()
+	end
+end
+
+function Cat2.GetSpellID(name, rank)
+	if name == nil then
+		return 0
+	end
+	name = Cat2.L.Spell(name)
+	if rank ~= nil then
+		rank = Cat2.L.Rank(rank)
+	end
+	EnsureSpellBookCache()
+	if rank ~= nil then
+		local ranks = spellBookCache.byNameAndRank[name]
+		return ranks and ranks[rank] or 0
+	end
+	return spellBookCache.firstByName[name] or 0
 end
 
 
@@ -253,6 +362,11 @@ function Cat2.CastSpellWithoutTarget(spellName, unit, tip)
 
 	if not unit then
 		return false
+	end
+
+	-- record the real cast unit so the interrupt monitor can resolve it later
+	if Cat2.RecordPendingCastTarget then
+		Cat2.RecordPendingCastTarget(spellName, unit)
 	end
 
 	if tip>0 then
@@ -304,20 +418,65 @@ end
 
 
 function Cat2.Cast(spellName, unit)
-	local NP_QueueChannelingSpells
-	if Cat2.Nampower then
-		NP_QueueChannelingSpells = GetCVar("NP_QueueChannelingSpells")
-		if NP_QueueChannelingSpells ~= 0 then
-			SetCVar("NP_QueueChannelingSpells", 0)
+	if Cat2.GetChanneled() < 0.08 then
+		-- record channeled spell names so the cursor / interrupt monitors can resolve them
+		if Cat2.RecordWarlockChannelCast then
+			Cat2.RecordWarlockChannelCast(spellName)
+		end
+		if Cat2.RecordMageChannelCast then
+			Cat2.RecordMageChannelCast(spellName)
+		end
+
+		local NP_QueueChannelingSpells
+		if Cat2.Nampower then
+			NP_QueueChannelingSpells = GetCVar("NP_QueueChannelingSpells")
+			if NP_QueueChannelingSpells ~= 0 then
+				SetCVar("NP_QueueChannelingSpells", 0)
+			end
+		end
+
+		CastSpellByName(spellName, unit)
+
+		if Cat2.Nampower then
+			SetCVar("NP_QueueChannelingSpells", NP_QueueChannelingSpells)
 		end
 	end
+end
 
-	CastSpellByName(spellName, unit)
+-- 临时启用鼠标地面快速施法；恢复设置后再向框架传播错误。
+function Cat2.WithCursorQuickcast(action, disableTargetQueue)
+    local settings = { { "NP_QuickcastTargetingSpells", "1" } }
+    if disableTargetQueue then
+        table.insert(settings, { "NP_QueueTargetingSpells", "0" })
+    end
+    for _, setting in ipairs(settings) do
+        local ok, value = pcall(GetCVar, setting[1])
+        if not ok or (value ~= "0" and value ~= "1") then
+            return false
+        end
+        setting[3] = value
+    end
 
-	if Cat2.Nampower then
-		SetCVar("NP_QueueChannelingSpells", NP_QueueChannelingSpells)
-	end
-
+    local ok, result = pcall(function()
+        for _, setting in ipairs(settings) do
+            SetCVar(setting[1], setting[2])
+        end
+        return action()
+    end)
+    local restoreError
+    for i = table.getn(settings), 1, -1 do
+        local restored, message = pcall(SetCVar, settings[i][1], settings[i][3])
+        if not restored then
+            restoreError = message
+        end
+    end
+    if restoreError then
+        error(restoreError, 0)
+    end
+    if not ok then
+        error(result, 0)
+    end
+    return result
 end
 
 function Cat2.CastWithNampower(spellName, unit)
@@ -373,8 +532,8 @@ function Cat2.GetShape(id)
 end
 
 
--- 切换姿态
-function Cat2.SetShape(shapename)
+-- 按名称检查当前是否处于指定姿态或形态
+function Cat2.GetShapeByName(shapename)
 	if not shapename then
 		return false
 	end
@@ -573,6 +732,23 @@ end
 
 
 -- 是否打开交互窗口（银行、邮箱、拍卖行、商人）
+
+local function IsBankOpen()
+    return (BankFrame and BankFrame:IsVisible()) or false
+end
+
+local function IsAuctionHouseOpen()
+    return (AuctionFrame and AuctionFrame:IsVisible()) or false
+end
+
+local function IsMailboxOpen()
+    return (MailFrame and MailFrame:IsVisible()) or false
+end
+
+local function IsMerchantOpen()
+    return (MerchantFrame and MerchantFrame:IsVisible()) or false
+end
+
 function Cat2.CheckUIStatus()
 
 	if IsBankOpen() then
@@ -592,6 +768,35 @@ function Cat2.CheckUIStatus()
 	end
 
 	return false
+end
+
+-- 在公共冷却前半段尝试切换萨满图腾圣物。
+-- 换装结果不负责阻断流程；context 标记只用于避免同一轮后续技能卡再次覆盖图腾。
+function Cat2.TryEquipShamanTotem(context, itemName)
+    if type(itemName) ~= "string" or itemName == "" then
+        return false
+    end
+    if type(context) == "table" and context.shamanTotemSwitchHandled then
+        return false
+    end
+    if not Cat2.IsGCDInFirstHalf or not Cat2.IsGCDInFirstHalf() or Cat2.CheckUIStatus() then
+        return false
+    end
+
+    if Cat2.CheckInventoryItemName(18, itemName) then
+        if type(context) == "table" then
+            context.shamanTotemSwitchHandled = true
+        end
+        return false
+    end
+
+    if Cat2.EquipItemByName(itemName, 18) then
+        if type(context) == "table" then
+            context.shamanTotemSwitchHandled = true
+        end
+        return true
+    end
+    return false
 end
 
 
@@ -623,6 +828,10 @@ function Cat2.GetSpellTooltip(spellName, spellRank)
         if line and line:GetText() then
             TooltipText = TooltipText .. line:GetText() .. "\n"
         end
+        line = getglobal("Cat2SpellTooltipTextRight" .. i)
+        if line and line:GetText() then
+            TooltipText = TooltipText .. line:GetText() .. "\n"
+        end
     end
 
     -- 清理 Tooltip
@@ -636,44 +845,65 @@ end
 -- spellRank 技能等级，如："回春术"
 -- 返回int
 function Cat2.GetHighestRankOfSpell(spellName)
-    spellName = Cat2.L.Spell(spellName)
-    local highestRank = 0
-    local highestSpellIndex = nil
-    
-    local i = 1
-    while true do
+	if spellName == nil then
+		return 0, nil
+	end
+	spellName = Cat2.L.Spell(spellName)
+	EnsureSpellBookCache()
+	local highest = spellBookCache.highestByName[spellName]
+	if not highest then
+		return 0, nil
+	end
+	return highest.rank, highest.index
+end
 
-        local name, rank = GetSpellName(i, BOOKTYPE_SPELL)
-        
-        if not name then
-            break
-        end
-        
-        if name == spellName then
-            local currentRank = 1  -- 默认等级为1
-            
-            -- 解析等级文本（处理各种格式）
-            if rank and rank ~= "" then
-                -- 匹配数字（适用于"Rank 3", "等级 3", "级别 3"等格式）
-                local rankNum = Cat2.Match(rank, "(%d+)")
-                if rankNum then
-                    currentRank = Cat2.ToNumber(rankNum)
-                end
-                -- 如果没有匹配到数字，保持默认等级1
-            end
-            
-            if currentRank > highestRank then
-                highestRank = currentRank
-                highestSpellIndex = i
-            end
-        end
-        
-        i = i + 1
-        -- 安全限制，防止无限循环
-        if i > 300 then break end
-    end
-    
-    return highestRank, highestSpellIndex
+-- 根据参数解析技能书中实际可用的施法名称。
+-- 无等级技能始终返回原始名称；有等级技能会限制在当前已学习的最高等级内。
+function Cat2.GetRankedSpellName(spellName, requestedRank)
+	if spellName == nil then
+		return nil
+	end
+	spellName = Cat2.L.Spell(spellName)
+	EnsureSpellBookCache()
+	local highest = spellBookCache.highestByName[spellName]
+	if not highest then
+		return nil
+	end
+
+	-- 旧版客户端对无等级技能不能附加“(等级 1)”。
+	if highest.rankText == nil or highest.rankText == "" then
+		return spellName
+	end
+
+	local rankNumber = tonumber(requestedRank) or highest.rank
+	rankNumber = math.floor(rankNumber + 0.5)
+	if rankNumber < 1 then
+		rankNumber = 1
+	elseif rankNumber > highest.rank then
+		rankNumber = highest.rank
+	end
+
+	local ranks = spellBookCache.byNameAndRank[spellName]
+	if ranks then
+		for rankText in pairs(ranks) do
+			local _, _, numericText = string.find(rankText, "(%d+)")
+			if numericText and tonumber(numericText) == rankNumber then
+				return spellName .. "(" .. rankText .. ")"
+			end
+		end
+	end
+
+	-- 技能书异常缺少中间等级时，退回当前最高已学习等级。
+	return spellName .. "(" .. highest.rankText .. ")"
+end
+
+function Cat2.CastRankedWithNampower(spellName, requestedRank)
+	local rankedSpellName = Cat2.GetRankedSpellName(spellName, requestedRank)
+	if not rankedSpellName then
+		return false
+	end
+	Cat2.CastWithNampower(rankedSpellName)
+	return true
 end
 
 
@@ -751,6 +981,18 @@ function Cat2.IsMainHandDagger()
     return false
 end
 
+-- 返回主手武器类型
+function Cat2.GetMainHandType()
+    local itemLink = GetInventoryItemLink("player", 16)
+    local itemID = Cat2.Match(itemLink, "item:(%d+):")
+    if itemLink then
+        local _, _, _, _, _, itemType = GetItemInfo(itemID)
+        return itemType
+    end
+    
+    return nil
+end
+
 
 -- 是否装备双手武器
 function Cat2.IsTwoHand()
@@ -766,20 +1008,22 @@ function Cat2.IsTwoHand()
     return true
 end
 
--- 远程武器类型
-function IsRangedThrownWeapon()
+-- 远程栏是否装备投掷武器。
+-- 不同 1.12 客户端扩展的物品类型字段位置可能不同，因此同时兼容第5、6、7返回值。
+function Cat2.IsRangedThrownWeapon()
     local itemLink = GetInventoryItemLink("player", 18)  -- 18=远程武器栏位
     if not itemLink then return false end
 
 	local itemID = Cat2.Match(itemLink, "item:(%d+):")
     if not itemID then return false end
 
-	local _,_,_,_,_,itemSubType = GetItemInfo(itemID)
-	if itemSubType==Cat2.L("投掷武器") then 
-		return true 
-	end
+	local _, _, _, _, value5, value6, value7 = GetItemInfo(Cat2.ToNumber(itemID))
+	return value5 == Cat2.L("投掷武器") or value6 == Cat2.L("投掷武器") or value7 == Cat2.L("投掷武器")
+end
 
-	return false
+-- 保留旧全局入口，避免仍在使用旧函数名的外部调用失效。
+function IsRangedThrownWeapon()
+	return Cat2.IsRangedThrownWeapon()
 end
 
 
@@ -790,6 +1034,52 @@ function Cat2.CheckInventoryItemName(slot, name)
 	if Link and strfind(Link,name) then return true end
 	local localizedName = Cat2.L.Item(name)
 	if localizedName ~= name and Link and strfind(Link,localizedName) then return true end
+	return false
+end
+
+-- 爆发饰品白名单，迁移自旧 Cat 的 MPCheckTrinket；栏位13为上饰品，14为下饰品。
+local burstTrinketNames = {
+	"压制能量遗物",
+	"狂野魔法宝石",
+	"衰落之眼",
+	"萨菲隆的精华",
+	"屠龙者的纹章",
+	"蜘蛛之吻",
+	"偏斜雕文",
+	"虫群卫士徽章",
+	"沙漠掠夺者塑像",
+	"沙虫之毒",
+	"坠落星辰碎片",
+	"自然之盟水晶",
+	"盲目光芒卷轴",
+	"毒性图腾",
+	"思维加速宝石",
+	"奥术能量宝石",
+	"黑龙之书",
+	"短暂能量护符",
+	"焰烬之石",
+	"赞达拉英雄勋章",
+	"赞达拉英雄护符",
+	"哈扎拉尔的魔法护符",
+	"大地之击",
+	"钻石水瓶",
+	"优越护符",
+	"龙人能量徽章",
+	"魔暴龙眼",
+}
+
+function Cat2.IsBurstTrinket(slot)
+	if slot ~= 13 and slot ~= 14 then
+		return false
+	end
+	local index = 1
+	local total = table.getn(burstTrinketNames)
+	while index <= total do
+		if Cat2.CheckInventoryItemName(slot, burstTrinketNames[index]) then
+			return true
+		end
+		index = index + 1
+	end
 	return false
 end
 
@@ -1043,6 +1333,19 @@ function Cat2.GetGroupHealthList()
     end
     
     return groupMembers
+end
+
+
+-- 轻量仇恨兼容入口；保留旧函数名，避免现有卡片批量改调用点。
+function Cat2.GetHatredFromTWT()
+	if CatThreatLite and type(CatThreatLite.GetPercent) == "function" then
+		local percent = CatThreatLite.GetPercent()
+		if percent ~= nil then
+			return math.floor(percent + 0.5)
+		end
+	end
+	return -1
+
 end
 
 

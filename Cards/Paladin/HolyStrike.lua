@@ -7,6 +7,7 @@ local card = {
     -- 预留 60 给十字军打击，确保神圣打击排列在它前面。
     sort = 80,
     category = "class",
+    exclusiveGroup = "paladin_holy_crusader_strike",
     classes = {
         PALADIN = 3,
     },

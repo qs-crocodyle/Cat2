@@ -26,6 +26,10 @@ end
 function card.Execute(context)
     local player = Cat2.PlayerInformation.temporary
 
+    if context.parameters.hunterStingOnlyBoss and not Cat2.IsBossTarget() then
+        return false
+    end
+
     -- 没目标就无需继续
     if not player.targetExists then
         return false

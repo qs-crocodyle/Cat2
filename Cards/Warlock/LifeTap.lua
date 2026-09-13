@@ -6,6 +6,7 @@ local card = {
     details = "蓝量低于卡片设定值时，施放生命分流。会检查相关生命值。成功执行时会阻断本轮后续卡片。",
     sort = 150,
     category = "class",
+    exclusiveGroup = "warlock_life_tap",
     classes = {
         WARLOCK = 1,
     },

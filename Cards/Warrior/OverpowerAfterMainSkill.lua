@@ -68,20 +68,23 @@ function card.Execute(context, step)
         return false
     end
 
-    -- 压制触发，CD满足
     if Cat2.WarriorOverpower(3.2) and Cat2.SpellReadyOffset("压制",1.5) then
-
-        if player.power>=5 and Cat2.GetShapeByName("战斗姿态") then
-
+        if Cat2.GetShapeByName("战斗姿态") then
             Cat2.Cast("压制")
             return true
+        end
+    end
 
+    -- 压制触发，CD满足
+    if Cat2.WarriorOverpower(3.2) and Cat2.SpellReadyOffset("压制",1.5) and player.power>=5 and player.power<maximumRage then
+
+        if Cat2.GetShapeByName("战斗姿态") then
+            Cat2.Cast("压制")
         end
 
-        if player.power>=5 and player.power<maximumRage and not Cat2.GetShapeByName("战斗姿态") then
+        if not Cat2.GetShapeByName("战斗姿态") then
             Cat2.Cast("战斗姿态")
-            return true
-       end
+        end
 
         return true
     end

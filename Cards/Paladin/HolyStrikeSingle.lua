@@ -6,6 +6,7 @@ local card = {
     details = "近战距离施放神圣打击。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 70,
     category = "class",
+    exclusiveGroup = "paladin_holy_crusader_strike",
     canStopSequence = true,
     classes = {
         PALADIN = 3,

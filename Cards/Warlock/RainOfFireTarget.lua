@@ -6,6 +6,7 @@ local card = {
     details = "以目标为施法位置使用火焰之雨，成功执行时会阻断本轮后续卡片。",
     sort = 40.2,
     category = "class",
+    exclusiveGroup = "warlock_rain_of_fire",
     classes = {
         WARLOCK = 3,
     },

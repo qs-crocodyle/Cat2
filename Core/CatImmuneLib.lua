@@ -1196,7 +1196,7 @@ end
 -- arg2 是带 GUID 的增强消息；不再同时监听原生事件，避免同一条日志被处理两次。
 local damageSchoolImmuneEventFrame = CreateFrame("Frame")
 if SUPERWOW_STRING then
-    damageSchoolImmuneEventFrame:RegisterEvent("RAW_COMBATLOG")
+    Cat2.RegisterOptionalEvent(damageSchoolImmuneEventFrame, "RAW_COMBATLOG")
     damageSchoolImmuneEventFrame:SetScript("OnEvent", function()
         if Cat2.IsDamageSchoolImmuneCaptureActive() and
            (arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" or

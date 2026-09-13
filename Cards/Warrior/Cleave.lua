@@ -44,6 +44,12 @@ function card.Execute(context, step)
 
     local rageThreshold = context:GetStepOption(step, "rageThreshold") or 50
 
+    -- 启用正面限制后，正面敌人不足2个时不施放顺劈斩。
+    if context.parameters.warriorCleaveFrontOnly
+        and Cat2.GetEligibleCleaveEnemyCount(context, 7) < 2 then
+        return false
+    end
+
     if player.power>=rageThreshold then
         Cat2.Cast("顺劈斩")
     end

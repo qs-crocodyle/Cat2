@@ -2,7 +2,12 @@
 -- 本文件在 FlowEditor 之后加载，以便读取 Cat2.RuntimeConfigurations 的当前流程数据。
 -- 每次 /cat2 配置名 执行时，仅在整轮开始前刷新一次 PlayerInformation.temporary；
 -- 所有卡片共享这份快照，避免逐卡刷新造成额外 API 调用与前后状态不一致。
+--
+-- 执行阶段固定为：受保护的待处理中断 -> 玩家临时快照 -> context 索引 -> 全部被动 Apply ->
+-- 全部被动 Validate -> 从编号1开始执行，按布尔/跳转结果推进；每轮最多调用60次流程卡 Execute。
+-- context 仅在本轮宏调用中有效；卡片不得跨轮保存 context 或修改 teamSnapshot 中的成员对象。
 Cat2 = Cat2 or {}
+local maximumExecutionSteps = 60
 
 -- 去掉聊天指令参数首尾的空格与制表符。
 local function TrimCommandText(text)
@@ -253,13 +258,18 @@ end
 
 -- 被动卡片先扫描整个配置并建立共享 context，因此其效果不受自身排列位置限制。
 -- 随后 Validate 统一决定流程能否运行，最后才从上往下调用普通卡片 Execute(context)。
-function Cat2.ExecuteConfiguration(configurationName)
+local function RunConfiguration(configurationName)
     local profile = Cat2.FindConfigurationByName(configurationName)
     if not profile then
         return false, 0, 0
     end
     if Cat2.UI and Cat2.UI.TriggerShortcutWindowTitleLight then
         Cat2.UI.TriggerShortcutWindowTitleLight(profile.id)
+    end
+    -- 事件监控只负责提出中断请求；在用户本次宏按键中执行受保护的停止施法。
+    -- 成功提交中断后结束本轮流程，避免紧接着执行下一张卡片再次施法。
+    if Cat2.TryExecutePendingCastInterrupt and Cat2.TryExecutePendingCastInterrupt() then
+        return true, 0, 0, true, {}
     end
     -- 每次触发配置时统一刷新一次临时角色信息，供本轮所有卡片读取同一份最新快照。
     if Cat2.RefreshPlayerTemporaryInformation then
@@ -358,10 +368,16 @@ function Cat2.ExecuteConfiguration(configurationName)
         passiveIndex = passiveIndex + 1
     end
 
+    -- 位置可以向前跳，计步只递增。暂停卡与被动卡跳过，不消耗主执行阶段的60步预算。
+    local executionSteps = 0
     stepIndex = 1
     while stepIndex <= stepTotal do
+        local nextStepIndex = stepIndex + 1
         local step = profile.steps[stepIndex]
         if step and step.enabled ~= 0 and step.behavior ~= "passive" and type(step.Execute) == "function" then
+            executionSteps = executionSteps + 1
+            context.currentStepIndex = stepIndex
+            context.executionStepCount = executionSteps
             PrintDebugStep(Cat2.L("执行"), stepIndex, stepTotal, step)
             local succeeded, executeResult = pcall(step.Execute, context, step)
             executedTotal = executedTotal + 1
@@ -375,12 +391,88 @@ function Cat2.ExecuteConfiguration(configurationName)
             elseif executeResult == true then
                 stopped = true
                 break
+            elseif Cat2.IsJumpResult(executeResult) then
+                local targetIndex = rawget(executeResult, "target")
+                if type(targetIndex) ~= "number" or not (targetIndex >= 1 and targetIndex <= stepTotal
+                    and targetIndex <= 60 and targetIndex == math.floor(targetIndex)) then
+                    failedTotal = failedTotal + 1
+                    local stepName = step.name or step.id or Cat2.L("未命名卡片")
+                    table.insert(failedNames, stepName)
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：卡片「") .. stepName .. Cat2.L("」的跳转编号无效，必须是当前流程内1至60的整数编号；本轮已终止。") .. "|r")
+                    stopped = true
+                    break
+                end
+                nextStepIndex = targetIndex
+            end
+            if executionSteps >= maximumExecutionSteps then
+                stopped = true
+                PrintDebugStep(Cat2.L("已达到60步上限"), stepIndex, stepTotal, step)
+                break
             end
         end
-        stepIndex = stepIndex + 1
+        stepIndex = nextStepIndex
     end
     Cat2.CurrentExecutionContext = nil
     return true, executedTotal, failedTotal, stopped, failedNames
+end
+
+-- 统一前置入口。后续需要提升到整轮流程的临时设置，可由此返回原值交给后置恢复。
+local function BeginConfigurationExecution(configurationName)
+    Cat2.CurrentExecutionContext = nil
+
+    if not Cat2.Nampower then
+        return nil, nil, nil, nil
+    end
+
+    local castTimeSetting = GetCVar("NP_QueueCastTimeSpells")
+    local instantSetting = GetCVar("NP_QueueInstantSpells")
+    local channelingSetting = GetCVar("NP_QueueChannelingSpells")
+    local interruptChannelSetting
+    -- interruptChannelSetting = GetCVar("NP_InterruptChannelsOutsideQueueWindow")
+
+    SetCVar("NP_QueueCastTimeSpells", "0")
+    SetCVar("NP_QueueInstantSpells", "0")
+    SetCVar("NP_QueueChannelingSpells", "0")
+    -- SetCVar("NP_InterruptChannelsOutsideQueueWindow", "0")
+
+    return castTimeSetting, instantSetting, channelingSetting, interruptChannelSetting
+end
+
+-- 统一后置出口。无论流程正常结束、提前返回或抛出 Lua 错误，外层都会调用本函数。
+local function FinishConfigurationExecution(castTimeSetting, instantSetting, channelingSetting, interruptChannelSetting)
+    Cat2.CurrentExecutionContext = nil
+
+    if not Cat2.Nampower then
+        return
+    end
+    if castTimeSetting ~= nil then
+        SetCVar("NP_QueueCastTimeSpells", castTimeSetting)
+    end
+    if instantSetting ~= nil then
+        SetCVar("NP_QueueInstantSpells", instantSetting)
+    end
+    if channelingSetting ~= nil then
+        SetCVar("NP_QueueChannelingSpells", channelingSetting)
+    end
+    -- if interruptChannelSetting ~= nil then
+    --     SetCVar("NP_InterruptChannelsOutsideQueueWindow", interruptChannelSetting)
+    -- end
+end
+
+-- 对外执行入口只负责前置、保护调用和后置；实际流程允许保留清晰的提前 return。
+function Cat2.ExecuteConfiguration(configurationName)
+    local castTimeSetting, instantSetting, channelingSetting, interruptChannelSetting = BeginConfigurationExecution(configurationName)
+    local succeeded, found, executedTotal, failedTotal, stopped, failedNames = pcall(
+        RunConfiguration,
+        configurationName
+    )
+
+    FinishConfigurationExecution(castTimeSetting, instantSetting, channelingSetting, interruptChannelSetting)
+
+    if not succeeded then
+        error(found)
+    end
+    return found, executedTotal, failedTotal, stopped, failedNames
 end
 
 -- 注册旧版客户端聊天指令：/cat2 配置名
@@ -394,10 +486,17 @@ SlashCmdList["CAT2CONFIGURATION"] = function(message)
         end
         return
     end
-    -- debug 是保留参数，用于随时打开或关闭玩家信息调试窗。
+    -- debug 是保留参数，只控制玩家信息调试窗口。
     if string.lower(configurationName) == "debug" then
-        if Cat2.UI and Cat2.UI.TogglePlayerDebugWindow then
-            Cat2.UI.TogglePlayerDebugWindow()
+        local playerDebugVisible = Cat2.UI and Cat2.UI.IsPlayerDebugWindowVisible
+            and Cat2.UI.IsPlayerDebugWindowVisible()
+
+        if playerDebugVisible then
+            if Cat2.UI.HidePlayerDebugWindow then
+                Cat2.UI.HidePlayerDebugWindow()
+            end
+        elseif Cat2.UI and Cat2.UI.ShowPlayerDebugWindow then
+            Cat2.UI.ShowPlayerDebugWindow()
         else
             DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：调试窗尚未加载，请完整重启游戏。") .. "|r")
         end

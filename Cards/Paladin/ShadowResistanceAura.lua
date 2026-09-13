@@ -6,6 +6,7 @@ local card = {
     details = "切换并保持暗影抗性光环。",
     sort = 61,
     category = "class",
+    exclusiveGroup = "paladin_aura",
     classes = {
         PALADIN = 2,
     },

@@ -5,6 +5,7 @@ local card = {
     description = "40能量时施放邪恶攻击",
     details = "40能量时施放邪恶攻击。需要存在有效目标。会检查当前资源。成功执行时会阻断本轮后续卡片。",
     sort = 20,
+    exclusiveGroup = "rogue_backstab_sinister",
     category = "class",
     canStopSequence = true,
     classes = {

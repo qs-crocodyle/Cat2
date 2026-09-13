@@ -6,6 +6,7 @@ local card = {
     details = "根据Buff时间施放，十字军打击先手。需要存在有效目标。会检查目标距离。仅在技能可用时尝试执行。成功执行时会阻断本轮后续卡片。",
     sort = 90,
     category = "class",
+    exclusiveGroup = "paladin_holy_crusader_strike",
     classes = {
         PALADIN = 3,
     },

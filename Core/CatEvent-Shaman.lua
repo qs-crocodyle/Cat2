@@ -16,8 +16,8 @@ frame:RegisterEvent("SPELLCAST_FAILED")
 frame:RegisterEvent("SPELLCAST_INTERRUPTED")
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+Cat2.RegisterOptionalEvent(frame, "UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(frame, "RAW_COMBATLOG")
 
 
 -- 烈焰震击
@@ -514,7 +514,7 @@ local function OnEvent()
         if arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
             -- 烈焰震击
-            if string.find( arg2, "你的烈焰震击.*抵抗了.*" ) or string.find( arg2 or "", "Your Flame Shock.*resisted" ) then
+            if string.find( arg2, "你的烈焰震击.*抵抗了.*" ) or string.find( arg2 or "", Cat2.L.Spell("烈焰震击") .. ".*resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2) 
                 if targetGUID and FlameShockDelayTime[targetGUID] then 
                     local timer = GetTime() - FlameShockDelayTime[targetGUID]
@@ -523,7 +523,7 @@ local function OnEvent()
                     end
                 end
 
-            elseif string.find( arg2, "你的熔岩爆裂击中.*" ) or string.find( arg2, "你的熔岩爆裂致命一击.*" ) or ( string.find(arg2 or "", "Your Lava Burst") and string.find(arg2 or "", "hits") ) or ( string.find(arg2 or "", "Your Lava Burst") and string.find(arg2 or "", "crits") ) then
+            elseif string.find( arg2, "你的熔岩爆裂击中.*" ) or string.find( arg2, "你的熔岩爆裂致命一击.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("熔岩爆裂")) and string.find(arg2 or "", "hits") ) or ( string.find(arg2 or "", Cat2.L.Spell("熔岩爆裂")) and string.find(arg2 or "", "crits") ) then
                 if Cat2.GetFlameShockDot() then
                     local targetGUID = Cat2.MatchGUID(arg2) 
                     if targetGUID and FlameShockCheck[targetGUID] then
@@ -533,6 +533,7 @@ local function OnEvent()
 
                 BeginLavaBurstCastTimer = GetTime()
 
+            -- TODO[SUSPECT] "Your Raging Flames" 英文匹配文本未经客户端验证，可能不匹配；确认后再改走 Cat2.L
             elseif string.find( arg2, "你的重燃烈火击中.*" ) or string.find( arg2, "你的重燃烈火致命一击.*" ) or ( string.find(arg2 or "", "Your Raging Flames") and string.find(arg2 or "", "hits") ) or ( string.find(arg2 or "", "Your Raging Flames") and string.find(arg2 or "", "crits") ) then
                 if Cat2.GetFlameShockDot() then
                     local targetGUID = Cat2.MatchGUID(arg2) 
@@ -696,6 +697,7 @@ function Cat2.GetShamanEnchantName(slot)
         local text = line:GetText() or ""
 
         -- 匹配附魔名称（根据客户端语言调整关键词）
+        -- TODO[SUSPECT] 英文附魔关键词未经客户端验证（Windfury/Flametongue/Frost/Icebrand/Rockbiter）；"Frost" 过宽可能误匹配 Frostbrand；确认后改走 Cat2.L
         if string.find(text, "分钟") or string.find(text or "", "minutes") then
             if string.find(text, "风怒") or string.find(text or "", "Windfury") then
 			    Cat2ShamanTooltip:Hide()

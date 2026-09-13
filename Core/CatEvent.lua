@@ -26,11 +26,11 @@ frame:RegisterEvent("CHAT_MSG_COMBAT_SELF_HITS")
 frame:RegisterEvent("UI_ERROR_MESSAGE")
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+Cat2.RegisterOptionalEvent(frame, "UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(frame, "RAW_COMBATLOG")
 
 -- Nampower专有事件
-frame:RegisterEvent("AUTO_ATTACK_SELF")
+Cat2.RegisterOptionalEvent(frame, "AUTO_ATTACK_SELF")
 
 
 -- 模组参数
@@ -83,10 +83,7 @@ local function GetNampowerChanneledState()
         return nil, nil, false
     end
 
-    local success, castInfo = pcall(GetCastInfo)
-    if not success then
-        return nil, nil, false
-    end
+    local castInfo = GetCastInfo()
     if type(castInfo) ~= "table" or tonumber(castInfo.castType) ~= 3 then
         return nil, nil, true
     end
@@ -223,7 +220,7 @@ local function CheckSpellLog(str)
         if spellName then
             castStartTime[objectGUID] = GetTime()
             castName[objectGUID] = spellName
-            castDuration[objectGUID] = 20000        -- 用20秒作为长度
+            castDuration[objectGUID] = 3        -- 用3秒作为长度
             --MPMsg("敌方 ["..objectGUID.."] 开始施放 ["..spellName.."]")
             return
         end
@@ -315,7 +312,7 @@ local function OnEvent()
 
     -- 背面判断
     elseif event == "UI_ERROR_MESSAGE" then
-        if arg1=="你必须位于目标背后" or string.find(arg1 or "", "behind the target") then
+        if arg1=="你必须位于目标背后" or string.find(arg1 or "", "behind your target") or string.find(arg1 or "", "behind the target") then
             ErrorBehindTimer = GetTime()
             ErrorBehind = false
         end
@@ -398,9 +395,9 @@ local function OnEvent()
     -- 技能伤害
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
-        if string.find( arg1, "你的英勇打击.*" ) or string.find( arg1 or "", "Your Heroic Strike" ) then
+        if string.find( arg1, "你的英勇打击.*" ) or string.find( arg1 or "", Cat2.L.Spell("英勇打击") ) then
             BeginHit()
-        elseif string.find( arg1, "你的顺劈斩.*" ) or string.find( arg1 or "", "Your Cleave" ) then
+        elseif string.find( arg1, "你的顺劈斩.*" ) or string.find( arg1 or "", Cat2.L.Spell("顺劈斩") ) then
             BeginHit()
         end
 
@@ -625,8 +622,8 @@ function Cat2.PlayerIsMoving()
 
     -- Nampower 直接提供移动状态；使用函数存在性判断兼容不同大版本。
     if Cat2.NampowerMove then
-        local succeeded, moving = pcall(PlayerIsMoving)
-        if succeeded and moving == 1 then
+        local moving = PlayerIsMoving()
+        if moving == 1 then
             return true
         else
             return false

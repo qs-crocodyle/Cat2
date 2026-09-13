@@ -8,6 +8,22 @@ Cat2.CardRegistry.Cards = Cat2.CardRegistry.Cards or {}
 -- 按稳定 ID 保存卡片定义，供无需加入流程的直接调用使用。
 Cat2.CardRegistry.ById = Cat2.CardRegistry.ById or {}
 
+-- 控制指令只在运行时使用，不进入配置存档。私有标记避免把旧卡片返回的普通表当成跳转。
+local jumpResultMarker = {}
+function Cat2.JumpTo(targetIndex)
+    return setmetatable({ action = "jump", target = targetIndex }, jumpResultMarker)
+end
+
+function Cat2.IsJumpResult(result)
+    return type(result) == "table" and getmetatable(result) == jumpResultMarker
+        and rawget(result, "action") == "jump"
+end
+
+function Cat2.NormalizeCardExecutionResult(result)
+    if Cat2.IsJumpResult(result) then return result end
+    return result == true
+end
+
 -- 运行时数据延迟到卡片第一次实际参与流程时再刷新。
 -- 脏状态保存在注册中心的唯一卡片定义上，避免同一卡片在多个配置中重复刷新。
 function Cat2.EnsureCardRuntimeData(card)
@@ -57,9 +73,16 @@ runtimeDataEventFrame:SetScript("OnEvent", function()
         if arg1 == "player" then
             Cat2.MarkCardsRuntimeDataDirty("equipment")
         end
-    elseif event == "SPELLS_CHANGED" then
+elseif event == "SPELLS_CHANGED" then
+        if Cat2.InvalidateSpellBookCache then
+            Cat2.InvalidateSpellBookCache()
+        end
         Cat2.MarkCardsRuntimeDataDirty("spells")
     elseif event == "CHARACTER_POINTS_CHANGED" then
+        -- 天赋变化可能改变可学习技能及其等级；与卡片运行时数据一起延迟刷新。
+        if Cat2.InvalidateSpellBookCache then
+            Cat2.InvalidateSpellBookCache()
+        end
         Cat2.MarkCardsRuntimeDataDirty("talents")
     end
 end)
@@ -95,7 +118,7 @@ function Cat2.CanAddCardForPlayer(card)
     if not card then
         return false
     end
-    if card.category == "common" or card.category == "item" then
+    if card.category == "common" or card.category == "logic" or card.category == "item" then
         return true
     end
     local actualClassFile = Cat2.PlayerInformation and Cat2.PlayerInformation.basic and Cat2.PlayerInformation.basic.classFile
@@ -235,13 +258,12 @@ function Cat2.RegisterCard(card)
         end
     end
 
-    -- 对所有卡片统一 Execute 契约：只返回布尔值，true 表示流程到此终止。
-    -- 旧卡片没有返回值或返回其他数据时统一视为 false，后续卡片继续执行。
+-- 保留布尔返回契约并透传框架生成的跳转指令；目标范围由执行器结合当前流程校验。
 local originalExecute = card.Execute
     if type(originalExecute) == "function" then
         card.Execute = function(context, step)
             Cat2.EnsureCardRuntimeData(card)
-            return originalExecute(context, step) == true
+            return Cat2.NormalizeCardExecutionResult(originalExecute(context, step))
         end
     else
         card.Execute = function()
@@ -254,7 +276,7 @@ local originalExecute = card.Execute
 end
 
 -- 直接执行注册中心里的普通卡片，不要求目标卡存在于当前流程。
--- 调用方仍需传入本轮 context；返回值遵循 true 阻断、false 继续的统一契约。
+-- 调用方仍需传入本轮 context；返回值透传布尔或跳转指令，由外层流程处理。
 function Cat2.ExecuteCardById(cardId, context)
     if type(cardId) ~= "string" or cardId == "" or type(context) ~= "table" then
         return false
@@ -287,7 +309,7 @@ function Cat2.ExecuteCardById(cardId, context)
 end
 
 -- 根据职业文件代码返回右侧列表可见的卡片。
--- 通用和道具卡始终返回；职业卡统一检查 classes 中是否包含当前职业。
+-- 通用、逻辑和道具卡始终返回；职业卡统一检查 classes 中是否包含当前职业。
 function Cat2.GetCardsForClass(classFile)
     local cards = {}
     local index = 1
@@ -295,7 +317,7 @@ function Cat2.GetCardsForClass(classFile)
     while index <= total do
         local card = Cat2.CardRegistry.Cards[index]
         local specialization = Cat2.GetCardSpecializationForClass(card, classFile)
-        if card.category == "common" or card.category == "item" or specialization then
+        if card.category == "common" or card.category == "logic" or card.category == "item" or specialization then
             Cat2.ResolveCardIcon(card)
             table.insert(cards, card)
         end

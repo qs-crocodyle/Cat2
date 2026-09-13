@@ -4,8 +4,9 @@ local card = {
     name = "生命分流（精确）",
     description = "蓝量<|cff6bc7e0{manaThreshold}|r且血量不低于|cff6bc7e0{minimumHealth}|r时，施放生命分流",
     details = "当前绝对蓝量低于设定值，且当前血量不低于设定下限时施放生命分流。默认蓝量阈值3000、最低血量400；血量低于设定下限时不会施放。成功执行时会阻断本轮后续卡片。",
-    sort = 151,
+    sort = 150.05,
     category = "class",
+    exclusiveGroup = "warlock_life_tap",
     classes = {
         WARLOCK = 1,
     },

@@ -17,12 +17,6 @@ local nextExecutionTime = 0
 local allowUse = 0
 local versionWarningShown = false
 
-local function RefreshPlayerDataAfterTargetChange()
-    if Cat2.RefreshPlayerTemporaryInformation then
-        Cat2.RefreshPlayerTemporaryInformation()
-    end
-end
-
 local function IsValidEnemy(unit, context)
     return UnitCanAttack("player", unit)
         and not UnitIsDeadOrGhost(unit)
@@ -67,20 +61,14 @@ function card.RefreshRuntimeData()
     end
 end
 
-function card.Execute(context)
-    local currentTime = GetTime()
-    if currentTime < nextExecutionTime then
-        return false
-    end
-    nextExecutionTime = currentTime + EXECUTION_INTERVAL
-
-    local player = Cat2.PlayerInformation.temporary
+local function ExecuteTargetSelection(context)
+    local needsRefresh = false
     if not Cat2.UnitXP or not Cat2.SuperWoW then
-        if player.targetExists and UnitIsDeadOrGhost("target") then
+        if UnitExists("target") and UnitIsDeadOrGhost("target") then
             ClearTarget()
-            RefreshPlayerDataAfterTargetChange()
+            needsRefresh = true
         end
-        return false
+        return needsRefresh
     end
 
     if allowUse == 0 and not versionWarningShown then
@@ -88,8 +76,8 @@ function card.Execute(context)
         versionWarningShown = true
     end
 
-    if player.targetExists and GetValidEnemyDistance("target", context) then
-        return false
+    if UnitExists("target") and GetValidEnemyDistance("target", context) then
+        return needsRefresh
     end
 
     local count, _, list = Cat2.ScanNearbyEnemies(41)
@@ -112,28 +100,44 @@ function card.Execute(context)
     if target and not UnitIsDeadOrGhost(target) then
         local oldTargetExists, oldTargetGUID = UnitExists("target")
         TargetUnit(target)
+        needsRefresh = true
         local newTargetExists, newTargetGUID = UnitExists("target")
         if newTargetExists and newTargetGUID ~= oldTargetGUID and GetValidEnemyDistance("target", context) then
-            RefreshPlayerDataAfterTargetChange()
-            return false
+            return needsRefresh
         end
         -- TargetUnit可能因候选失效而静默失败；未确认切换时恢复原目标。
         if oldTargetExists and oldTargetGUID then
             TargetUnit(oldTargetGUID)
+            needsRefresh = true
         elseif newTargetExists then
             ClearTarget()
+            needsRefresh = true
         end
     end
 
-    if player.targetExists then
+    if UnitExists("target") then
         if UnitIsDeadOrGhost("target") then
             ClearTarget()
-            RefreshPlayerDataAfterTargetChange()
+            needsRefresh = true
         end
         -- 活着但不合格的目标继续保留，并允许后续卡片执行。
-        return false
+        return needsRefresh
     end
 
+    return needsRefresh
+end
+
+-- 保留独立节流；选敌、校验与恢复全部完成后再刷新属性快照。
+function card.Execute(context)
+    local currentTime = GetTime()
+    if currentTime < nextExecutionTime then
+        return false
+    end
+    nextExecutionTime = currentTime + EXECUTION_INTERVAL
+
+    if ExecuteTargetSelection(context) and Cat2.RefreshPlayerTemporaryInformation then
+        Cat2.RefreshPlayerTemporaryInformation()
+    end
     return false
 end
 

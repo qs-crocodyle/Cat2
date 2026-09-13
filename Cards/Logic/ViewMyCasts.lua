@@ -1,13 +1,14 @@
--- 详细查看玩家施法：保留 UNIT_CASTEVENT 提供的全部玩家施法与触发效果。
+-- 事件型被动卡参考：events 只声明订阅，OnEvent 仅在本卡位于当前流程且已启用时执行。
+-- 本卡过滤被动与触发效果；需要完整原始事件时使用 ViewMyCastsDetailed.lua。
 local card = {
-    id = "common_view_my_casts_detailed",
-    name = "查看我的施法（详细）",
-    description = "显示玩家施法及触发的完整事件信息",
-    details = "监听玩家的完整施法事件，包括主动技能、被动效果和触发特效，并将技能名、等级和目标打印到聊天框。聊天窗口留空时沿用默认聊天框；填写窗口标签名后会尝试输出到对应聊天窗口，找不到时回退默认聊天框。仅在当前流程启用时生效。",
-    sort = 59,
+    id = "common_view_my_casts",
+    name = "查看我的施法",
+    description = "成功施法后，在聊天框打印技能名和等级",
+    details = "监听玩家主动施放的技能，并将技能名和等级打印到聊天框。聊天窗口留空时沿用默认聊天框；填写窗口标签名后会尝试输出到对应聊天窗口，找不到时回退默认聊天框。会过滤技能书被动技能及多数触发特效，仅在当前流程启用时生效。",
+    sort = 910,
     behavior = "passive",
     unique = true,
-    category = "common",
+    category = "logic",
     icons = {
         "Interface\\Icons\\Spell_Holy_MagicalSentry",
     },
@@ -48,6 +49,31 @@ local function GetSpellNameAndRank(spellId)
         spellName, spellRank = SpellInfo(spellId)
     end
     return spellName, spellRank
+end
+
+-- 普通查看卡只保留玩家技能书中的主动技能；详细卡负责显示完整事件。
+local function IsPlayerActiveSpell(spellId)
+    local spellName, spellRank = GetSpellNameAndRank(spellId)
+    if not spellName then
+        return false
+    end
+
+    local spellIndex = Cat2.GetSpellID(spellName, spellRank)
+    if not spellIndex or spellIndex == 0 then
+        spellIndex = Cat2.GetSpellID(spellName)
+    end
+    if not spellIndex or spellIndex == 0 then
+        return false
+    end
+
+    if type(IsPassiveSpell) == "function" then
+        local bookType = BOOKTYPE_SPELL or "spell"
+        local succeeded, isPassive = pcall(IsPassiveSpell, spellIndex, bookType)
+        if succeeded and isPassive then
+            return false
+        end
+    end
+    return true
 end
 
 local targetClassColors = {
@@ -166,8 +192,12 @@ function card.OnEvent(state, eventName, sourceGuid, targetGuid, castState, spell
     if eventName ~= "UNIT_CASTEVENT" or sourceGuid ~= GetPlayerGuid() then
         return
     end
+    if not IsPlayerActiveSpell(spellId) then
+        return
+    end
 
     if castState == "START" or castState == "CHANNEL" then
+        -- 读条和引导在启动时立即打印；记住本次施法，完成事件不再重复输出。
         state.pendingSpellId = spellId
         state.pendingTargetGuid = targetGuid
         state.pendingStartedAt = GetTime()

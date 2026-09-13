@@ -24,11 +24,11 @@ frame:RegisterEvent("SPELLCAST_START")
 frame:RegisterEvent("SPELLS_CHANGED")
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+Cat2.RegisterOptionalEvent(frame, "UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(frame, "RAW_COMBATLOG")
 
 -- Nampower 的光环移除事件；未安装时安全降级为原生技能冷却判断。
-pcall(frame.RegisterEvent, frame, "BUFF_REMOVED_SELF")
+Cat2.RegisterOptionalEvent(frame, "BUFF_REMOVED_SELF")
 
 
 -- 等待技能反馈的等待时间
@@ -177,7 +177,7 @@ local function OnEvent()
     elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
         if not Cat2.SuperWoW then
-            if string.find( arg1, ".*你的自动射击.*" ) or string.find( arg1 or "", "Your Auto Shot" ) then
+            if string.find( arg1, ".*你的自动射击.*" ) or string.find( arg1 or "", Cat2.L.Spell("自动射击") ) then
                 HunterShotTimer = GetTime()
                 HunterShotDuration = UnitRangedDamage("player")
             end
@@ -187,7 +187,7 @@ local function OnEvent()
             HunterGoreTimer = GetTime()+4
 
         -- 奥术射击 - 异常免疫目标记录
-        elseif string.find( arg1, ".*奥术射击.*免疫.*" ) or string.find( arg1 or "", "Your Arcane Shot" ) and string.find( arg1 or "", "immune" ) then
+        elseif string.find( arg1, ".*奥术射击.*免疫.*" ) or string.find( arg1 or "", Cat2.L.Spell("奥术射击") ) and string.find( arg1 or "", "immune" ) then
 
             local targetName = UnitName("target")
             if targetName then
@@ -196,7 +196,7 @@ local function OnEvent()
             end
 
         -- 猎人印记 - 异常免疫目标记录
-        elseif string.find( arg1, ".*猎人印记.*免疫.*" ) or string.find( arg1 or "", "Your Hunters Mark" ) and string.find( arg1 or "", "immune" ) then
+        elseif string.find( arg1, ".*猎人印记.*免疫.*" ) or string.find( arg1 or "", Cat2.L.Spell("猎人印记") ) and string.find( arg1 or "", "immune" ) then
 
             local targetName = UnitName("target")
             if targetName then
@@ -205,7 +205,7 @@ local function OnEvent()
             end
 
         -- 毒蛇钉刺 - 异常免疫目标记录
-        elseif string.find( arg1, ".*毒蛇钉刺.*免疫.*" ) or string.find( arg1 or "", "Your Serpent Sting" ) and string.find( arg1 or "", "immune" ) then
+        elseif string.find( arg1, ".*毒蛇钉刺.*免疫.*" ) or string.find( arg1 or "", Cat2.L.Spell("毒蛇钉刺") ) and string.find( arg1 or "", "immune" ) then
 
             local targetName = UnitName("target")
             if targetName then
@@ -281,7 +281,7 @@ local function OnEvent()
         -- 自己的攻击
         if arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
-            if string.find( arg2, "你的毒蛇钉刺.*招架.*" ) or string.find( arg2, "你的毒蛇钉刺.*躲闪.*" ) or string.find( arg2, "你的毒蛇钉刺.*格挡.*" ) or string.find( arg2, "你的毒蛇钉刺.*没有击中.*" ) or ( string.find(arg2 or "", "Your Serpent Sting") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
+            if string.find( arg2, "你的毒蛇钉刺.*招架.*" ) or string.find( arg2, "你的毒蛇钉刺.*躲闪.*" ) or string.find( arg2, "你的毒蛇钉刺.*格挡.*" ) or string.find( arg2, "你的毒蛇钉刺.*没有击中.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("毒蛇钉刺")) and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and SerpentDelayTime[targetGUID] then 
                     local timer = GetTime() - SerpentDelayTime[targetGUID]
@@ -289,7 +289,7 @@ local function OnEvent()
                         SerpentDelayTime[targetGUID] = nil
                     end
                 end
-            elseif string.find( arg2, "你的蝰蛇钉刺.*招架.*" ) or string.find( arg2, "你的蝰蛇钉刺.*躲闪.*" ) or string.find( arg2, "你的蝰蛇钉刺.*格挡.*" ) or string.find( arg2, "你的蝰蛇钉刺.*没有击中.*" ) or ( string.find(arg2 or "", "Your Viper Sting") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
+            elseif string.find( arg2, "你的蝰蛇钉刺.*招架.*" ) or string.find( arg2, "你的蝰蛇钉刺.*躲闪.*" ) or string.find( arg2, "你的蝰蛇钉刺.*格挡.*" ) or string.find( arg2, "你的蝰蛇钉刺.*没有击中.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("蝰蛇钉刺")) and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and ViperDelayTime[targetGUID] then 
                     local timer = GetTime() - ViperDelayTime[targetGUID]
@@ -297,7 +297,7 @@ local function OnEvent()
                         ViperDelayTime[targetGUID] = nil
                     end
                 end
-            elseif string.find( arg2, "你的毒蝎钉刺.*招架.*" ) or string.find( arg2, "你的毒蝎钉刺.*躲闪.*" ) or string.find( arg2, "你的毒蝎钉刺.*格挡.*" ) or string.find( arg2, "你的毒蝎钉刺.*没有击中.*" ) or ( string.find(arg2 or "", "Your Scorpid Sting") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
+            elseif string.find( arg2, "你的毒蝎钉刺.*招架.*" ) or string.find( arg2, "你的毒蝎钉刺.*躲闪.*" ) or string.find( arg2, "你的毒蝎钉刺.*格挡.*" ) or string.find( arg2, "你的毒蝎钉刺.*没有击中.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("毒蝎钉刺")) and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and ScorpidDelayTime[targetGUID] then 
                     local timer = GetTime() - ScorpidDelayTime[targetGUID]

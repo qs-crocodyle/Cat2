@@ -6,6 +6,7 @@ local card = {
     details = "技能冷却完成且存在有效目标时，以目标为施法位置使用扰乱，成功执行时会阻断本轮后续卡片。",
     sort = 1000,
     category = "class",
+    exclusiveGroup = "rogue_distract",
     classes = {
         ROGUE = 3,
     },

@@ -11,11 +11,11 @@ frame:RegisterEvent("CHAT_MSG_COMBAT_SELF_MISSES")
 frame:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+Cat2.RegisterOptionalEvent(frame, "UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(frame, "RAW_COMBATLOG")
 
 -- Nampower专有事件
-frame:RegisterEvent("BUFF_REMOVED_SELF")
+Cat2.RegisterOptionalEvent(frame, "BUFF_REMOVED_SELF")
 
 
 
@@ -199,7 +199,7 @@ local function OnEvent()
                 end
             
             -- 破甲
-            elseif string.find( arg2, "你的破甲.*招架.*" ) or string.find( arg2, "你的破甲.*躲闪.*" ) or string.find( arg2, "你的破甲.*格挡.*" ) or string.find( arg2, "你的破甲.*没有击中.*" ) or ( string.find(arg2 or "", "Your Expose Armor") and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
+            elseif string.find( arg2, "你的破甲.*招架.*" ) or string.find( arg2, "你的破甲.*躲闪.*" ) or string.find( arg2, "你的破甲.*格挡.*" ) or string.find( arg2, "你的破甲.*没有击中.*" ) or ( string.find(arg2 or "", Cat2.L.Spell("破甲")) and ( string.find(arg2 or "", "dodg") or string.find(arg2 or "", "parr") or string.find(arg2 or "", "block") or string.find(arg2 or "", "miss") ) ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and ExposeArmorDelayTime[targetGUID] then 
                     local timer = GetTime() - ExposeArmorDelayTime[targetGUID]

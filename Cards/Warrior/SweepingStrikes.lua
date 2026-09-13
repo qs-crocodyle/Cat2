@@ -35,7 +35,7 @@ local card = {
             shortLabel = "怒",
             default = 50,
             minimum = 21,
-            maximum = 100,
+            maximum = 130,
         },
     },
 }
@@ -47,7 +47,7 @@ function card.Execute(context, step)
 
     local player = Cat2.PlayerInformation.temporary
     local scanRange = context:GetStepOption(step, "scanRange") or 8
-    local maximumRage = context:GetStepOption(step, "maximumRage") or 40
+    local maximumRage = context:GetStepOption(step, "maximumRage") or 50
 
     -- 没有目标时无需继续。
     if not player.targetExists then
@@ -56,23 +56,25 @@ function card.Execute(context, step)
 
     local nearby = Cat2.ScanNearbyEnemies(scanRange)
 
-    if nearby > 1 and Cat2.SpellReadyOffset("横扫攻击",1.0) then
-
-        if player.power>=20 and Cat2.GetShapeByName("战斗姿态") then
-
+    if Cat2.ScanNearbyEnemies(scanRange+2)>1 and player.power>=20 and Cat2.SpellReadyOffset("横扫攻击",1.2) then
+        if Cat2.GetShapeByName("战斗姿态") then
             Cat2.Cast("横扫攻击")
             return true
+        end
+    end
 
+    if nearby > 1 and Cat2.SpellReadyOffset("横扫攻击",1.2) and player.power>=20 and player.power<maximumRage then
+
+        if Cat2.GetShapeByName("战斗姿态") then
+            Cat2.Cast("横扫攻击")
         end
 
-        if player.power>=20 and player.power<maximumRage and not Cat2.GetShapeByName("战斗姿态") then
+        if not Cat2.GetShapeByName("战斗姿态") then
             Cat2.Cast("战斗姿态")
-            return true
-       end
+        end
 
         return true
     end
-
 
     return false
 end

@@ -54,7 +54,7 @@ function card.Execute(context)
     -- 执行圣印卡片内容
 
 
-    if not player.buff["智慧圣印"] then
+    if not Cat2.Seal("智慧圣印") then
         Cat2.Cast("智慧圣印")
         return true
     end

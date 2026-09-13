@@ -5,6 +5,10 @@ Cat2.UI = Cat2.UI or {}
 local ui = Cat2.UI
 local ApplyFlatBackdrop = ui.ApplyFlatBackdrop
 
+local CreateScrollArea = ui.CreateScrollArea
+local UpdateScrollBar = ui.UpdateScrollBar
+local SetScrollPosition = ui.SetScrollPosition
+
 local managerWindow = nil
 local selectedProfileId = nil
 local profileEntries = {}
@@ -110,6 +114,10 @@ local function FormatScale(value)
     return integer .. "." .. decimal
 end
 
+local function FormatOpacity(value)
+    return math.floor(value * 100 + 0.5) .. "%"
+end
+
 local function RefreshManager()
     if not managerWindow then
         return
@@ -129,67 +137,99 @@ local function RefreshManager()
         profileEntries[oldIndex]:Hide()
         oldIndex = oldIndex + 1
     end
-    profileEntries = {}
     local index = 1
+    local selectedOrderIndex = nil
     while index <= table.getn(repository.profileOrder) do
         local profileId = repository.profileOrder[index]
         local entryProfile = repository.profiles[profileId]
-        local entry = CreateFrame("Button", nil, managerWindow.list)
-        entry:SetWidth(170)
-        entry:SetHeight(30)
-        entry:SetPoint("TOPLEFT", managerWindow.list, "TOPLEFT", 7, -35 - (index - 1) * 33)
-        ApplyFlatBackdrop(entry, 0.06, 0.08, 0.12, 0.94)
-        local text = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        text:SetPoint("LEFT", entry, "LEFT", 9, 0)
-        text:SetPoint("RIGHT", entry, "RIGHT", -6, 0)
-        text:SetJustifyH("LEFT")
-        text:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
-        text:SetText(entryProfile.name)
-        if profileId == selectedProfileId then
-            entry:SetBackdropColor(0.1, 0.28, 0.42, 0.98)
-            text:SetTextColor(1, 0.84, 0.28)
-        else
-            text:SetTextColor(0.78, 0.88, 0.96)
-        end
-        local entryId = profileId
-        entry:SetScript("OnClick", function()
-            selectedProfileId = entryId
-            if ui.SelectConfigurationProfile then
-                ui.SelectConfigurationProfile(entryId)
-            end
-            RefreshManager()
-        end)
-        entry:SetScript("OnEnter", function()
-            if entryId ~= selectedProfileId then
-                entry:SetBackdropColor(0.1, 0.2, 0.3, 1)
-            end
-        end)
-        entry:SetScript("OnLeave", function()
-            if entryId ~= selectedProfileId then
-                entry:SetBackdropColor(0.06, 0.08, 0.12, 0.94)
-            end
-        end)
-        entry:SetScript("OnMouseDown", function()
-            text:ClearAllPoints()
-            text:SetPoint("LEFT", entry, "LEFT", 10, -1)
-        end)
-        entry:SetScript("OnMouseUp", function()
-            text:ClearAllPoints()
+        local entry = profileEntries[index]
+        if not entry then
+            entry = CreateFrame("Button", nil, managerWindow.listContent)
+            entry:SetWidth(148)
+            entry:SetHeight(30)
+            ApplyFlatBackdrop(entry, 0.06, 0.08, 0.12, 0.94)
+            local text = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             text:SetPoint("LEFT", entry, "LEFT", 9, 0)
-        end)
-        profileEntries[index] = entry
+            text:SetPoint("RIGHT", entry, "RIGHT", -6, 0)
+            text:SetJustifyH("LEFT")
+            text:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+            entry.text = text
+            entry:SetScript("OnClick", function()
+                selectedProfileId = entry.profileId
+                if ui.SelectConfigurationProfile then
+                    ui.SelectConfigurationProfile(entry.profileId)
+                end
+                RefreshManager()
+            end)
+            entry:SetScript("OnEnter", function()
+                if entry.profileId ~= selectedProfileId then
+                    entry:SetBackdropColor(0.1, 0.2, 0.3, 1)
+                end
+            end)
+            entry:SetScript("OnLeave", function()
+                if entry.profileId ~= selectedProfileId then
+                    entry:SetBackdropColor(0.06, 0.08, 0.12, 0.94)
+                end
+            end)
+            entry:SetScript("OnMouseDown", function()
+                entry.text:ClearAllPoints()
+                entry.text:SetPoint("LEFT", entry, "LEFT", 10, -1)
+            end)
+            entry:SetScript("OnMouseUp", function()
+                entry.text:ClearAllPoints()
+                entry.text:SetPoint("LEFT", entry, "LEFT", 9, 0)
+            end)
+            profileEntries[index] = entry
+        end
+        entry.profileId = profileId
+        entry.text:SetText(entryProfile.name)
+        entry:ClearAllPoints()
+        entry:SetPoint("TOPLEFT", managerWindow.listContent, "TOPLEFT", 1, -1 - (index - 1) * 33)
+        if profileId == selectedProfileId then
+            selectedOrderIndex = index
+            entry:SetBackdropColor(0.1, 0.28, 0.42, 0.98)
+            entry.text:SetTextColor(1, 0.84, 0.28)
+        else
+            entry:SetBackdropColor(0.06, 0.08, 0.12, 0.94)
+            entry.text:SetTextColor(0.78, 0.88, 0.96)
+        end
+        entry:Show()
         index = index + 1
+    end
+
+    local contentHeight = table.getn(repository.profileOrder) * 33 + 2
+    local minimumHeight = managerWindow.listScroll:GetHeight()
+    if contentHeight < minimumHeight then
+        contentHeight = minimumHeight
+    end
+    managerWindow.listContent:SetHeight(contentHeight)
+    UpdateScrollBar(managerWindow.listScroll, managerWindow.listSlider, contentHeight)
+
+    -- 新建配置或从外部切换配置后，保证当前项自动进入可见区域。
+    if selectedOrderIndex then
+        local entryTop = (selectedOrderIndex - 1) * 33
+        local entryBottom = entryTop + 30
+        local scrollTop = managerWindow.listScroll:GetVerticalScroll()
+        local scrollBottom = scrollTop + managerWindow.listScroll:GetHeight()
+        if entryTop < scrollTop then
+            SetScrollPosition(managerWindow.listScroll, managerWindow.listSlider, entryTop)
+        elseif entryBottom > scrollBottom then
+            SetScrollPosition(managerWindow.listScroll, managerWindow.listSlider, entryBottom - managerWindow.listScroll:GetHeight())
+        end
     end
 
     managerWindow.profileName:SetText(profile.name)
     if managerWindow.UpdateCommandText then
         managerWindow.UpdateCommandText(profile.name)
     end
-    local visible, iconLimit, direction, _, _, scale = Cat2.GetProfileShortcutWindowSettings(selectedProfileId)
+    local visible, iconLimit, direction, _, _, scale, opacity, locked, showCooldown = Cat2.GetProfileShortcutWindowSettings(selectedProfileId)
     managerWindow.visible = visible
     managerWindow.iconLimit = iconLimit
     managerWindow.direction = direction
     managerWindow.scale = scale
+    managerWindow.opacity = opacity
+    managerWindow.locked = locked
+    managerWindow.showCooldown = showCooldown
     managerWindow.visibilityButton.text:SetText(visible and Cat2.L("已开启") or Cat2.L("已关闭"))
     if visible then
         managerWindow.visibilityButton.SetColors(0.08, 0.3, 0.18, 0.14, 0.45, 0.28, 0.04, 0.16, 0.09)
@@ -199,17 +239,19 @@ local function RefreshManager()
     managerWindow.visibilityButton:ApplyBaseColor()
     managerWindow.limitText:SetText(iconLimit)
     managerWindow.scaleText:SetText(FormatScale(scale))
-    managerWindow.cooldownButton = managerWindow.cooldownButton or CreateFrame("Button", nil, managerWindow, "UIPanelButtonTemplate")
-    managerWindow.cooldownButton:SetPoint("LEFT", managerWindow.lockButton, "RIGHT", 12, 0)
-    managerWindow.cooldownButton:SetSize(88, 28)
-    managerWindow.cooldownButton:SetText(showCooldown and "�ʾ��ȴ" or "������ȴ")
-    managerWindow.cooldownButton:SetScript("OnClick", function()
-        SaveLayout(managerWindow.visible, managerWindow.iconLimit, managerWindow.direction, managerWindow.scale, not managerWindow.showCooldown)
-    end)
-    if showCooldown then
-        managerWindow.cooldownButton:SetColors(0.08, 0.3, 0.18, 0.14, 0.45, 0.28, 0.04, 0.16, 0.09)
+    managerWindow.opacityText:SetText(FormatOpacity(opacity))
+    managerWindow.lockButton.text:SetText(locked and Cat2.L("解除锁定") or Cat2.L("位置锁定"))
+    if locked then
+        managerWindow.lockButton.SetColors(0.1, 0.28, 0.42, 0.14, 0.4, 0.58, 0.05, 0.16, 0.24)
     else
-        managerWindow.cooldownButton:SetColors(0.32, 0.07, 0.08, 0.48, 0.1, 0.12, 0.18, 0.03, 0.04)
+        managerWindow.lockButton.SetColors(0.08, 0.18, 0.27, 0.12, 0.4, 0.58, 0.04, 0.1, 0.16)
+    end
+    managerWindow.lockButton:ApplyBaseColor()
+    managerWindow.cooldownButton.text:SetText(showCooldown and Cat2.L("显示冷却") or Cat2.L("隐藏冷却"))
+    if showCooldown then
+        managerWindow.cooldownButton.SetColors(0.08, 0.3, 0.18, 0.14, 0.45, 0.28, 0.04, 0.16, 0.09)
+    else
+        managerWindow.cooldownButton.SetColors(0.32, 0.07, 0.08, 0.48, 0.1, 0.12, 0.18, 0.03, 0.04)
     end
     managerWindow.cooldownButton:ApplyBaseColor()
     managerWindow.horizontalButton:SetBackdropColor(direction == "horizontal" and 0.12 or 0.08, direction == "horizontal" and 0.4 or 0.18, direction == "horizontal" and 0.58 or 0.27, 0.98)
@@ -221,11 +263,20 @@ local function RefreshManager()
     managerWindow.windowCount:SetText(Cat2.L("已开启快捷窗：") .. CountVisibleWindows() .. " / " .. maximumWindows)
 end
 
-local function SaveLayout(visible, iconLimit, direction, scale, showCooldown)
+local function SaveLayout(visible, iconLimit, direction, scale, opacity, locked, showCooldown)
+    if scale == nil then
+        scale = managerWindow.scale
+    end
+    if opacity == nil then
+        opacity = managerWindow.opacity
+    end
+    if locked == nil then
+        locked = managerWindow.locked
+    end
     if showCooldown == nil then
         showCooldown = managerWindow.showCooldown
     end
-    Cat2.SaveProfileShortcutWindowSettings(selectedProfileId, visible, iconLimit, direction, nil, nil, scale or managerWindow.scale, managerWindow.opacity, managerWindow.locked, showCooldown)
+    Cat2.SaveProfileShortcutWindowSettings(selectedProfileId, visible, iconLimit, direction, nil, nil, scale, opacity, locked, showCooldown)
     if ui.RedrawMinimizedShortcuts then
         ui.RedrawMinimizedShortcuts()
     end
@@ -286,6 +337,17 @@ local function CreateManager()
     listTitle:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     listTitle:SetTextColor(0.5, 0.82, 1)
     listTitle:SetText(Cat2.L("配置列表"))
+
+    -- 标题和底部操作按钮固定，只让中间配置条目滚动。
+    managerWindow.listScroll, managerWindow.listContent, managerWindow.listSlider = CreateScrollArea(managerWindow.list)
+    managerWindow.listScroll:SetWidth(150)
+    managerWindow.listScroll:SetHeight(278)
+    managerWindow.listScroll:SetPoint("TOPLEFT", managerWindow.list, "TOPLEFT", 7, -34)
+    managerWindow.listContent:SetWidth(148)
+    managerWindow.listContent:SetHeight(278)
+    managerWindow.listSlider:SetWidth(12)
+    managerWindow.listSlider:SetHeight(278)
+    managerWindow.listSlider:SetPoint("TOPRIGHT", managerWindow.list, "TOPRIGHT", -7, -34)
 
     -- 配置的创建与删除集中放在列表底部，避免主界面与管理界面各维护一套入口。
     local createProfileButton = CreateButton(managerWindow.list, Cat2.L("新建配置"), 78, 28)
@@ -453,7 +515,7 @@ local function CreateManager()
     managerWindow.windowCount:SetTextColor(0.58, 0.7, 0.82)
 
     local limitLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    limitLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -112)
+    limitLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -104)
     limitLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     limitLabel:SetTextColor(0.72, 0.84, 0.96)
     limitLabel:SetText(Cat2.L("每行或列图标数"))
@@ -483,7 +545,7 @@ local function CreateManager()
     end)
 
     local directionLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    directionLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -157)
+    directionLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -140)
     directionLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     directionLabel:SetTextColor(0.72, 0.84, 0.96)
     directionLabel:SetText(Cat2.L("排列方向"))
@@ -499,7 +561,7 @@ local function CreateManager()
     end)
 
     local scaleLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    scaleLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -202)
+    scaleLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -176)
     scaleLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
     scaleLabel:SetTextColor(0.72, 0.84, 0.96)
     scaleLabel:SetText(Cat2.L("快捷窗缩放"))
@@ -526,6 +588,37 @@ local function CreateManager()
             value = 1.8
         end
         SaveLayout(managerWindow.visible, managerWindow.iconLimit, managerWindow.direction, value)
+    end)
+
+    -- 非图标透明度：标题、底纹、按钮边框等界面元素共用同一亮度调节。
+    local opacityLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    opacityLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -212)
+    opacityLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    opacityLabel:SetTextColor(0.72, 0.84, 0.96)
+    opacityLabel:SetText(Cat2.L("非图标透明度"))
+    local opacityDecrease = CreateButton(content, "-", 26, 24)
+    opacityDecrease:SetPoint("LEFT", opacityLabel, "RIGHT", 40, 0)
+    managerWindow.opacityText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    managerWindow.opacityText:SetPoint("LEFT", opacityDecrease, "RIGHT", 12, 0)
+    managerWindow.opacityText:SetWidth(42)
+    managerWindow.opacityText:SetJustifyH("CENTER")
+    managerWindow.opacityText:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+    managerWindow.opacityText:SetTextColor(1, 0.82, 0.2)
+    local opacityIncrease = CreateButton(content, "+", 26, 24)
+    opacityIncrease:SetPoint("LEFT", managerWindow.opacityText, "RIGHT", 12, 0)
+    opacityDecrease:SetScript("OnClick", function()
+        local value = managerWindow.opacity - 0.1
+        if value < 0 then
+            value = 0
+        end
+        SaveLayout(managerWindow.visible, managerWindow.iconLimit, managerWindow.direction, managerWindow.scale, value)
+    end)
+    opacityIncrease:SetScript("OnClick", function()
+        local value = managerWindow.opacity + 0.1
+        if value > 1 then
+            value = 1
+        end
+        SaveLayout(managerWindow.visible, managerWindow.iconLimit, managerWindow.direction, managerWindow.scale, value)
     end)
 
     local commandLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -589,6 +682,16 @@ local function CreateManager()
         if ui.ResetMinimizedWindowPosition then
             ui.ResetMinimizedWindowPosition(selectedProfileId)
         end
+    end)
+    managerWindow.lockButton = CreateButton(content, Cat2.L("位置锁定"), 88, 28)
+    managerWindow.lockButton:SetPoint("LEFT", reset, "RIGHT", 12, 0)
+    managerWindow.lockButton:SetScript("OnClick", function()
+        SaveLayout(managerWindow.visible, managerWindow.iconLimit, managerWindow.direction, managerWindow.scale, managerWindow.opacity, not managerWindow.locked)
+    end)
+    managerWindow.cooldownButton = CreateButton(content, Cat2.L("显示冷却"), 88, 28)
+    managerWindow.cooldownButton:SetPoint("LEFT", managerWindow.lockButton, "RIGHT", 12, 0)
+    managerWindow.cooldownButton:SetScript("OnClick", function()
+        SaveLayout(managerWindow.visible, managerWindow.iconLimit, managerWindow.direction, managerWindow.scale, managerWindow.opacity, managerWindow.locked, not managerWindow.showCooldown)
     end)
     managerWindow:Hide()
 end

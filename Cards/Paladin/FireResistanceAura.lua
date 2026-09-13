@@ -6,6 +6,7 @@ local card = {
     details = "切换并保持火焰抗性光环。",
     sort = 63,
     category = "class",
+    exclusiveGroup = "paladin_aura",
     classes = {
         PALADIN = 2,
     },

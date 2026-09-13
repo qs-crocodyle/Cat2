@@ -989,5 +989,8 @@ function ui.CloseAllDialogs()
     if ui.HideRulesWindow then
         ui.HideRulesWindow()
     end
+    if ui.HideProfileIconPicker then
+        ui.HideProfileIconPicker()
+    end
     ui.HideMainWindowDim()
 end

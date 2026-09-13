@@ -6,6 +6,7 @@ local card = {
     details = "技能冷却完成且存在有效目标时，以目标为施法位置使用飓风，成功执行时会阻断本轮后续卡片。",
     sort = 129.2,
     category = "class",
+    exclusiveGroup = "druid_hurricane",
     classes = {
         DRUID = 1,
     },

@@ -5,6 +5,7 @@ local card = {
     description = "目标背后且60能量时施放背刺",
     details = "手持匕首，目标背后且60能量时施放背刺，若无匕首，则打邪恶打击。需要存在有效目标。会检查当前资源。会检查与目标的相对位置。成功执行时会阻断本轮后续卡片。",
     sort = 30,
+    exclusiveGroup = "rogue_backstab_sinister",
     category = "class",
     canStopSequence = true,
     classes = {

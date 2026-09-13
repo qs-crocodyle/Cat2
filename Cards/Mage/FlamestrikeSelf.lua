@@ -6,6 +6,7 @@ local card = {
     details = "以自己为施法位置使用烈焰风暴，成功执行时会阻断本轮后续卡片。",
     sort = 55.1,
     category = "class",
+    exclusiveGroup = "mage_flamestrike",
     classes = {
         MAGE = 2,
     },
@@ -37,7 +38,7 @@ function card.Execute(context)
         return false
     end
 
-    Cat2.Cast("烈焰风暴")
+    Cat2.Cast(Cat2.GetAlternatingFlamestrikeName(context))
     UnitXP("castAOE", "player")
 
     return true

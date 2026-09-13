@@ -6,6 +6,7 @@ local card = {
     details = "切换并保持专注光环。",
     sort = 0,
     category = "class",
+    exclusiveGroup = "paladin_aura",
     classes = {
         PALADIN = 1,
     },

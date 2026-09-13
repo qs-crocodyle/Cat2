@@ -6,6 +6,7 @@ local card = {
     details = "按卡片设定等级，以目标为施法位置使用暴风雪；默认动态使用当前已学习的最高等级，需UnitXP202607以上。成功执行时会阻断本轮后续卡片。",
     sort = 40.2,
     category = "class",
+    exclusiveGroup = "mage_blizzard",
     classes = {
         MAGE = 3,
     },

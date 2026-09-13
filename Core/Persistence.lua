@@ -255,9 +255,8 @@ end
 
 -- 记录退出游戏时独立流程快捷小窗是否仍处于显示状态。
 
-
--- �ɰ浥��ݴ������� ShaguDPS ��ͬ�����ĵ�������ꡣ���ڻָ�ʱ�:::;
--- ����л��ֱ��ʺ����ܱ��ִ�����ͬ����Ļλ�ã��� left/top ���ݼ�����Ϊ���ݻ��ˡ�
+-- 旧版单快捷窗采用与 ShaguDPS 相同的中心点比例坐标。窗口恢复时再按当前分辨率换算，
+-- 因此切换分辨率后仍能保持大致相同的屏幕位置；旧 left/top 数据继续作为兼容回退。
 function Cat2.GetMinimizedWindowCenterPosition()
     local database = EnsureDatabase()
     local position = database.ui.minimizedCenterPosition
@@ -325,7 +324,10 @@ local function GetProfileShortcutWindowTable(profileId)
             visible = 0,
             iconLimit = 1,
             direction = "vertical",
-            scale = 1
+            scale = 1,
+            opacity = 0.6,
+            locked = 0,
+            showCooldown = 1
         }
         local activeProfileId = database.configurations and database.configurations.activeProfileId
         if profileId == activeProfileId and database.ui.minimizedWindowVisible == 1 then
@@ -360,11 +362,101 @@ function Cat2.GetProfileShortcutWindowSettings(profileId)
         scale = 1.8
     end
     local opacity = tonumber(settings.opacity) or 0.6
-    local showCooldown = settings.showCooldown == 1
-    return settings.visible == 1, iconLimit, direction, tonumber(settings.left), tonumber(settings.top), scale, opacity, showCooldown
+    if opacity < 0 then
+        opacity = 0
+    end
+    if opacity > 1 then
+        opacity = 1
+    end
+    local locked = settings.locked == 1
+    -- 旧存档没有该字段时保持兼容，默认显示快捷窗技能与物品冷却。
+    local showCooldown = settings.showCooldown ~= 0
+    return settings.visible == 1, iconLimit, direction, tonumber(settings.left), tonumber(settings.top), scale, opacity, locked, showCooldown
 end
 
-function Cat2.SaveProfileShortcutWindowSettings(profileId, visible, iconLimit, direction, left, top, scale)
+-- 旧版本保存的原始锚点仅用于兼容迁移。新版本第一次拖动后会写入下方的中心点比例坐标，
+-- 并清理这些旧字段；relativeTo 不写入 SavedVariables，旧位置始终相对 UIParent 恢复。
+local validShortcutAnchorPoints = {
+    TOPLEFT = true,
+    TOP = true,
+    TOPRIGHT = true,
+    LEFT = true,
+    CENTER = true,
+    RIGHT = true,
+    BOTTOMLEFT = true,
+    BOTTOM = true,
+    BOTTOMRIGHT = true,
+}
+
+function Cat2.GetProfileShortcutWindowAnchor(profileId)
+    local settings = GetProfileShortcutWindowTable(profileId)
+    local point = settings.anchorPoint
+    local relativePoint = settings.anchorRelativePoint
+    local offsetX = tonumber(settings.anchorX)
+    local offsetY = tonumber(settings.anchorY)
+    if not validShortcutAnchorPoints[point] or not validShortcutAnchorPoints[relativePoint] or offsetX == nil or offsetY == nil then
+        return nil, nil, nil, nil
+    end
+    return point, relativePoint, offsetX, offsetY
+end
+
+function Cat2.SaveProfileShortcutWindowAnchor(profileId, point, relativePoint, offsetX, offsetY)
+    if not validShortcutAnchorPoints[point] or not validShortcutAnchorPoints[relativePoint] then
+        return false
+    end
+    offsetX = tonumber(offsetX)
+    offsetY = tonumber(offsetY)
+    if offsetX == nil or offsetY == nil then
+        return false
+    end
+    local settings = GetProfileShortcutWindowTable(profileId)
+    settings.anchorPoint = point
+    settings.anchorRelativePoint = relativePoint
+    settings.anchorX = offsetX
+    settings.anchorY = offsetY
+    -- 新锚点保存成功后清理旧版绝对位置，后续登录只走安全恢复路径。
+    settings.left = nil
+    settings.top = nil
+    return true
+end
+
+-- 配置快捷窗使用与 ShaguDPS 相同的中心点比例坐标。拖动结束只保存这组数值，
+-- 不在同一次鼠标回调中重新挂锚；SetPoint 只发生在窗口创建/加载阶段。
+function Cat2.GetProfileShortcutWindowCenterPosition(profileId)
+    local settings = GetProfileShortcutWindowTable(profileId)
+    local position = settings.position
+    if type(position) ~= "table" then
+        return nil, nil
+    end
+    local relativeX = tonumber(position[1])
+    local relativeY = tonumber(position[2])
+    if position.rel ~= true or relativeX == nil or relativeY == nil then
+        return nil, nil
+    end
+    return relativeX * GetScreenWidth(), relativeY * GetScreenHeight()
+end
+
+function Cat2.SaveProfileShortcutWindowCenterPosition(profileId, centerX, centerY)
+    centerX = tonumber(centerX)
+    centerY = tonumber(centerY)
+    local screenWidth = GetScreenWidth()
+    local screenHeight = GetScreenHeight()
+    if centerX == nil or centerY == nil or not screenWidth or not screenHeight or screenWidth <= 0 or screenHeight <= 0 then
+        return false
+    end
+    local settings = GetProfileShortcutWindowTable(profileId)
+    settings.position = { centerX / screenWidth, centerY / screenHeight, rel = true }
+    -- 新坐标保存成功后清理两套旧格式，后续登录只按中心点比例恢复。
+    settings.left = nil
+    settings.top = nil
+    settings.anchorPoint = nil
+    settings.anchorRelativePoint = nil
+    settings.anchorX = nil
+    settings.anchorY = nil
+    return true
+end
+
+function Cat2.SaveProfileShortcutWindowSettings(profileId, visible, iconLimit, direction, left, top, scale, opacity, locked, showCooldown)
     local settings = GetProfileShortcutWindowTable(profileId)
     settings.visible = visible and 1 or 0
     settings.iconLimit = math.floor(tonumber(iconLimit) or 1)
@@ -388,6 +480,21 @@ function Cat2.SaveProfileShortcutWindowSettings(profileId, visible, iconLimit, d
             settings.scale = 1.8
         end
     end
+    if opacity then
+        settings.opacity = tonumber(opacity) or 0.6
+        if settings.opacity < 0 then
+            settings.opacity = 0
+        end
+        if settings.opacity > 1 then
+            settings.opacity = 1
+        end
+    end
+    if locked ~= nil then
+        settings.locked = locked and 1 or 0
+    end
+    if showCooldown ~= nil then
+        settings.showCooldown = showCooldown and 1 or 0
+    end
 end
 
 function Cat2.RemoveProfileShortcutWindowSettings(profileId)
@@ -399,11 +506,17 @@ end
 
 function Cat2.ResetProfileShortcutWindowPosition(profileId)
     local settings = GetProfileShortcutWindowTable(profileId)
+    settings.position = nil
     settings.left = nil
     settings.top = nil
+    settings.anchorPoint = nil
+    settings.anchorRelativePoint = nil
+    settings.anchorX = nil
+    settings.anchorY = nil
 end
 
 function Cat2.ResetMinimizedPositionData()
     local database = EnsureDatabase()
     database.ui.minimizedPosition = nil
+    database.ui.minimizedCenterPosition = nil
 end

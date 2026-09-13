@@ -374,6 +374,11 @@ function ui.TogglePlayerDebugWindow()
     end
 end
 
+function ui.ShowPlayerDebugWindow()
+    CreateDebugWindow()
+    debugWindow:Show()
+end
+
 function ui.IsPlayerDebugWindowVisible()
     return debugWindow and debugWindow:IsVisible() and true or false
 end

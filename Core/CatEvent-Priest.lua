@@ -23,8 +23,8 @@ frame:RegisterEvent("SPELLCAST_CHANNEL_STOP")
 
 
 -- SuperWow专有事件
-frame:RegisterEvent("UNIT_CASTEVENT")
-frame:RegisterEvent("RAW_COMBATLOG")
+Cat2.RegisterOptionalEvent(frame, "UNIT_CASTEVENT")
+Cat2.RegisterOptionalEvent(frame, "RAW_COMBATLOG")
 
 
 
@@ -112,7 +112,7 @@ local function OnEvent()
     elseif event == "CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE" then
         --print(arg1)
 
-        if string.find(arg1, "你的精神鞭笞使.*") or string.find(arg1 or "", "Your Mind Flay hits" ) then
+        if string.find(arg1, "你的精神鞭笞使.*") or string.find(arg1 or "", Cat2.L.Spell("精神鞭笞") .. " hits" ) then
             MindFlayCount = MindFlayCount + 1
         end
 
@@ -175,7 +175,7 @@ local function OnEvent()
         if arg1 == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 
             -- 暗言术：痛
-            if string.find( arg2, "你的暗言术：痛被.*抵抗.*" ) or string.find( arg2 or "", "Your Shadow Word: Pain was resisted" ) then
+            if string.find( arg2, "你的暗言术：痛被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("暗言术：痛") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and PainDelayTime[targetGUID] then 
                     local timer = GetTime() - PainDelayTime[targetGUID]
@@ -186,7 +186,7 @@ local function OnEvent()
             end
 
             -- 吸血鬼的拥抱
-            if string.find( arg2, "你的吸血鬼的拥抱被.*抵抗.*" ) or string.find( arg2 or "", "Your Vampiric Embrace was resisted" ) then
+            if string.find( arg2, "你的吸血鬼的拥抱被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("吸血鬼的拥抱") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and VampiricDelayTime[targetGUID] then 
                     local timer = GetTime() - VampiricDelayTime[targetGUID]
@@ -197,7 +197,7 @@ local function OnEvent()
             end
 
             -- 神圣之火
-            if string.find( arg2, "你的神圣之火被.*抵抗.*" ) or string.find( arg2 or "", "Your Holy Fire was resisted" ) then
+            if string.find( arg2, "你的神圣之火被.*抵抗.*" ) or string.find( arg2 or "", Cat2.L.Spell("神圣之火") .. " was resisted" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and HolyFireDelayTime[targetGUID] then 
                     local timer = GetTime() - HolyFireDelayTime[targetGUID]

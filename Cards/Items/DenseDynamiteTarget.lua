@@ -6,6 +6,7 @@ local card = {
     details = "物品冷却完成且存在有效目标时，以目标为投掷位置使用致密炸弹，成功执行时会阻断本轮后续卡片。",
     sort = 1000,
     category = "item",
+    exclusiveGroup = "dense_dynamite",
     canStopSequence = true,
     icons = {
         "Interface\\Icons\\INV_Misc_Bomb_06",

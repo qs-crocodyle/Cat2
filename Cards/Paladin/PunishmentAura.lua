@@ -6,6 +6,7 @@ local card = {
     details = "切换并保持惩罚光环。",
     sort = 0.5,
     category = "class",
+    exclusiveGroup = "paladin_aura",
     classes = {
         PALADIN = 3,
     },
