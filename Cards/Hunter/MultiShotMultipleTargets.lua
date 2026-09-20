@@ -67,7 +67,7 @@ function card.Execute(context)
 	for key, value in pairs(list) do
 
 		-- 目标 1可以攻击 2未死亡 3排除小动物
-		if UnitCanAttack("player", key) and not UnitIsDeadOrGhost(key) and UnitCreatureType(key) ~= "小动物" then
+		if UnitCanAttack("player", key) and not UnitIsDeadOrGhost(key) and UnitCreatureType(key) ~= "小动物" and UnitCreatureType(key) ~= "Critter" then
 		-- 1正面朝向
         local behind = UnitXP("behind", key, "player")
 		if behind==false then

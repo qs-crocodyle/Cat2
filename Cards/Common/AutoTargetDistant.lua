@@ -30,6 +30,7 @@ local function IsValidEnemy(unit, context)
 		and not UnitIsDeadOrGhost(unit)
 		and Cat2.IsAutoTargetCandidateAllowed(unit, context)
 		and UnitCreatureType(unit) ~= "小动物"
+		and UnitCreatureType(unit) ~= "Critter"
 end
 
 -- 几何条件统一限定为8码外、41码内、角色正面且处于视野中。

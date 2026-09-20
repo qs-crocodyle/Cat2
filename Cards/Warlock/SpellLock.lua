@@ -14,7 +14,7 @@ local function GetSpellLockPetActionSlot()
                 actionName = _G[actionName] or actionName
             end
         end
-        if actionName == "法术封锁" then
+        if actionName == "法术封锁" or actionName == Cat2.L.Spell("法术封锁") then
             return slot
         end
         slot = slot + 1

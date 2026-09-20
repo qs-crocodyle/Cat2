@@ -111,7 +111,7 @@ local function OnEvent()
     -- 施法事件处理，读条类，读条也要处理GCD
     elseif event == "SPELLCAST_START" then
 
-        if arg1 == "熔岩爆裂" then 
+        if arg1 == "熔岩爆裂" or arg1 == Cat2.L.Spell("熔岩爆裂") then 
             BeginLavaBurstCastTimer = GetTime()+4.0
         end
 
@@ -156,108 +156,108 @@ local function OnEvent()
         if not Cat2.SuperWoW then
             local totemName = Cat2.Match(arg1, "你施放了(.+)。") or Cat2.Match(arg1 or "", "You cast (.+)%.")
 
-            if totemName=="地缚图腾" then
+            if totemName=="地缚图腾" or totemName==Cat2.L.Spell("地缚图腾") then
                 EarthTotemDuration = 45
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "地缚图腾"
-            elseif totemName=="石爪图腾" then
+            elseif totemName=="石爪图腾" or totemName==Cat2.L.Spell("石爪图腾") then
                 EarthTotemDuration = 15
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "石爪图腾"
-            elseif totemName=="大地之力图腾" then
+            elseif totemName=="大地之力图腾" or totemName==Cat2.L.Spell("大地之力图腾") then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "大地之力图腾"
-            elseif totemName=="石肤图腾" then
+            elseif totemName=="石肤图腾" or totemName==Cat2.L.Spell("石肤图腾") then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "石肤图腾"
-            elseif totemName=="战栗图腾" then
+            elseif totemName=="战栗图腾" or totemName==Cat2.L.Spell("战栗图腾") then
                 EarthTotemDuration = 120
                 EarthTotemTimer = GetTime()
                 EarthTotemName = "战栗图腾"
 
-            elseif totemName=="火焰新星图腾" then
+            elseif totemName=="火焰新星图腾" or totemName==Cat2.L.Spell("火焰新星图腾") then
                 FireTotemDuration = 5
                 FireTotemTimer = GetTime()
                 FireTotemName = "火焰新星图腾"
 
-            elseif totemName=="灼热图腾" then
+            elseif totemName=="灼热图腾" or totemName==Cat2.L.Spell("灼热图腾") then
                 FireTotemDuration = 55
                 FireTotemTimer = GetTime()
                 FireTotemName = "灼热图腾"
 
-            elseif totemName=="熔岩图腾" then
+            elseif totemName=="熔岩图腾" or totemName==Cat2.L.Spell("熔岩图腾") then
                 FireTotemDuration = 20
                 FireTotemTimer = GetTime()
                 FireTotemName = "熔岩图腾"
 
-            elseif totemName=="抗寒图腾" then
+            elseif totemName=="抗寒图腾" or totemName==Cat2.L.Spell("抗寒图腾") then
                 FireTotemDuration = 120
                 FireTotemTimer = GetTime()
                 FireTotemName = "抗寒图腾"
 
-            elseif totemName=="火舌图腾" then
+            elseif totemName=="火舌图腾" or totemName==Cat2.L.Spell("火舌图腾") then
                 FireTotemDuration = 120
                 FireTotemTimer = GetTime()
                 FireTotemName = "火舌图腾"
 
-            elseif totemName=="抗火图腾" then
+            elseif totemName=="抗火图腾" or totemName==Cat2.L.Spell("抗火图腾") then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "抗火图腾"
 
-            elseif totemName=="治疗之泉图腾" then
+            elseif totemName=="治疗之泉图腾" or totemName==Cat2.L.Spell("治疗之泉图腾") then
                 WaterTotemDuration = 60
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "治疗之泉图腾"
 
-            elseif totemName=="法力之泉图腾" then
+            elseif totemName=="法力之泉图腾" or totemName==Cat2.L.Spell("法力之泉图腾") then
                 WaterTotemDuration = 60
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "法力之泉图腾"
 
-            elseif totemName=="清毒图腾" then
+            elseif totemName=="清毒图腾" or totemName==Cat2.L.Spell("清毒图腾") then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "清毒图腾"
 
-            elseif totemName=="祛病图腾" then
+            elseif totemName=="祛病图腾" or totemName==Cat2.L.Spell("祛病图腾") then
                 WaterTotemDuration = 120
                 WaterTotemTimer = GetTime()
                 WaterTotemName = "祛病图腾"
 
-            elseif totemName=="岗哨图腾" then
+            elseif totemName=="岗哨图腾" or totemName==Cat2.L.Spell("岗哨图腾") then
                 AirTotemDuration = 300
                 AirTotemTimer = GetTime()
                 AirTotemName = "岗哨图腾"
 
-            elseif totemName=="根基图腾" then
+            elseif totemName=="根基图腾" or totemName==Cat2.L.Spell("根基图腾") then
                 AirTotemDuration = 45
                 AirTotemTimer = GetTime()
                 AirTotemName = "根基图腾"
 
-            elseif totemName=="自然抗性图腾" then
+            elseif totemName=="自然抗性图腾" or totemName==Cat2.L.Spell("自然抗性图腾") then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "自然抗性图腾"
 
-            elseif totemName=="风之优雅图腾" then
+            elseif totemName=="风之优雅图腾" or totemName==Cat2.L.Spell("风之优雅图腾") then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风之优雅图腾"
 
-            elseif totemName=="风墙图腾" then
+            elseif totemName=="风墙图腾" or totemName==Cat2.L.Spell("风墙图腾") then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风墙图腾"
 
-            elseif totemName=="风怒图腾" then
+            elseif totemName=="风怒图腾" or totemName==Cat2.L.Spell("风怒图腾") then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "风怒图腾"
 
-            elseif totemName=="宁静之风图腾" then
+            elseif totemName=="宁静之风图腾" or totemName==Cat2.L.Spell("宁静之风图腾") then
                 AirTotemDuration = 120
                 AirTotemTimer = GetTime()
                 AirTotemName = "宁静之风图腾"

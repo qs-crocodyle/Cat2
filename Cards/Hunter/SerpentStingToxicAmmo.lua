@@ -36,7 +36,7 @@ function card.Execute(context)
     end
 
     -- 机械和元素生物无法中毒
-    if player.targetCreatureType == "机械" or player.targetCreatureType == "元素生物" then
+    if player.targetCreatureType == "机械" or player.targetCreatureType == "Mechanical" or player.targetCreatureType == "元素生物" or player.targetCreatureType == "Elemental" then
         return false
     end
 

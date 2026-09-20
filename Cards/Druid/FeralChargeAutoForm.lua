@@ -28,7 +28,7 @@ function card.RefreshRuntimeData()
     local formIndex = 1
     while formIndex <= formCount do
         local _, formName = GetShapeshiftFormInfo(formIndex)
-        if formName == "巨熊形态" or formName == "熊形态" then
+        if formName == "巨熊形态" or formName == Cat2.L.Spell("巨熊形态") or formName == "熊形态" or formName == Cat2.L.Spell("熊形态") then
             bearFormId = formIndex
             return
         end

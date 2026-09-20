@@ -31,7 +31,7 @@ do
     end
 
     local function GetValidNearbyEnemyDistance(unit, maximumDistance, context)
-        if not IsBasicValidEnemy(unit, context) or UnitCreatureType(unit) == "小动物" then
+        if not IsBasicValidEnemy(unit, context) or UnitCreatureType(unit) == "小动物" or UnitCreatureType(unit) == "Critter" then
             return nil
         end
         if UnitXP("behind", unit, "player") or not UnitXP("inSight", "player", unit) then

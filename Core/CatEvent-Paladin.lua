@@ -191,7 +191,7 @@ local function OnEvent()
             PaladinSealRightDuration = GetTime()
             PaladinSealFairnessDuration = 0
 
-        elseif string.find( arg1, "你获得了公正圣印的效果.*" ) then
+        elseif string.find( arg1, "你获得了公正圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of " .. Cat2.L.Spell("公正圣印") ) then
 
             PaladinSealJustice = false
             PaladinSealCommand = false

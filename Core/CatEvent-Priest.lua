@@ -87,7 +87,7 @@ local function OnEvent()
     -- 施法事件处理，读条类，读条也要处理GCD
     elseif event == "SPELLCAST_START" then
 
-        if arg1 == "神圣之火" then
+        if arg1 == "神圣之火" or arg1 == Cat2.L.Spell("神圣之火") then
             CastHolyFireTimer=GetTime()+(arg2/1000)+0.3
         end
 

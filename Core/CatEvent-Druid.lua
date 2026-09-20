@@ -277,18 +277,18 @@ local function OnEvent()
         elseif arg1 == "CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE" then
 
             -- 扫击 dot jump
-            if string.find( arg2, "你的扫击使.*" ) then
+            if string.find( arg2, "你的扫击使.*" ) or string.find( arg2 or "", Cat2.L.Spell("扫击") ) then
                 DruidRateJumpTimer = GetTime() + 3.0
 
             -- 撕扯 dot jump
-            elseif string.find( arg2, "你的撕扯使.*" ) then
+            elseif string.find( arg2, "你的撕扯使.*" ) or string.find( arg2 or "", Cat2.L.Spell("撕扯") ) then
                 DruidRipJumpTimer = GetTime() + 2.0
 
             end
 
         elseif arg1 == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
 
-            if string.find( arg2, "你从猛虎之怒.*" ) then
+            if string.find( arg2, "你从猛虎之怒.*" ) or string.find( arg2 or "", Cat2.L.Spell("猛虎之怒") ) then
                 DruidTigerFuryTimer = GetTime() + 3.0
             end
 

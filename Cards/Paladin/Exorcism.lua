@@ -38,8 +38,8 @@ function card.Execute(context)
         return false
     end
 
-    local typeA = string.find( player.targetCreatureType, "亡灵")
-    local typeB = string.find( player.targetCreatureType, "恶魔")
+local typeA = string.find( player.targetCreatureType, "亡灵") or string.find( player.targetCreatureType, "Undead")
+    local typeB = string.find( player.targetCreatureType, "恶魔") or string.find( player.targetCreatureType, "Demon")
 
     if Cat2.UnitXP then
         local targetDistance = UnitXP("distanceBetween", "player", "target")

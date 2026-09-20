@@ -265,8 +265,8 @@ local function OnEvent()
     -- 施法事件处理，读条类
     elseif event == "SPELLCAST_START" then
 
-        if arg1 == "献祭" then ImmolateTimer=GetTime()+2
-        elseif arg1 == "腐蚀术" then CorruptionTimer=GetTime()+1.6 end
+        if arg1 == "献祭" or arg1 == Cat2.L.Spell("献祭") then ImmolateTimer=GetTime()+2
+        elseif arg1 == "腐蚀术" or arg1 == Cat2.L.Spell("腐蚀术") then CorruptionTimer=GetTime()+1.6 end
         --elseif arg1 == "灼热之痛" then SearingPainTimer = GetTime()
         --elseif arg1 == "暗影箭" then ShadowTwilightTimer = GetTime() end
 

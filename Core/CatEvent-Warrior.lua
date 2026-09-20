@@ -122,7 +122,7 @@ local function GetWarriorSpellData(spellId)
 end
 
 local function IsQueuedSwingSpell(spellName)
-    return spellName == "英勇打击" or spellName == "顺劈斩"
+    return spellName == "英勇打击" or spellName == "顺劈斩" or spellName == Cat2.L.Spell("英勇打击") or spellName == Cat2.L.Spell("顺劈斩")
 end
 
 
@@ -174,7 +174,7 @@ local function OnEvent()
     -- 施法事件处理，读条类，读条也要处理GCD
     elseif event == "SPELLCAST_START" then
 
-        if arg1=="猛击" then
+        if arg1=="猛击" or arg1==Cat2.L.Spell("猛击") then
             WarriorSlamCast=1
             WarriorSlamCastTimer = GetTime()+(arg2/1000)
         end
@@ -217,7 +217,7 @@ local function OnEvent()
             CounterTimerNoSW = GetTime()
         elseif string.find( arg1, ".*你闪躲开了.*" ) or string.find( arg1 or "", "You dodge" ) then
             CounterTimerNoSW = GetTime()
-        elseif string.find( arg1, ".*你格挡开了.*" ) or string.find( arg2 or "", "You block" ) then
+        elseif string.find( arg1, ".*你格挡开了.*" ) or string.find( arg1 or "", "You block" ) then
             CounterTimerNoSW = GetTime()
         end
 
@@ -297,7 +297,7 @@ local function OnEvent()
                     CounterTimer = GetTime()
                     CounterTargetGUID = guid
                 end
-elseif string.find( arg1, ".*你格挡开了.*" ) or string.find( arg1 or "", "You block" ) then
+elseif string.find( arg2, ".*你格挡开了.*" ) or string.find( arg2 or "", "You block" ) then
                 local guid = Cat2.MatchGUID(arg2)
                 if guid then
                     CounterTimer = GetTime()

@@ -22,10 +22,15 @@ local autoRepeatFrame = CreateFrame("Frame")
 -- 只接受这张卡实际支持的远程武器子类型，避免把“武器”等大类误认为子类型。
 local supportedRangedSubTypes = {
     ["投掷武器"] = true,
+    ["Thrown"] = true,
     ["魔杖"] = true,
+    ["Wands"] = true,
     ["弓"] = true,
+    ["Bows"] = true,
     ["枪械"] = true,
+    ["Guns"] = true,
     ["弩"] = true,
+    ["Crossbows"] = true,
 }
 
 autoRepeatFrame:RegisterEvent("START_AUTOREPEAT_SPELL")
@@ -58,29 +63,29 @@ end
 local function GetRangedAttackSpell(itemSubType)
     local _, playerClass = UnitClass("player")
 
-    if itemSubType == "投掷武器" then
-        return GetKnownSpellName({ "投掷" })
+    if itemSubType == "投掷武器" or itemSubType == "Thrown" then
+        return GetKnownSpellName({ "投掷", "Throw" })
     end
 
-    if itemSubType == "魔杖" then
-        return GetKnownSpellName({ "射击" })
+    if itemSubType == "魔杖" or itemSubType == "Wands" then
+        return GetKnownSpellName({ "射击", "Shoot" })
     end
 
     -- 猎人使用自动射击；其他职业使用武器类型对应的射击技能。
     if playerClass == "HUNTER" then
-        return GetKnownSpellName({ "自动射击" })
+        return GetKnownSpellName({ "自动射击", "Auto Shot" })
     end
 
-    if itemSubType == "弓" then
-        return GetKnownSpellName({ "弓射击", "射击" })
+    if itemSubType == "弓" or itemSubType == "Bows" then
+        return GetKnownSpellName({ "弓射击", "射击", "Shoot" })
     end
 
-    if itemSubType == "枪械" then
-        return GetKnownSpellName({ "枪械射击", "射击" })
+    if itemSubType == "枪械" or itemSubType == "Guns" then
+        return GetKnownSpellName({ "枪械射击", "射击", "Shoot" })
     end
 
-    if itemSubType == "弩" then
-        return GetKnownSpellName({ "弩射击", "射击" })
+    if itemSubType == "弩" or itemSubType == "Crossbows" then
+        return GetKnownSpellName({ "弩射击", "射击", "Shoot" })
     end
 
     return nil

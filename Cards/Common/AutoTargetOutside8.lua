@@ -22,6 +22,7 @@ local function IsValidEnemy(unit, context)
         and not UnitIsDeadOrGhost(unit)
         and Cat2.IsAutoTargetCandidateAllowed(unit, context)
         and UnitCreatureType(unit) ~= "小动物"
+        and UnitCreatureType(unit) ~= "Critter"
 end
 
 local function GetValidEnemyDistance(unit, context)

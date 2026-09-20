@@ -5,13 +5,13 @@
 ## Notes-zhCN: 卡式全职业一键宏，提供自由的搭配选择
 ## Title-enUS: |cff00aaff[Utility]|r Cat|cffff00002|r Macro
 ## Notes-enUS: All-class card-based macro addon with flexible combinations
-## Author: 妖姬�?
+## Author: 妖姬变
 ## Version: 2.0.0
 ## SavedVariablesPerCharacter: Cat2CharacterDB
 
 Cat2.lua
 Core\Localization.lua
-# 核心基础服务：后面的卡片定义依赖这些命名空间、职业信息与注册器�?
+# 核心基础服务：后面的卡片定义依赖这些命名空间、职业信息与注册器。
 Core\ClassSpecializations.lua
 Core\CatThreatLite.lua
 Core\CatLib.lua
@@ -32,7 +32,8 @@ Core\CardRegistry.lua
 Core\CardCooldown.lua
 Core\CardEventDispatcher.lua
 Core\CastInterruptMonitor.lua
-# 卡片定义按通用、消耗品、跨职业共享、各职业排列；每个文件加载时自行注册�?
+
+# 卡片定义按通用、消耗品、跨职业共享、各职业排列；每个文件加载时自行注册。
 Cards\Common\AutoAttack.lua
 Cards\Common\AutoAttackPet.lua
 Cards\Common\AutoAttackPetIdle.lua
@@ -41,6 +42,7 @@ Cards\Common\RangedAttack.lua
 Cards\Common\FishingAutoBait.lua
 Cards\Common\AutoPick.lua
 Cards\Common\StandUp.lua
+Cards\Common\StopCasting.lua
 Cards\Common\AutoTarget.lua
 Cards\Common\AutoTargetRanged.lua
 Cards\Common\AutoTargetOutside8.lua
@@ -75,6 +77,7 @@ Cards\Logic\FlowJumpTargetNatureImmune.lua
 Cards\Logic\FlowJumpTargetShadowImmune.lua
 Cards\Logic\FlowJumpTargetArcaneImmune.lua
 Cards\Common\BlankPlaceholder.lua
+
 Cards\Items\HerbalTeaHP.lua
 Cards\Items\HerbalTeaMP.lua
 Cards\Items\Healthstone.lua
@@ -100,6 +103,7 @@ Cards\Items\DenseDynamiteCursor.lua
 Cards\Items\StratholmeHolyWaterSelf.lua
 Cards\Items\StratholmeHolyWaterTarget.lua
 Cards\Items\StratholmeHolyWaterCursor.lua
+
 Cards\Shared\HealingTarget.lua
 Cards\Shared\HealingTargetTarget.lua
 Cards\Shared\HealingParty.lua
@@ -107,7 +111,9 @@ Cards\Shared\HealingTeam.lua
 Cards\Shared\HealingTeamPriorityTank.lua
 Cards\Shared\RandomHealingTeam.lua
 Cards\Shared\HealingSelf.lua
+Cards\Shared\MultiDotOnlyCombatEnemies.lua
 Cards\Shared\InterruptFullHealthCast.lua
+
 Cards\Druid\BearForm.lua
 Cards\Druid\CatForm.lua
 Cards\Druid\AutoFormIdol.lua
@@ -184,6 +190,8 @@ Cards\Druid\NaturesSwiftnessRegrowth.lua
 Cards\Druid\Rejuvenation.lua
 Cards\Druid\RejuvenationMove.lua
 Cards\Druid\Regrowth.lua
+
+
 Cards\Warrior\BattleStance.lua
 Cards\Warrior\Charge.lua
 Cards\Warrior\ChargeAutoStance.lua
@@ -240,6 +248,7 @@ Cards\Warrior\LifegivingGem.lua
 Cards\Warrior\ShieldSlam.lua
 Cards\Warrior\ConcussionBlow.lua
 Cards\Warrior\Bloodrage.lua
+
 Cards\Paladin\HolyLight.lua
 Cards\Paladin\FlashOfLight.lua
 Cards\Paladin\LayOnHands.lua
@@ -291,6 +300,7 @@ Cards\Paladin\SealOfLight.lua
 Cards\Paladin\SealOfWisdom.lua
 Cards\Paladin\SealOfJustice.lua
 Cards\Paladin\TargetHealthRelicSwitch.lua
+
 Cards\Hunter\AspectOfTheHawk.lua
 Cards\Hunter\AspectOfTheViper.lua
 Cards\Hunter\AutoAspectOfTheViper.lua
@@ -340,6 +350,7 @@ Cards\Hunter\FeignDeathBossWatching.lua
 Cards\Hunter\FlareSelf.lua
 Cards\Hunter\FlareTarget.lua
 Cards\Hunter\FlareCursor.lua
+
 Cards\Rogue\Eviscerate1.lua
 Cards\Rogue\Eviscerate2.lua
 Cards\Rogue\Eviscerate3.lua
@@ -409,6 +420,7 @@ Cards\Rogue\Excitement5.lua
 Cards\Rogue\DistractSelf.lua
 Cards\Rogue\DistractTarget.lua
 Cards\Rogue\DistractCursor.lua
+
 Cards\Priest\PowerWordShield.lua
 Cards\Priest\PowerWordShieldMove.lua
 Cards\Priest\InnerFire.lua
@@ -441,6 +453,8 @@ Cards\Priest\VampiricEmbrace.lua
 Cards\Priest\Shadowform.lua
 Cards\Priest\Fade.lua
 Cards\Priest\Silence.lua
+Cards\Priest\ShadowWordPainMultiDot.lua
+
 Cards\Shaman\LightningBolt.lua
 Cards\Shaman\ChainLightning.lua
 Cards\Shaman\LavaBurst.lua
@@ -503,6 +517,7 @@ Cards\Shaman\TremorTotem.lua
 Cards\Shaman\GroundingTotem.lua
 Cards\Shaman\WindwallTotem.lua
 Cards\Shaman\TranquilAirTotem.lua
+
 Cards\Mage\ArcaneMissiles.lua
 Cards\Mage\ArcaneFracture.lua
 Cards\Mage\ArcaneFractureWithoutBuff.lua
@@ -562,6 +577,7 @@ Cards\Mage\IceBarrier.lua
 Cards\Mage\IceBarrierIcyVeins.lua
 Cards\Mage\ContinueIgniteScorchFireBlast.lua
 Cards\Mage\ViewMyIgnite.lua
+
 Cards\Warlock\Corruption.lua
 Cards\Warlock\CurseOfAgony.lua
 Cards\Warlock\CurseOfWeakness.lua
@@ -595,7 +611,6 @@ Cards\Warlock\CurseOfShadowHexMultiDot.lua
 Cards\Warlock\CurseOfAgonyMultiDot.lua
 Cards\Warlock\CorruptionMultiDot.lua
 Cards\Warlock\SiphonLifeMultiDot.lua
-Cards\Warlock\MultiDotOnlyCombatEnemies.lua
 Cards\Warlock\HealthFunnel.lua
 Cards\Warlock\ManaChannel.lua
 Cards\Warlock\SearingPainBeforePotentialThreeStacks.lua
@@ -620,17 +635,18 @@ Cards\Warlock\ConflagrateImmolatePresent.lua
 Cards\Warlock\ConflagrateImmolate.lua
 Cards\Warlock\ConflagrateImmolateAutoTiming.lua
 Cards\Warlock\SpellLock.lua
-# 数据恢复和编码必须在全部卡片注册后加载，才能按稳�?ID 重新绑定流程步骤�?
+
+# 数据恢复和编码必须在全部卡片注册后加载，才能按稳定 ID 重新绑定流程步骤。
 Core\Persistence.lua
 Core\ConfigurationCodec.lua
-# UI 基础控件先于各业务窗口；ConfigurationRunner �?FlowEditor 建立运行时仓库后加载�?
+# UI 基础控件先于各业务窗口；ConfigurationRunner 在 FlowEditor 建立运行时仓库后加载。
 UI\Controls.lua
 UI\PlayerDebug.lua
 UI\Notice.lua
 UI\ImportExport.lua
 UI\Rules.lua
 UI\ModuleStatus.lua
-# 编辑器状态先建立，随后加载卡片、列表、标题区和主窗口；快捷窗由独立模块负责�?
+# 编辑器状态先建立，随后加载卡片、列表、标题区和主窗口；快捷窗由独立模块负责。
 UI\FlowEditor.lua
 UI\FlowEditorCards.lua
 UI\FlowEditorLists.lua

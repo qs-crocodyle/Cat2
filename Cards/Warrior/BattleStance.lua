@@ -20,7 +20,7 @@ local ShapeshiftID = 0
 function card.RefreshRuntimeData()
 	for i = 1, 4 do
 		local _, name, _, id = GetShapeshiftFormInfo(i)
-        if name and name=="战斗姿态" then
+        if name and (name=="战斗姿态" or name==Cat2.L.Spell("战斗姿态")) then
             ShapeshiftID = i
             break
         end

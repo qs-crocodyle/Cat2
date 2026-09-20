@@ -114,7 +114,7 @@ function Cat2.GetAlternatingFlamestrikeName(context)
     while true do
         local name, rankText = GetSpellName(index, "spell")
         if not name then break end
-        if name == "烈焰风暴" then
+        if name == "烈焰风暴" or name == Cat2.L.Spell("烈焰风暴") then
             local _, _, number = string.find(rankText or "", "(%d+)")
             local rank = tonumber(number) or 1
             if rank > highest then
@@ -143,7 +143,7 @@ local function RecordFlamestrikeSuccess(spellID)
     if not name and type(SpellInfo) == "function" then
         name, rankText = SpellInfo(spellID)
     end
-    if name ~= "烈焰风暴" then return end
+    if name ~= "烈焰风暴" and name ~= Cat2.L.Spell("烈焰风暴") then return end
     local _, _, number = string.find(tostring(rankText or ""), "(%d+)")
     FlamestrikeLastSuccessRank = tonumber(number) or FlamestrikeRequestedRank
     FlamestrikeLastSuccessTime = GetTime()
@@ -223,18 +223,24 @@ local IGNITE_DURATION_SECONDS = 4
 -- Nampower 直接提供技能 ID 与暴击标记；名称白名单只负责筛掉其他法术。
 local IgniteTriggerFireSpells = {
     ["火球术"] = true,
+    ["Fireball"] = true,
     ["火焰冲击"] = true,
+    ["Fire Blast"] = true,
     ["灼烧"] = true,
+    ["Scorch"] = true,
     ["炎爆术"] = true,
+    ["Pyroblast"] = true,
     ["烈焰风暴"] = true,
+    ["Flamestrike"] = true,
     ["冲击波"] = true,
+    ["Blast Wave"] = true,
 }
 
 local function IsIgniteSpell(spellId)
     if tonumber(spellId) == IGNITE_SPELL_ID then
         return true
     end
-    return GetMageSpellNameByID(spellId) == "点燃"
+    return GetMageSpellNameByID(spellId) == Cat2.L.Spell("点燃")
 end
 
 local function IsIgniteTriggerFireSpell(spellId)
@@ -411,7 +417,7 @@ local function OnEvent()
     elseif event == "SPELLCAST_START" then
 
         -- 读条处理
-        if arg1 == "炎爆术" then MageCastPyroblastTimer=GetTime()+(arg2/1000)+0.5 end
+        if arg1 == "炎爆术" or arg1 == Cat2.L.Spell("炎爆术") then MageCastPyroblastTimer=GetTime()+(arg2/1000)+0.5 end
 
     elseif event == "SPELLCAST_CHANNEL_START" then
         MageArcaneMissilesDuration = tonumber(arg1) or 0

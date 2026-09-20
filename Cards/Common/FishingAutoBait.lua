@@ -25,7 +25,7 @@ local FishPole = false
 
 function card.RefreshRuntimeData()
     FishPole = false
-    if Cat2.GetMainHandType()=="鱼竿" then
+    if Cat2.GetMainHandType()=="鱼竿" or Cat2.GetMainHandType()=="Fishing Pole" then
         FishPole = true
     end
 end
@@ -42,7 +42,7 @@ local function GetBait()
         local line = _G["Cat2FishPoleTipTextLeft"..i]
         if line then
             local text = line:GetText() or ""
-            local Value = string.find(text, "鱼饵")
+            local Value = string.find(text, "鱼饵") or string.find(text, "Bait") or string.find(text, "Lure")
             if Value then
                 return true
             end

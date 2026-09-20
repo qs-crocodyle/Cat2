@@ -437,7 +437,7 @@ function Cat2.CanBleed(unit)
 
 	-- 元素生物,机械，直接认定为不可流血
 	local creature = UnitCreatureType(unit) or "其它"
-	local position = string.find("元素生物,机械", creature)
+	local position = string.find("元素生物,机械,Elemental,Mechanical", creature)
 	if position then
 		-- 元素生物与机械中的白名单
 		if monsterWhiteList[name] == true then
@@ -507,7 +507,7 @@ function Cat2.IsDrain(unit)
 
 	-- 机械，直接认定为不可吸血
 	local creature = UnitCreatureType(unit) or "其它"
-	local position = string.find("机械", creature)
+	local position = string.find("机械,Mechanical", creature)
 	if position then
 		return false
 	end
@@ -543,7 +543,7 @@ function Cat2.IsManaDrain(unit)
 
 	-- 机械，直接认定为不可吸血
 	local creature = UnitCreatureType(unit) or "其它"
-	local position = string.find("机械", creature)
+	local position = string.find("机械,Mechanical", creature)
 	if position then
 		return false
 	end
@@ -1103,15 +1103,26 @@ local function ExtractImmuneTargetName(message)
     -- 旧版 Cat 和当前中文客户端已经使用过的主要日志格式：
     -- “你的技能施放失败。目标对此免疫。”
     local _, _, targetName = string.find(message, "施放失败。(.-)对此免疫")
+    if not targetName then
+        _, _, targetName = string.find(message, "[Ff]ailed%.%s*(.-)%s+[Ii]s [Ii]mmune")
+    end
 
     -- 兼容“目标免疫了你的技能”一类格式。
     if not targetName then
         _, _, targetName = string.find(message, "^%s*(.-)免疫了")
     end
+    -- enUS: "<target> is immune to your <spell>." / "<target> is immune." 
+    if not targetName then
+        _, _, targetName = string.find(message, "^%s*(.-)%s+[Ii]s [Ii]mmune")
+    end
 
     -- 兼容“你的技能对目标造成……免疫”一类扩展日志。
     if not targetName then
         _, _, targetName = string.find(message, "对(.-)造成.-免疫")
+    end
+    -- enUS fallback: "Your <spell> hits <target> ... Immune" style logs.
+    if not targetName then
+        _, _, targetName = string.find(message, "(.-)%s+[Ii]mmune")
     end
 
     return TrimCombatLogName(targetName)
@@ -1125,9 +1136,16 @@ local function FindImmuneSpellRule(message)
 
     -- 只有日志已经包含“免疫”时才会进入这里。选择最长命中的名称，避免短名称
     -- 与扩展技能同名开头时产生歧义。
-    for spellName, school in pairs(damageSchoolImmuneSpellRules) do
-        if string.find(message, spellName, 1, true) then
-            local nameLength = string.len(spellName)
+for spellName, school in pairs(damageSchoolImmuneSpellRules) do
+        local needle = spellName
+        if not string.find(message, spellName, 1, true) then
+            local enName = Cat2.L.Spell(spellName)
+            if enName ~= spellName and string.find(message, enName, 1, true) then
+                needle = enName
+            end
+        end
+        if string.find(message, needle, 1, true) then
+            local nameLength = string.len(needle)
             if nameLength > matchedLength then
                 matchedSpellName = spellName
                 matchedSchool = school
@@ -1148,7 +1166,7 @@ function Cat2.LearnDamageSchoolImmuneFromMessage(message, targetGuid)
     end
 
     if not string.find(message, "免疫", 1, true) and
-       not string.find(message, "IMMUNE", 1, true) then
+       not string.find(string.lower(message), "immune", 1, true) then
         return false
     end
 

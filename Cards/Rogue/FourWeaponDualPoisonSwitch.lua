@@ -64,18 +64,18 @@ function card.Execute(context, step)
 	end
 
 	local postion_text = ""
-	local position = string.find("元素生物,机械,巨人,亡灵", player.targetCreatureType, 1, true)
+	local position = string.find("元素生物,机械,巨人,亡灵,Elemental,Mechanical,Giant,Undead", player.targetCreatureType, 1, true)
 	if position then
 		-- 切换至溶解毒药
 		-- 主手
 		postion_text = Cat2.GetMainHandPostion()
-		if not postion_text or not string.find( postion_text, "溶解毒药" ) then
+		if not postion_text or not string.find( postion_text, "溶解毒药" ) or not string.find( postion_text, Cat2.L.Spell("溶解毒药") ) then
 			Cat2.RogueSwitchWeapon("溶解毒药", 16)
 		else
 
 			-- 副手
 			postion_text = Cat2.GetOffHandPostion()
-			if not postion_text or not string.find( postion_text, "溶解毒药" ) then
+			if not postion_text or not string.find( postion_text, "溶解毒药" ) or not string.find( postion_text, Cat2.L.Spell("溶解毒药") ) then
 				Cat2.RogueSwitchWeapon("溶解毒药", 17)
 			end
 		end
@@ -84,13 +84,13 @@ function card.Execute(context, step)
 
 		-- 主手
 		postion_text = Cat2.GetMainHandPostion()
-		if not postion_text or not string.find( postion_text, "速效毒药" ) then
+		if not postion_text or not string.find( postion_text, "速效毒药" ) or not string.find( postion_text, Cat2.L.Spell("速效毒药") ) then
 			Cat2.RogueSwitchWeapon("速效毒药", 16)
 		else
 
 			-- 副手
 			postion_text = Cat2.GetOffHandPostion()
-			if not postion_text or not string.find( postion_text, "速效毒药" ) then
+			if not postion_text or not string.find( postion_text, "速效毒药" ) or not string.find( postion_text, Cat2.L.Spell("速效毒药") ) then
 				Cat2.RogueSwitchWeapon("速效毒药", 17)
 			end
 		end

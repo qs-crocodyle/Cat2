@@ -209,7 +209,7 @@ local function OnEvent()
                 end
 
             -- 割裂
-            elseif string.find( arg2, "你的割裂.*招架.*" ) or string.find( arg2, "你的割裂.*躲闪.*" ) or string.find( arg2, "你的割裂.*格挡.*" ) or string.find( arg2, "你的割裂.*没有击中.*" ) then
+            elseif string.find( arg2, "你的割裂.*招架.*" ) or string.find( arg2, "你的割裂.*躲闪.*" ) or string.find( arg2, "你的割裂.*格挡.*" ) or string.find( arg2, "你的割裂.*没有击中.*" ) or string.find( arg2 or "", Cat2.L.Spell("割裂") .. " was parried" ) or string.find( arg2 or "", Cat2.L.Spell("割裂") .. " was dodged" ) or string.find( arg2 or "", Cat2.L.Spell("割裂") .. " was blocked" ) or string.find( arg2 or "", Cat2.L.Spell("割裂") .. " missed" ) then
                 local targetGUID = Cat2.MatchGUID(arg2)
                 if targetGUID and RuptureDelayTime[targetGUID] then 
                     local timer = GetTime() - RuptureDelayTime[targetGUID]
@@ -463,7 +463,7 @@ function Cat2.GetMainHandPostion()
         local line = _G["Cat2PostionNametipTextLeft"..i]
         if line then
             local text = line:GetText() or ""
-            if string.find(text, "毒药") then
+            if string.find(text, "毒药") or string.find(text, "Poison") then
                 return text
             end
         end
@@ -483,7 +483,7 @@ function Cat2.GetOffHandPostion()
         local line = _G["Cat2PostionNametipTextLeft"..i]
         if line then
             local text = line:GetText() or ""
-            if string.find(text, "毒药") then
+            if string.find(text, "毒药") or string.find(text, "Poison") then
                 return text
             end
         end
@@ -523,7 +523,7 @@ function Cat2.RogueSwitchWeapon(postion, inventory)
                             weapon_dps = Cat2.ToNumber(local_dps)
                         end
 
-                        if string.find(text, postion) then
+                        if string.find(text, postion) or string.find(text, Cat2.L.Spell(postion)) then
                             local _, _, name = string.find(itemLink, "%[(.-)%]")
                             --print(name)
 
