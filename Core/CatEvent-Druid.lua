@@ -358,7 +358,9 @@ local function GetRakeDotCheck( guid, value )
         if timer <= (DruidRakeDuration-value) then
             return true
         else
-            RateCheck[guid] = nil
+            if timer > DruidRakeDuration then
+                RateCheck[guid] = nil
+            end
         end
     end
 
@@ -410,14 +412,24 @@ end
 local function GetRipDotCheck( guid, value )
     if RipCheck[guid] then
         local timer = GetTime() - RipCheck[guid]
-        if timer < (DruidRipDuration-value) then
+        if timer <= (DruidRipDuration-value) then
             return true
         else
-            RipCheck[guid] = nil
+            if timer > DruidRipDuration then
+                RipCheck[guid] = nil
+            end
         end
     end
 
     return false
+end
+
+function Cat2.GetRipDotCheckData(guid)
+    if guid then
+        return RipCheck[guid]
+    end
+
+    return 0
 end
 
 function Cat2.ResetRipDot(guid)
@@ -464,10 +476,12 @@ end
 local function GetRavageDotCheck( guid, value )
     if RavageCheck[guid] then
         local timer = GetTime() - RavageCheck[guid]
-        if timer < (DruidRavageDuration-value) then
+        if timer <= (DruidRavageDuration-value) then
             return true
         else
-            RavageCheck[guid] = nil
+            if timer > DruidRavageDuration then
+                RavageCheck[guid] = nil
+            end
         end
     end
 

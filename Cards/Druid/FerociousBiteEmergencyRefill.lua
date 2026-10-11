@@ -36,14 +36,14 @@ function card.Execute(context, step)
         return false
     end
 
-    if Cat2.GetRipDot() and not Cat2.GetRipDot("target", 2) then
+    if player.targetCombo>4 then
+        if Cat2.GetRipDot() and not Cat2.GetRipDot("target", 3) then
     
-        if player.targetCombo>0 and (player.power>=35 or player.buff["节能施法"]) then
+            --print("凶猛撕咬（紧急续杯）")
             Cat2.Cast("凶猛撕咬")
-            print(Cat2.L("凶猛撕咬（紧急续杯）"))
             return true
-        end
 
+        end
     end
 
     return false

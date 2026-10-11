@@ -47,6 +47,12 @@ function ui.ShowNotice(message)
         noticeWindow:SetFrameStrata("FULLSCREEN_DIALOG")
         -- 必须高于配置管理窗等 FULLSCREEN_DIALOG 界面，确保容量限制等提示不会被底层窗口遮住。
         noticeWindow:SetFrameLevel(200)
+        noticeWindow:EnableKeyboard(true)
+        noticeWindow:SetScript("OnKeyDown", function()
+            if arg1 == "ESCAPE" then
+                noticeWindow:Hide()
+            end
+        end)
         ui.ApplyFlatBackdrop(noticeWindow, 0.06, 0.08, 0.12, 0.98)
 
         noticeText = noticeWindow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -268,6 +274,14 @@ function ui.ShowTextInput(titleText, initialText, validator, onSubmit, submitLab
         inputWindow:SetFrameStrata("FULLSCREEN_DIALOG")
         inputWindow:SetFrameLevel(220)
         inputWindow:EnableMouse(true)
+        inputWindow:EnableKeyboard(true)
+        inputWindow:SetScript("OnKeyDown", function()
+            if arg1 == "ESCAPE" then
+                pendingInputSubmit = nil
+                pendingInputValidator = nil
+                inputWindow:Hide()
+            end
+        end)
         ui.ApplyFlatBackdrop(inputWindow, 0.07, 0.08, 0.12, 1)
 
         inputTitle = inputWindow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -430,6 +444,13 @@ function ui.ShowCardOptionEditor(step, onSubmit)
         cardOptionsWindow:SetFrameStrata("FULLSCREEN_DIALOG")
         cardOptionsWindow:SetFrameLevel(220)
         cardOptionsWindow:EnableMouse(true)
+        cardOptionsWindow:EnableKeyboard(true)
+        cardOptionsWindow:SetScript("OnKeyDown", function()
+            if arg1 == "ESCAPE" then
+                pendingCardOptionsSubmit = nil
+                cardOptionsWindow:Hide()
+            end
+        end)
         ui.ApplyFlatBackdrop(cardOptionsWindow, 0.07, 0.08, 0.12, 1)
 
         cardOptionsTitle = cardOptionsWindow:CreateFontString(nil, "OVERLAY", "GameFontNormal")

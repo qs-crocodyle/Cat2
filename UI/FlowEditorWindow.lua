@@ -38,6 +38,10 @@ local function CreateMainWindow()
     end
 
     editor.mainWindow = CreateFrame("Frame", "Cat2MainWindow", UIParent)
+    -- 交给客户端统一处理 ESC；主窗口隐藏时的清理逻辑由 OnHide 完成。
+    if type(UISpecialFrames) == "table" then
+        table.insert(UISpecialFrames, "Cat2MainWindow")
+    end
     editor.mainWindow:SetWidth(784)
     editor.mainWindow:SetHeight(550)
     editor.mainWindow:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
@@ -189,13 +193,6 @@ local function CreateMainWindow()
         closeText:SetPoint("CENTER", closeButton, "CENTER", 0, 0)
     end)
     closeButton:SetScript("OnClick", function()
-        CloseAllDialogs()
-        if editor.mainWindow.classPreviewMenu then
-            editor.mainWindow.classPreviewMenu:Hide()
-        end
-        if Cat2.UI.HideSettingsWindow then
-            Cat2.UI.HideSettingsWindow()
-        end
         editor.mainWindow:Hide()
     end)
 
@@ -288,10 +285,17 @@ local function CreateMainWindow()
     editor.emptyHint:SetJustifyH("CENTER")
     editor.emptyHint:SetText(Cat2.L("将右侧步骤拖到这里\n支持鼠标左键或右键拖动\n拖动左侧步骤可以调整顺序"))
 
-    editor.dropIndicator = CreateFrame("Frame", nil, editor.flowContent)
+    -- 高于流程卡片，但低于鼠标跟随预览，不能让提示线穿过预览的图标和文字。
+    editor.dropIndicator = CreateFrame("Frame", nil, editor.flowScroll)
+    editor.dropIndicator:SetFrameStrata("TOOLTIP")
+    editor.dropIndicator:SetFrameLevel(19)
+    editor.dropIndicator:EnableMouse(false)
     editor.dropIndicator:SetWidth(316)
     editor.dropIndicator:SetHeight(3)
-    ApplyFlatBackdrop(editor.dropIndicator, 1, 0.75, 0.15, 1)
+    local dropLine = editor.dropIndicator:CreateTexture(nil, "OVERLAY")
+    dropLine:SetAllPoints(editor.dropIndicator)
+    dropLine:SetTexture("Interface\\Buttons\\WHITE8X8")
+    dropLine:SetVertexColor(1, 0.75, 0.15, 1)
     editor.dropIndicator:Hide()
 
     editor.availablePanel = CreateFrame("Frame", nil, editor.mainWindow)
@@ -828,6 +832,16 @@ local function CreateMainWindow()
     editor.mainWindow:SetScript("OnShow", function()
         if editor.mainWindow.Raise then
             editor.mainWindow:Raise()
+        end
+    end)
+    -- ESC、右上角关闭按钮和其他隐藏入口共用同一套收尾，避免留下弹窗或下拉菜单。
+    editor.mainWindow:SetScript("OnHide", function()
+        CloseAllDialogs()
+        if editor.mainWindow.classPreviewMenu then
+            editor.mainWindow.classPreviewMenu:Hide()
+        end
+        if Cat2.UI.HideSettingsWindow then
+            Cat2.UI.HideSettingsWindow()
         end
     end)
     Cat2.UI.RedrawFlow()

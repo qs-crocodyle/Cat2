@@ -50,7 +50,7 @@ function card.Execute(context, step)
     end
 
     if player.power < energyThreshold and Cat2.SpellReady("冲动") and Cat2.TargetDistance() then
-        Cat2.Cast("冲动")
+        Cat2.CastWithNampower("冲动")
     end
 
     return false

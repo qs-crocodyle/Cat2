@@ -48,7 +48,7 @@ function card.Execute(context)
         if UnitExists(guid) and UnitCanAttack("player", guid) and not UnitIsDeadOrGhost(guid)
             and (not requireCombatTarget or UnitAffectingCombat(guid)) then
             local hasCurseOfAgony = Cat2.Buff("痛苦诅咒", guid)
-            if not hasCurseOfAgony then
+            if not hasCurseOfAgony and not Cat2.IsShadowImmune(guid) then
                 if Cat2.CastSpellWithoutTarget("暗影诅咒", guid) then
                     return true
                 end

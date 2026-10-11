@@ -45,7 +45,7 @@ function card.Execute(context)
 
 
     if player.power>=ghostPower and Cat2.SpellReady("鬼魅攻击") then
-        Cat2.Cast("鬼魅攻击")
+        Cat2.CastWithNampower("鬼魅攻击")
         return true
     end
 

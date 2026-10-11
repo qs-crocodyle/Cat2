@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放治疗之泉图腾。",
     sort = 120,
     exclusiveGroup = "shaman_water_totem",
+    duration = { type = "shaman_totem", slot = "water", name = "治疗之泉图腾", cacheKey = "shaman_totem:water:治疗之泉图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

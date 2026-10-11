@@ -60,7 +60,7 @@ function card.Health(unit, member, context, triggerPercent, minimumRank, maximum
     end
 
     local percentHealth = health / maximumHealth * 100
-    if percentHealth >= triggerPercent then
+    if percentHealth > triggerPercent then
         return false
     end
 

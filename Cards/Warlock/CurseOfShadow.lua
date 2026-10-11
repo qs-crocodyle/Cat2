@@ -27,6 +27,10 @@ function card.Execute(context)
         return false
     end
 
+    if Cat2.IsShadowImmune() then
+        return false
+    end
+
     if Cat2.UnitXP then
         local targetDistance = UnitXP("distanceBetween", "player", "target")
         if targetDistance and targetDistance > distance then

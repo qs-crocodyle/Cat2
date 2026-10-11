@@ -88,6 +88,7 @@ function Cat2.RecordPendingCastTarget(spellName, unit)
         unit = unit,
         targetGuid = targetGuid,
         recordedAt = GetTime(),
+        profileId = Cat2.CurrentExecutionContext and Cat2.CurrentExecutionContext.profileId,
     }
     return true
 end
@@ -104,7 +105,7 @@ local function ConsumePendingCastTarget(spellName, eventTargetGuid)
     if eventTargetGuid and pending.targetGuid and eventTargetGuid ~= pending.targetGuid then
         return nil, eventTargetGuid
     end
-    return pending.unit, pending.targetGuid or eventTargetGuid
+    return pending.unit, pending.targetGuid or eventTargetGuid, pending.profileId
 end
 
 -- 注册卡片描述的技能能力。能力本身不会启用任何中断行为。
@@ -165,14 +166,15 @@ local function SpellHasTag(spellName, tag)
     return false
 end
 
-local function GetActivePolicies(spellName)
+local function GetActivePolicies(spellName, requestedProfileId)
     local policies = {}
     local repository = Cat2.RuntimeConfigurations
     if type(repository) ~= "table" or type(repository.profiles) ~= "table" then
         return policies, nil
     end
 
-    local profileId = repository.activeProfileId
+    local executionContext = Cat2.CurrentExecutionContext
+    local profileId = requestedProfileId or (executionContext and executionContext.profileId) or repository.activeProfileId
     local profile = repository.profiles[profileId]
     if type(profile) ~= "table" or type(profile.steps) ~= "table" then
         return policies, profileId
@@ -317,7 +319,7 @@ local function MonitorOnUpdate()
         return
     end
 
-    local policies, profileId = GetActivePolicies(activeCast.spellName)
+    local policies, profileId = GetActivePolicies(activeCast.spellName, activeCast.profileId)
     if profileId ~= activeCast.profileId or table.getn(policies) == 0 then
         StopMonitoring()
         return
@@ -418,12 +420,12 @@ monitorFrame:SetScript("OnEvent", function()
             StopMonitoring()
             return
         end
-        local policies, profileId = GetActivePolicies(spellName)
+        local targetUnit, targetGuid, castProfileId = ConsumePendingCastTarget(spellName, arg2)
+        local policies, profileId = GetActivePolicies(spellName, castProfileId)
         if table.getn(policies) == 0 then
             StopMonitoring()
             return
         end
-        local targetUnit, targetGuid = ConsumePendingCastTarget(spellName, arg2)
         StartMonitoring(spellId, spellName, targetUnit, targetGuid, castType, policies, profileId)
         return
     end

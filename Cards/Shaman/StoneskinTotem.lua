@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放石肤图腾。",
     sort = 20,
     exclusiveGroup = "shaman_earth_totem",
+    duration = { type = "shaman_totem", slot = "earth", name = "石肤图腾", cacheKey = "shaman_totem:earth:石肤图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

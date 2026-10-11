@@ -27,9 +27,11 @@ end
 function card.Execute(context)
     local player = Cat2.PlayerInformation.temporary
 
+    --[[
     if not player.targetExists then
         return false
     end
+    ]]
 
     if player.buff["潜行"] then
         Cat2.StopAttack()

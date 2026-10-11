@@ -63,15 +63,15 @@ function card.Execute(context)
         if UnitXP("behind", "player", "target") then
             if player.power>=shredPower or player.buff["节能施法"] then
                 if not player.behind then
-                    Cat2.Cast("爪击")
+                    Cat2.CastWithNampower("爪击")
                 else
-                    Cat2.Cast("撕碎")
+                    Cat2.CastWithNampower("撕碎")
                 end
                 return true
             end
         else
             if player.power>=clawPower or player.buff["节能施法"] then
-                Cat2.Cast("爪击")
+                Cat2.CastWithNampower("爪击")
                 return true
             end
         end
@@ -80,12 +80,12 @@ function card.Execute(context)
 
         if player.behind then
             if player.power>=shredPower or player.buff["节能施法"] then
-                Cat2.Cast("撕碎")
+                Cat2.CastWithNampower("撕碎")
                 return true
             end
         else
             if player.power>=clawPower or player.buff["节能施法"] then
-                Cat2.Cast("爪击")
+                Cat2.CastWithNampower("爪击")
                 return true
             end
         end

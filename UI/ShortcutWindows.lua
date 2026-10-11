@@ -3,7 +3,8 @@
 -- 属于角色 UI 设置，不进入配置导入导出文本。卡片图标状态仍来自对应 profile.steps。
 -- 标题光带只在 /cat2 实际触发该配置时播放；短于阈值的轨道不创建可见效果。
 --
--- CD显示约定：本文件不解析技能书或物品，只调用 Core/CardCooldown.lua 的统一接口。
+-- 倒计时只调用 CardCooldown / CardDuration 的独立接口，不解析具体技能或效果。
+-- 同一位置优先显示绿色持续时间；效果结束后回到原有CD显示。
 -- 所有快捷窗共用一个0.1秒刷新器，并在单轮内按冷却缓存键合并查询；禁止给每个图标各建
 -- OnUpdate。图标按钮及CD子框体均通过位置池复用，重绘只换绑定数据，不持续创建新Frame。
 -- 当前客户端不认识 Cooldown 框体类型，因此不能使用系统旋转冷却模板；兼容方案是在图标
@@ -242,6 +243,38 @@ local function FormatCooldownRemaining(remaining)
     return string.format("%.1f", remaining)
 end
 
+local function FormatDurationRemaining(remaining)
+    local seconds = math.ceil(remaining)
+    local minutes = math.floor(seconds / 60)
+    return string.format("%02d:%02d", minutes, seconds - minutes * 60)
+end
+
+local function QueryShortcutTimer(step, queryCache)
+    local durationKey = Cat2.GetCardDurationCacheKey and Cat2.GetCardDurationCacheKey(step)
+    durationKey = durationKey and "duration:" .. durationKey
+    local effect = durationKey and queryCache[durationKey]
+    if not effect then
+        local startTime, duration, remaining
+        if Cat2.QueryCardDuration then startTime, duration, remaining = Cat2.QueryCardDuration(step) end
+        effect = { startTime = startTime, duration = duration, enabled = 1, remaining = remaining, state = "duration" }
+        if durationKey then queryCache[durationKey] = effect end
+    end
+    if effect.remaining and effect.remaining > 0 then return effect end
+
+    local cooldownKey = Cat2.GetCardCooldownCacheKey and Cat2.GetCardCooldownCacheKey(step)
+    cooldownKey = cooldownKey and "cooldown:" .. cooldownKey
+    local result = cooldownKey and queryCache[cooldownKey]
+    if not result then
+        local startTime, duration, enabled, remaining, state
+        if Cat2.QueryCardCooldown then
+            startTime, duration, enabled, remaining, state = Cat2.QueryCardCooldown(step)
+        end
+        result = { startTime = startTime, duration = duration, enabled = enabled, remaining = remaining, state = state }
+        if cooldownKey then queryCache[cooldownKey] = result end
+    end
+    return result
+end
+
 local function ApplyShortcutCooldown(iconButton, startTime, duration, enabled, remaining, state)
     if state == "missing_item" then
         HideShortcutCooldown(iconButton)
@@ -261,15 +294,18 @@ local function ApplyShortcutCooldown(iconButton, startTime, duration, enabled, r
     end
 
     RestoreShortcutIconState(iconButton)
-    iconButton.cooldownState = nil
+    iconButton.cooldownState = state
     -- 起点或总时长变化才更新记录；数字仍按共享刷新周期更新。
     if iconButton.cooldownStart ~= startTime or iconButton.cooldownDuration ~= duration then
         iconButton.cooldownStart = startTime
         iconButton.cooldownDuration = duration
     end
     iconButton.cooldownFrame:Show()
-    iconButton.cooldownText:SetText(FormatCooldownRemaining(remaining))
-    if iconButton.step and iconButton.step.enabled == 0 then
+    iconButton.cooldownText:SetText(state == "duration" and FormatDurationRemaining(remaining) or FormatCooldownRemaining(remaining))
+    if state == "duration" then
+        local paused = iconButton.step and iconButton.step.enabled == 0
+        iconButton.cooldownText:SetTextColor(0.35, 0.9, 0.45, paused and 0.5 or 1)
+    elseif iconButton.step and iconButton.step.enabled == 0 then
         iconButton.cooldownText:SetTextColor(0.72, 0.76, 0.82, 0.72)
     else
         iconButton.cooldownText:SetTextColor(1, 1, 1, 1)
@@ -279,7 +315,7 @@ end
 -- 所有快捷窗共用一次刷新和一次查询缓存，避免给每个图标安装独立 OnUpdate。
 -- 暂停卡仍显示CD，但数字降低亮度；隐藏卡和空白占位不进入这里。
 local function RefreshShortcutCooldowns()
-    if not Cat2.QueryCardCooldown then
+    if not Cat2.QueryCardCooldown and not Cat2.QueryCardDuration then
         return
     end
 
@@ -291,31 +327,7 @@ local function RefreshShortcutCooldowns()
             while blockIndex <= blockTotal do
                 local iconButton = window.blocks[blockIndex]
                 if window.showCooldown and iconButton:IsVisible() and iconButton.step then
-                    local cacheKey = Cat2.GetCardCooldownCacheKey and Cat2.GetCardCooldownCacheKey(iconButton.step)
-                    local result
-                    if cacheKey then
-                        result = queryCache[cacheKey]
-                        if not result then
-                            local startTime, duration, enabled, remaining, state = Cat2.QueryCardCooldown(iconButton.step)
-                            result = {
-                                startTime = startTime,
-                                duration = duration,
-                                enabled = enabled,
-                                remaining = remaining,
-                                state = state,
-                            }
-                            queryCache[cacheKey] = result
-                        end
-                    else
-                        local startTime, duration, enabled, remaining, state = Cat2.QueryCardCooldown(iconButton.step)
-                        result = {
-                            startTime = startTime,
-                            duration = duration,
-                            enabled = enabled,
-                            remaining = remaining,
-                            state = state,
-                        }
-                    end
+                    local result = QueryShortcutTimer(iconButton.step, queryCache)
                     ApplyShortcutCooldown(iconButton, result.startTime, result.duration, result.enabled, result.remaining, result.state)
                 else
                     HideShortcutCooldown(iconButton)
@@ -802,22 +814,8 @@ local function RedrawShortcutWindow(profileId, keepHidden)
         iconButton.icon:SetTexture(Cat2.GetCardPrimaryIcon(step))
         iconButton.icon:SetDesaturated(step.enabled == 0)
         iconButton.icon:SetAlpha(step.enabled == 0 and 0.4 or 1)
-        if window.showCooldown and Cat2.QueryCardCooldown then
-            local cacheKey = Cat2.GetCardCooldownCacheKey and Cat2.GetCardCooldownCacheKey(step)
-            local cooldownResult = cacheKey and redrawCooldownCache[cacheKey]
-            if not cooldownResult then
-                local startTime, duration, enabled, remaining, state = Cat2.QueryCardCooldown(step)
-                cooldownResult = {
-                    startTime = startTime,
-                    duration = duration,
-                    enabled = enabled,
-                    remaining = remaining,
-                    state = state,
-                }
-                if cacheKey then
-                    redrawCooldownCache[cacheKey] = cooldownResult
-                end
-            end
+        if window.showCooldown and (Cat2.QueryCardCooldown or Cat2.QueryCardDuration) then
+            local cooldownResult = QueryShortcutTimer(step, redrawCooldownCache)
             ApplyShortcutCooldown(
                 iconButton,
                 cooldownResult.startTime,

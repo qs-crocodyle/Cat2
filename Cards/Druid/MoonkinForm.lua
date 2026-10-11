@@ -28,7 +28,7 @@ local ShapeshiftID = 0
 -- 插件启动时注册卡片后调用一次。
 function card.RefreshRuntimeData()
 
-    allowUse = Cat2.IsTalentLearned(1,20)
+    allowUse = Cat2.IsTalentLearned(1,15)
 
 	for i = 1, 9 do
 		local _, name, _, id = GetShapeshiftFormInfo(i)

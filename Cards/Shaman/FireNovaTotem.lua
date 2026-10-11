@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放火焰新星图腾。",
     sort = 60,
     exclusiveGroup = "shaman_fire_totem",
+    duration = { type = "shaman_totem", slot = "fire", name = "火焰新星图腾", cacheKey = "shaman_totem:fire:火焰新星图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

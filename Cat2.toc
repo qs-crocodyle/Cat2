@@ -18,6 +18,7 @@ Core\CatLib.lua
 Core\CatImmuneLib.lua
 Core\Buff.lua
 Core\PlayerInformation.lua
+Core\CardDuration.lua
 Core\CatEvent.lua
 Core\CatEvent-Druid.lua
 Core\CatEvent-Paladin.lua
@@ -32,6 +33,7 @@ Core\CardRegistry.lua
 Core\CardCooldown.lua
 Core\CardEventDispatcher.lua
 Core\CastInterruptMonitor.lua
+Core\RoguePoison.lua
 
 # 卡片定义按通用、消耗品、跨职业共享、各职业排列；每个文件加载时自行注册。
 Cards\Common\AutoAttack.lua
@@ -40,6 +42,7 @@ Cards\Common\AutoAttackPetIdle.lua
 Cards\Common\AutoAttackPetTargetCombat.lua
 Cards\Common\RangedAttack.lua
 Cards\Common\FishingAutoBait.lua
+Cards\Common\WeaponSwitch.lua
 Cards\Common\AutoPick.lua
 Cards\Common\StandUp.lua
 Cards\Common\StopCasting.lua
@@ -57,16 +60,20 @@ Cards\Common\TrinketsOnlyMelee.lua
 Cards\Common\RacialBurst.lua
 Cards\Common\AutoCancelSalvation.lua
 Cards\Common\AutoCancelCasterBuffs.lua
+Cards\Common\AutoCancelCustomBuff.lua
 Cards\Logic\PauseWhenTargetBanished.lua
 Cards\Logic\CaptureElementalImmunity.lua
 Cards\Logic\ViewMyCasts.lua
 Cards\Logic\ViewMyCastsDetailed.lua
 Cards\Logic\FlowTerminate.lua
+Cards\Logic\CallConfiguration.lua
 Cards\Logic\FlowTerminateInCombat.lua
 Cards\Logic\FlowJumpInCombat.lua
 Cards\Logic\FlowTerminateOutOfCombat.lua
 Cards\Logic\FlowJumpOutOfCombat.lua
 Cards\Logic\FlowJumpTargetHealthBelow.lua
+Cards\Logic\FlowJumpPowerAbove.lua
+Cards\Logic\FlowJumpPowerBelow.lua
 Cards\Logic\FlowJumpTargetBoss.lua
 Cards\Logic\FlowJumpTargetNotBoss.lua
 Cards\Logic\FlowJumpTargetCanBleed.lua
@@ -87,6 +94,8 @@ Cards\Items\MajorHealingPotion.lua
 Cards\Items\MajorManaPotion.lua
 Cards\Items\MajorRejuvenationPotionHP.lua
 Cards\Items\MajorRejuvenationPotionMP.lua
+Cards\Items\CustomConsumableHP.lua
+Cards\Items\CustomConsumableMP.lua
 Cards\Items\MajorHealingSalve.lua
 Cards\Items\ThistleTea.lua
 Cards\Items\JujuFlurry.lua
@@ -103,6 +112,9 @@ Cards\Items\DenseDynamiteCursor.lua
 Cards\Items\StratholmeHolyWaterSelf.lua
 Cards\Items\StratholmeHolyWaterTarget.lua
 Cards\Items\StratholmeHolyWaterCursor.lua
+Cards\Items\CustomCastConsumableSelf.lua
+Cards\Items\CustomCastConsumableTarget.lua
+Cards\Items\CustomCastConsumableCursor.lua
 
 Cards\Shared\HealingTarget.lua
 Cards\Shared\HealingTargetTarget.lua
@@ -168,7 +180,9 @@ Cards\Druid\FerociousBite5_50.lua
 Cards\Druid\FerociousBiteEmergencyRefill.lua
 Cards\Druid\Stealth.lua
 Cards\Druid\Shred.lua
+Cards\Druid\ShredClearcasting.lua
 Cards\Druid\ShredClaw.lua
+Cards\Druid\ShredClawClearcasting.lua
 Cards\Druid\ShredClawSmooth.lua
 Cards\Druid\ShredPreferredClawAssist.lua
 Cards\Druid\TigersFury.lua
@@ -208,6 +222,7 @@ Cards\Warrior\Slam.lua
 Cards\Warrior\SlamWithoutFlurry.lua
 Cards\Warrior\SlamAfterMainSkills.lua
 Cards\Warrior\SlamFlurry.lua
+Cards\Warrior\SlamFlurryAfterMainSkills.lua
 Cards\Warrior\SpecialStrike.lua
 Cards\Warrior\HeroicStrike.lua
 Cards\Warrior\HeroicStrikeAlt.lua
@@ -266,6 +281,7 @@ Cards\Paladin\KeepLightJudgement.lua
 Cards\Paladin\KeepCrusaderJudgement.lua
 Cards\Paladin\KeepJusticeJudgement.lua
 Cards\Paladin\HandOfProtection.lua
+Cards\Paladin\DivineProtection.lua
 Cards\Paladin\DivineShield.lua
 Cards\Paladin\LayOnHandsSelf.lua
 Cards\Paladin\RighteousFury.lua
@@ -318,6 +334,7 @@ Cards\Hunter\AutoShot.lua
 Cards\Hunter\HuntersMark.lua
 Cards\Hunter\HuntersMarkBoss.lua
 Cards\Hunter\ArcaneShot.lua
+Cards\Hunter\ArcaneShotMove.lua
 Cards\Hunter\ConcussiveShot.lua
 Cards\Hunter\MultiShot.lua
 Cards\Hunter\MultiShotMultipleTargets.lua
@@ -346,7 +363,9 @@ Cards\Hunter\AutoTrap.lua
 Cards\Hunter\ExplosiveTrap.lua
 Cards\Hunter\ImmolationTrap.lua
 Cards\Hunter\FrostTrap.lua
+Cards\Hunter\Deterrence.lua
 Cards\Hunter\FeignDeathBossWatching.lua
+Cards\Hunter\FeignDeathFlowTerminate.lua
 Cards\Hunter\FlareSelf.lua
 Cards\Hunter\FlareTarget.lua
 Cards\Hunter\FlareCursor.lua
@@ -356,6 +375,11 @@ Cards\Rogue\Eviscerate2.lua
 Cards\Rogue\Eviscerate3.lua
 Cards\Rogue\Eviscerate4.lua
 Cards\Rogue\Eviscerate5.lua
+Cards\Rogue\EviscerateSimple1.lua
+Cards\Rogue\EviscerateSimple2.lua
+Cards\Rogue\EviscerateSimple3.lua
+Cards\Rogue\EviscerateSimple4.lua
+Cards\Rogue\EviscerateSimple5.lua
 Cards\Rogue\Rupture1.lua
 Cards\Rogue\Rupture2.lua
 Cards\Rogue\Rupture3.lua
@@ -385,6 +409,46 @@ Cards\Rogue\SliceAndDice4.lua
 Cards\Rogue\SliceAndDice5.lua
 Cards\Rogue\DualBladePoisonStrike.lua
 Cards\Rogue\FourWeaponDualPoisonSwitch.lua
+Cards\Rogue\PoisonDissolveMain.lua
+Cards\Rogue\PoisonDissolveOff.lua
+Cards\Rogue\PoisonDissolveBaseMain.lua
+Cards\Rogue\PoisonDissolveBaseOff.lua
+Cards\Rogue\PoisonInstant6Main.lua
+Cards\Rogue\PoisonInstant6Off.lua
+Cards\Rogue\PoisonInstant5Main.lua
+Cards\Rogue\PoisonInstant5Off.lua
+Cards\Rogue\PoisonInstant4Main.lua
+Cards\Rogue\PoisonInstant4Off.lua
+Cards\Rogue\PoisonInstant3Main.lua
+Cards\Rogue\PoisonInstant3Off.lua
+Cards\Rogue\PoisonInstant2Main.lua
+Cards\Rogue\PoisonInstant2Off.lua
+Cards\Rogue\PoisonInstant1Main.lua
+Cards\Rogue\PoisonInstant1Off.lua
+Cards\Rogue\PoisonDeadly5Main.lua
+Cards\Rogue\PoisonDeadly5Off.lua
+Cards\Rogue\PoisonDeadly4Main.lua
+Cards\Rogue\PoisonDeadly4Off.lua
+Cards\Rogue\PoisonDeadly3Main.lua
+Cards\Rogue\PoisonDeadly3Off.lua
+Cards\Rogue\PoisonDeadly2Main.lua
+Cards\Rogue\PoisonDeadly2Off.lua
+Cards\Rogue\PoisonDeadly1Main.lua
+Cards\Rogue\PoisonDeadly1Off.lua
+Cards\Rogue\PoisonCorrosive2Main.lua
+Cards\Rogue\PoisonCorrosive2Off.lua
+Cards\Rogue\PoisonCorrosive1Main.lua
+Cards\Rogue\PoisonCorrosive1Off.lua
+Cards\Rogue\PoisonMindNumbing3Main.lua
+Cards\Rogue\PoisonMindNumbing3Off.lua
+Cards\Rogue\PoisonMindNumbing2Main.lua
+Cards\Rogue\PoisonMindNumbing2Off.lua
+Cards\Rogue\PoisonMindNumbing1Main.lua
+Cards\Rogue\PoisonMindNumbing1Off.lua
+Cards\Rogue\PoisonWoundMain.lua
+Cards\Rogue\PoisonWoundOff.lua
+Cards\Rogue\PoisonCripplingMain.lua
+Cards\Rogue\PoisonCripplingOff.lua
 Cards\Rogue\DeadlyThrow.lua
 Cards\Rogue\DeadlyThrowInterrupt.lua
 Cards\Rogue\Envenom1.lua
@@ -450,6 +514,7 @@ Cards\Priest\MindFlay.lua
 Cards\Priest\MindFlaySecond.lua
 Cards\Priest\MindFlaySecondFiveStacks.lua
 Cards\Priest\VampiricEmbrace.lua
+Cards\Priest\VampiricEmbraceBoss.lua
 Cards\Priest\Shadowform.lua
 Cards\Priest\Fade.lua
 Cards\Priest\Silence.lua
@@ -532,6 +597,7 @@ Cards\Mage\ArcanePower.lua
 Cards\Mage\ArcanePowerFuse.lua
 Cards\Mage\ArcanePowerBoss.lua
 Cards\Mage\ArcaneSurge.lua
+Cards\Mage\ArcaneSurgeMove.lua
 Cards\Mage\ArcaneSurgeIgnoreArcaneFracture.lua
 Cards\Mage\ArcaneSurgeArcaneFractureEnding.lua
 Cards\Mage\ArcaneSurgeIgnoreArcanePower.lua
@@ -635,6 +701,10 @@ Cards\Warlock\ConflagrateImmolatePresent.lua
 Cards\Warlock\ConflagrateImmolate.lua
 Cards\Warlock\ConflagrateImmolateAutoTiming.lua
 Cards\Warlock\SpellLock.lua
+
+# Custom cards; class and order defined by each card itself.
+Cards\Custom\HunterCannon.lua
+Cards\Custom\HunterOrbitalMissile.lua
 
 # 数据恢复和编码必须在全部卡片注册后加载，才能按稳定 ID 重新绑定流程步骤。
 Core\Persistence.lua

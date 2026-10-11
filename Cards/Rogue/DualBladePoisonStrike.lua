@@ -45,7 +45,7 @@ function card.Execute(context)
     end
 
     if player.power >= 45 then
-        Cat2.Cast("双刃毒袭")
+        Cat2.CastWithNampower("双刃毒袭")
         return true
     end
 

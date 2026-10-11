@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放自然抗性图腾。",
     sort = 170,
     exclusiveGroup = "shaman_air_totem",
+    duration = { type = "shaman_totem", slot = "air", name = "自然抗性图腾", cacheKey = "shaman_totem:air:自然抗性图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

@@ -34,6 +34,7 @@ local card = {
                 { value = "星火图腾", label = "|cFF0070DD星火图腾|r" },
                 { value = "腐根图腾", label = "|cFF0070DD腐根图腾|r" },
                 { value = "腐潮图腾", label = "|cFF0070DD腐潮图腾|r" },
+                { value = "潮汐图腾", label = "|cFF0070DD潮汐图腾|r" },
             },
         },
     },

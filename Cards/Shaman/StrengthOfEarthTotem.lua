@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放大地之力图腾。",
     sort = 10,
     exclusiveGroup = "shaman_earth_totem",
+    duration = { type = "shaman_totem", slot = "earth", name = "大地之力图腾", cacheKey = "shaman_totem:earth:大地之力图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

@@ -49,7 +49,7 @@ function card.Execute(context, step)
 
     if player.buff["节能施法"] then
     
-        if player.power<28 and player.targetCombo==4 then
+        if player.power<15 and player.targetCombo==4 then
             Cat2.Cast("凶猛撕咬")
             return true
         end

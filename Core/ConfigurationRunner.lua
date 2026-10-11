@@ -258,23 +258,21 @@ end
 
 -- 被动卡片先扫描整个配置并建立共享 context，因此其效果不受自身排列位置限制。
 -- 随后 Validate 统一决定流程能否运行，最后才从上往下调用普通卡片 Execute(context)。
-local function RunConfiguration(configurationName)
-    local profile = Cat2.FindConfigurationByName(configurationName)
-    if not profile then
-        return false, 0, 0
-    end
+local RunProfile
+local function RunConfiguration(profile, session)
     if Cat2.UI and Cat2.UI.TriggerShortcutWindowTitleLight then
         Cat2.UI.TriggerShortcutWindowTitleLight(profile.id)
     end
     -- 事件监控只负责提出中断请求；在用户本次宏按键中执行受保护的停止施法。
     -- 成功提交中断后结束本轮流程，避免紧接着执行下一张卡片再次施法。
-    if Cat2.TryExecutePendingCastInterrupt and Cat2.TryExecutePendingCastInterrupt() then
+    if not session.started and Cat2.TryExecutePendingCastInterrupt and Cat2.TryExecutePendingCastInterrupt() then
         return true, 0, 0, true, {}
     end
     -- 每次触发配置时统一刷新一次临时角色信息，供本轮所有卡片读取同一份最新快照。
-    if Cat2.RefreshPlayerTemporaryInformation then
+    if not session.started and Cat2.RefreshPlayerTemporaryInformation then
         Cat2.RefreshPlayerTemporaryInformation()
     end
+    session.started = true
     local executedTotal = 0
     local failedTotal = 0
     local failedNames = {}
@@ -306,12 +304,38 @@ local function RunConfiguration(configurationName)
         end
         return nil
     end
-    -- scope：party/group；order：original/health/maxHealth/random。
+    -- 团队快照按需构建并在本轮复用。scope：party/group；order：original/health/maxHealth/random。
     function context:GetTeamMembers(scope, order)
         return GetTeamMembers(self, scope, order)
     end
     function context:GetTeamMemberRange(member)
         return GetTeamMemberRange(member)
+    end
+    function context:FailConfigurationCall(message)
+        failedTotal = failedTotal + 1
+        table.insert(failedNames, Cat2.L("调用配置"))
+        session.abort = true
+        DEFAULT_CHAT_FRAME:AddMessage("|cffff5555Cat2：" .. message .. Cat2.L("；本轮已终止。") .. "|r")
+    end
+    function context:CallConfiguration(profileId)
+        local repository = Cat2.RuntimeConfigurations
+        local child = repository and repository.profiles and repository.profiles[profileId]
+        if not child then
+            self:FailConfigurationCall(Cat2.L("调用的配置已不存在。"))
+            return true
+        end
+        if session.stack[profileId] then
+            self:FailConfigurationCall(Cat2.L("禁止循环调用配置。") .. child.name .. Cat2.L("。"))
+            return true
+        end
+        local found, total, failures, childStopped, names = RunProfile(child, session)
+        executedTotal = executedTotal + total
+        failedTotal = failedTotal + failures
+        for _, name in ipairs(names or {}) do table.insert(failedNames, name) end
+        -- 子流程可能改变队伍状态，返回后重新按需建立父流程的治疗快照。
+        self.teamSnapshot = nil
+        if childStopped or failures > 0 then session.abort = true end
+        return session.abort == true
     end
     -- 除函数参数外也保留本轮全局引用，便于旧卡片逐步迁移；执行结束后立即清除。
     Cat2.CurrentExecutionContext = context
@@ -369,15 +393,18 @@ local function RunConfiguration(configurationName)
     end
 
     -- 位置可以向前跳，计步只递增。暂停卡与被动卡跳过，不消耗主执行阶段的60步预算。
-    local executionSteps = 0
     stepIndex = 1
     while stepIndex <= stepTotal do
+        if session.abort or session.steps >= maximumExecutionSteps then
+            stopped = true
+            break
+        end
         local nextStepIndex = stepIndex + 1
         local step = profile.steps[stepIndex]
         if step and step.enabled ~= 0 and step.behavior ~= "passive" and type(step.Execute) == "function" then
-            executionSteps = executionSteps + 1
+            session.steps = session.steps + 1
             context.currentStepIndex = stepIndex
-            context.executionStepCount = executionSteps
+            context.executionStepCount = session.steps
             PrintDebugStep(Cat2.L("执行"), stepIndex, stepTotal, step)
             local succeeded, executeResult = pcall(step.Execute, context, step)
             executedTotal = executedTotal + 1
@@ -388,6 +415,7 @@ local function RunConfiguration(configurationName)
                 -- 详细错误单独占一行，让聊天框可以按自身宽度完整换行。
                 DEFAULT_CHAT_FRAME:AddMessage("|cffff5555" .. Cat2.L("Cat2：卡片「") .. stepName .. Cat2.L("」执行失败：") .. "|r")
                 DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. tostring(executeResult) .. "|r")
+                if session.depth > 1 then session.abort = true end
             elseif executeResult == true then
                 stopped = true
                 break
@@ -404,9 +432,11 @@ local function RunConfiguration(configurationName)
                 end
                 nextStepIndex = targetIndex
             end
-            if executionSteps >= maximumExecutionSteps then
+            if session.abort or session.steps >= maximumExecutionSteps then
                 stopped = true
-                PrintDebugStep(Cat2.L("已达到60步上限"), stepIndex, stepTotal, step)
+                if session.steps >= maximumExecutionSteps then
+                    PrintDebugStep(Cat2.L("已达到60步上限"), stepIndex, stepTotal, step)
+                end
                 break
             end
         end
@@ -414,6 +444,32 @@ local function RunConfiguration(configurationName)
     end
     Cat2.CurrentExecutionContext = nil
     return true, executedTotal, failedTotal, stopped, failedNames
+end
+
+-- 每层进入/退出都恢复父上下文；预算和调用栈不暴露给卡片，避免被跳转或嵌套重置。
+RunProfile = function(profile, session)
+    if session.steps >= maximumExecutionSteps then
+        session.abort = true
+        return true, 0, 0, true, {}
+    end
+    local parentContext = Cat2.CurrentExecutionContext
+    session.depth = (session.depth or 0) + 1
+    session.stack[profile.id] = true
+    local ok, found, total, failures, stopped, names = pcall(RunConfiguration, profile, session)
+    session.stack[profile.id] = nil
+    session.depth = session.depth - 1
+    Cat2.CurrentExecutionContext = parentContext
+    if not ok then
+        session.abort = true
+        error(found)
+    end
+    return found, total, failures, stopped, names
+end
+
+local function RunRootConfiguration(configurationName)
+    local profile = Cat2.FindConfigurationByName(configurationName)
+    if not profile then return false, 0, 0 end
+    return RunProfile(profile, { steps = 0, stack = {} })
 end
 
 -- 统一前置入口。后续需要提升到整轮流程的临时设置，可由此返回原值交给后置恢复。
@@ -463,7 +519,7 @@ end
 function Cat2.ExecuteConfiguration(configurationName)
     local castTimeSetting, instantSetting, channelingSetting, interruptChannelSetting = BeginConfigurationExecution(configurationName)
     local succeeded, found, executedTotal, failedTotal, stopped, failedNames = pcall(
-        RunConfiguration,
+        RunRootConfiguration,
         configurationName
     )
 

@@ -37,9 +37,11 @@ function card.Execute(context)
     local player = Cat2.PlayerInformation.temporary
 
     -- 没目标就无需继续
+    --[[
     if not player.targetExists then
         return false
     end
+    ]]
 
 
     if player.buff["潜行"] then

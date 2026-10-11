@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放熔岩图腾。",
     sort = 80,
     exclusiveGroup = "shaman_fire_totem",
+    duration = { type = "shaman_totem", slot = "fire", name = "熔岩图腾", cacheKey = "shaman_totem:fire:熔岩图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

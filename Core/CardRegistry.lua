@@ -463,7 +463,7 @@ function Cat2.NormalizeCardOptionValue(definition, value, card)
             end
         end
         -- 不允许自定义的下拉框遇到无效旧值时回退默认值。
-        if definition.allowCustom ~= true and not selectedChoice then
+        if definition.allowCustom ~= true and definition.preserveUnknownValue ~= true and not selectedChoice then
             return nil
         end
     end

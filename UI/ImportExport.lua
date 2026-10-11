@@ -147,7 +147,13 @@ local function CreateTransferWindow()
     transferWindow:SetMovable(true)
     transferWindow:SetClampedToScreen(true)
     transferWindow:EnableMouse(true)
+    transferWindow:EnableKeyboard(true)
     transferWindow:RegisterForDrag("LeftButton")
+    transferWindow:SetScript("OnKeyDown", function()
+        if arg1 == "ESCAPE" then
+            HideTransferWindow()
+        end
+    end)
     ui.ApplyFlatBackdrop(transferWindow, 0.04, 0.05, 0.08, 0.99)
     transferWindow:SetScript("OnDragStart", function()
         transferWindow:StartMoving()

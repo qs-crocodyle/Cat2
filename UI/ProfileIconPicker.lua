@@ -148,6 +148,12 @@ local function CreatePicker(parent)
     picker:SetFrameLevel(parent:GetFrameLevel() + 210)
     picker:SetClampedToScreen(true)
     picker:EnableMouse(true)
+    picker:EnableKeyboard(true)
+    picker:SetScript("OnKeyDown", function()
+        if arg1 == "ESCAPE" then
+            picker:Hide()
+        end
+    end)
     -- 透明点击层位于弹窗下方，截住外部点击；松开后关闭，避免点击穿透。
     local outsideClick = CreateFrame("Frame", nil, parent)
     outsideClick:SetAllPoints(UIParent)

@@ -296,11 +296,14 @@ local function CreateManager()
     managerWindow:SetMovable(true)
     managerWindow:SetClampedToScreen(true)
     managerWindow:EnableMouse(true)
+    managerWindow:EnableKeyboard(true)
     managerWindow:RegisterForDrag("LeftButton")
-    -- 配置管理是标准可关闭窗口，登记到原生 ESC 列表；快捷小窗不接管 ESC。
-    if type(UISpecialFrames) == "table" then
-        table.insert(UISpecialFrames, "Cat2ProfileManagerWindow")
-    end
+    -- 二级窗口自行接管 ESC，避免原生 UISpecialFrames 同时关闭它和 Cat2 主界面。
+    managerWindow:SetScript("OnKeyDown", function()
+        if arg1 == "ESCAPE" then
+            managerWindow:Hide()
+        end
+    end)
     ApplyFlatBackdrop(managerWindow, 0.04, 0.05, 0.08, 0.99)
     managerWindow:SetScript("OnDragStart", function()
         managerWindow:StartMoving()

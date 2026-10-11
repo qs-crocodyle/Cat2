@@ -87,3 +87,39 @@
 - Shaman 附魔 tooltip 的英文文本依赖实际客户端提示（minutes 等），建议英文端实机确认。
 - 其余英文片段有 Turtle 专属名（Anomalus / Hot Streng / Raging Flames 等），按服上实况为准。
 - 若后续发现未覆盖翻译，仍按`Localization.lua` 字典补充。
+
+## 2026-10-11 同步（CN 2026-09-16 → 2026-10-11）
+
+新增 Core：`CardDuration.lua`（持续时间显示服务，原样）；`RoguePoison.lua`（武器毒药涂抹，
+加英文双匹配：附魔提示基名经 `L.Spell`、次数 `(%d+)%s*次 or charges`、背包全名经 `L.Spell`）。
+
+新增卡片 66 个：毒药 40（`CreateWeaponPoisonCard`，行为走 `RoguePoison` 双匹配）、
+`EviscerateSimple1-5`、`CallConfiguration`（ cardio 显示经 `L()`，导入导出名绑定）、
+`FlowJumpPowerAbove/Below`、`WeaponSwitch`、`AutoCancelCustomBuff`、`CustomConsumableHP/MP`、
+`CustomCastConsumableSelf/Target/Cursor`、`ShredClearcasting`、`ShredClawClearcasting`、
+`ArcaneShotMove`、`Deterrence`（天赋名 `威慑 or Deterrence`）、`FeignDeathFlowTerminate`、
+`ArcaneSurgeMove`、`DivineProtection`、`VampiricEmbraceBoss`、`SlamFlurryAfterMainSkills`、
+`Custom/HunterCannon`、`HunterOrbitalMissile`（`小动物 or Critter`）。
+
+Core 增量移植（保留 EN 双正则）：`CardRegistry`（`preserveUnknownValue`）、
+`CardEventDispatcher`/`CastInterruptMonitor`（`CurrentExecutionContext.profileId` 跟随子配置）、
+`CatEvent-Druid`（Rip/Ravage `<=` + 延迟清计时，新增 `GetRipDotCheckData`）、
+`CatEvent-Paladin`（圣印 combat-log 分支仅 `not SuperWoW` 时走，增加 duration 清零；
+`Seal()` 同理）、`CatEvent-Shaman`（`shaman_totem` duration provider）、
+`CatLib`（爆发饰品 +`污秽之爪`，EN 名待用户确认，暂缺省）、
+`ClassSpecializations`（盗贼 +`毒药`分组）、`ConfigurationCodec`/`ConfigurationRunner`
+（配置调用：`RunProfile(session)` 共享 60 步预算、防递归，提示语走 `L()`）、
+`CatImmuneLib`（6 系中文免疫名单补增，EN 名待确认，按文档缺口原样收录）。
+
+字典：Spells 补毒药各等级（速效 II-VI、致命 II-V、麻痹 II-III、致残 II、致伤、
+腐蚀/II=Corrosive Poison）＋`威慑`=Deterrence、`圣佑术`=Divine Protection；
+修正 `溶解毒药`=Dissolvent Poison（itemDB 54009/54010 对应两阶卡）＋`溶解毒药 II`；
+Buffs 补 `威慑`、`假死`；UI 补 `毒药`＋调用配置 12 条；Cards 新增 66 条、更新 22 条
+（圣印/审判等级参数、Eviscerate 血腥气息优先、MindFlay 独立二阶、有限无敌 1-100%）。
+
+UI 增量：FlowEditor 系拖放/悬停/ESC 收尾、ShortcutWindows 持续时间（绿字）优先显示、
+ProfileManager/ImportExport/Notice/IconPicker 二级窗自管 ESC。
+
+验证：`scan_zh_matchers` → FLAG 9（圣印内部链 6＋免疫 CN 侧 2＋旋风斩内部键 1，均为已知安全），
+REVIEW 75（新增 5 处已 eyeball：Critter×2、Deterrence、charges、主手显示），DICT MISSING 0；
+`check_completeness` 仅中文展示串（Cards 字典覆盖）。

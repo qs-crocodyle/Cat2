@@ -96,12 +96,20 @@ local function OnEvent()
             PaladinFrenzyDuration = GetTime()
             CrusaderStrikeCheck = GetTime()
         elseif string.find( arg1, "你的.*审判.*" ) or string.find( arg1 or "", Cat2.L.Spell("审判") ) then
-            PaladinSealJustice = false
-            PaladinSealCommand = false
-            PaladinSealWisdom = false
-            PaladinSealCrusader = false
-            PaladinSealRight = false
-            PaladinSealFairness = false
+            if not Cat2.SuperWoW then
+                PaladinSealJustice = false
+                PaladinSealCommand = false
+                PaladinSealWisdom = false
+                PaladinSealCrusader = false
+                PaladinSealRight = false
+                PaladinSealFairness = false
+                PaladinSealJusticeDuration = 0
+                PaladinSealWisdomDuration = 0
+                PaladinSealCrusaderDuration = 0
+                PaladinSealCommandDuration = 0
+                PaladinSealRightDuration = 0
+                PaladinSealFairnessDuration = 0
+            end
             gcdtimer = 0
         end
 
@@ -116,7 +124,11 @@ local function OnEvent()
             else
                 PaladinFrenzyLayer = 1
             end
-        elseif string.find( arg1, "你获得了正义圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of " .. Cat2.L.Spell("正义圣印") ) then
+        end
+
+        if not Cat2.SuperWoW then
+
+            if string.find( arg1, "你获得了正义圣印的效果.*" ) or string.find( arg1 or "", "You gain the effect of " .. Cat2.L.Spell("正义圣印") ) then
             PaladinSealJustice = true
             PaladinSealCommand = false
             PaladinSealWisdom = false
@@ -207,6 +219,7 @@ local function OnEvent()
             PaladinSealRightDuration = 0
             PaladinSealFairnessDuration = GetTime()
 
+            end
         end
 
     elseif event == "CHAT_MSG_SPELL_AURA_GONE_SELF" then
@@ -219,20 +232,22 @@ local function OnEvent()
             end
         elseif string.find( arg1, ".*圣印.*消失.*" ) or string.find( arg1 or "", "Seal.*fades" ) then
 
-            PaladinSealJustice = false
-            PaladinSealCommand = false
-            PaladinSealWisdom = false
-            PaladinSealCrusader = false
-            PaladinSealRight = false
-            PaladinSealFairness = true
-            
-            PaladinSealJusticeDuration = 0
-            PaladinSealWisdomDuration = 0
-            PaladinSealCrusaderDuration = 0
-            PaladinSealCommandDuration = 0
-            PaladinSealRightDuration = 0
-            PaladinSealFairnessDuration = 0
-            
+            if not Cat2.SuperWoW then
+                PaladinSealJustice = false
+                PaladinSealCommand = false
+                PaladinSealWisdom = false
+                PaladinSealCrusader = false
+                PaladinSealRight = false
+                PaladinSealFairness = false
+
+                PaladinSealJusticeDuration = 0
+                PaladinSealWisdomDuration = 0
+                PaladinSealCrusaderDuration = 0
+                PaladinSealCommandDuration = 0
+                PaladinSealRightDuration = 0
+                PaladinSealFairnessDuration = 0
+            end
+
         end
 
 
@@ -347,10 +362,12 @@ frame:SetScript("OnEvent", OnEvent)
 -- return 存在返回真
 function Cat2.Seal(name)
 
-	local information = Cat2.PlayerInformation and Cat2.PlayerInformation.temporary
-	if information and information.buff and information.buff[name] then
-		return true
-	end
+    if not Cat2.SuperWoW then
+	    local information = Cat2.PlayerInformation and Cat2.PlayerInformation.temporary
+	    if information and information.buff then
+		    return information.buff[name]
+	    end
+    end
 
 	if name=="正义圣印" then
 		if GetTime()-PaladinSealJusticeDuration<30 then

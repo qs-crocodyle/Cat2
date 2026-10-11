@@ -3,7 +3,7 @@ local card = {
     id = "priest_mind_flay_second",
     name = "精神鞭笞（二阶）",
     description = "对目标施放二阶精神鞭笞",
-    details = "对目标施放二阶精神鞭笞。需要存在有效目标；目标暗影免疫时不会施放。成功执行时会阻断本轮后续卡片。",
+    details = "可独立使用：未在施法或引导时启动精神鞭笞；引导造成第二跳伤害后，中断当前引导并重新施放。需要存在有效目标；目标暗影免疫或超出射程时不会施放。成功执行时会阻断本轮后续卡片。",
     sort = 31,
     category = "class",
     classes = {
@@ -41,9 +41,18 @@ function card.Execute(context)
         end
     end
 
-    if Cat2.GetChanneledDuration()>0 then
+    if Cat2.GetChanneledDuration() <= 0 then
+        if not Cat2.GetIsCast() and Cat2.SpellReady("精神鞭笞") then
+            Cat2.Cast("精神鞭笞")
+            return true
+        end
+        return false
+    end
+
+    if Cat2.SpellReady("精神鞭笞") then
 
         if Cat2.GetPriestMindFlayCount()>=2 then
+            SpellStopCasting()
             CastSpellByName("精神鞭笞")
             return true
         end

@@ -1066,6 +1066,7 @@ local burstTrinketNames = {
 	"优越护符",
 	"龙人能量徽章",
 	"魔暴龙眼",
+	"污秽之爪",
 }
 
 function Cat2.IsBurstTrinket(slot)

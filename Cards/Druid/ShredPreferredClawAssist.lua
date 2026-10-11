@@ -61,12 +61,12 @@ function card.Execute(context)
 
     if Cat2.CheckBehindErrorMessage() then
         if player.power>=shredPower or player.buff["节能施法"] then
-            Cat2.Cast("撕碎")
+            Cat2.CastWithNampower("撕碎")
             return true
         end
     else
         if player.power>=80 or player.buff["节能施法"] then
-            Cat2.Cast("爪击")
+            Cat2.CastWithNampower("爪击")
             return true
         end
     end

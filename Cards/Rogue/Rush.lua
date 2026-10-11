@@ -49,7 +49,7 @@ function card.Execute(context, step)
     end
 
     if player.power >= 10 and player.power < energyLimit and Cat2.RogueSurpriseStrike() then
-        Cat2.Cast("突袭")
+        Cat2.CastWithNampower("突袭")
         return true
     end
 

@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放战栗图腾。",
     sort = 40,
     exclusiveGroup = "shaman_earth_totem",
+    duration = { type = "shaman_totem", slot = "earth", name = "战栗图腾", cacheKey = "shaman_totem:earth:战栗图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

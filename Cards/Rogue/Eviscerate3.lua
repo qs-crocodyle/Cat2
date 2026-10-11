@@ -1,16 +1,17 @@
 -- 剔骨（三星）技能卡片。
 local card = {
     id = "rogue_eviscerate_3",
-    name = "剔骨（三星）",
+    name = "剔骨（优先血腥气息，三星）",
     description = "消耗3连击点施放剔骨，血腥等待|cff6bc7e0{bloodyWaitSeconds}秒|r",
     details = "消耗3连击点施放剔骨，若血腥气息即将结束，则等待。需要存在有效目标。成功执行时会阻断本轮后续卡片。",
-    sort = 23,
+    sort = 25.3,
     category = "class",
     classes = {
         ROGUE = 1,
     },
     icons = {
         "Interface\\Icons\\Ability_Rogue_Eviscerate",
+        "Interface\\Icons\\INV_Misc_Bone_09",
     },
     optionSchema = {
         {

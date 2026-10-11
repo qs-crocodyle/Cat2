@@ -16,7 +16,7 @@ local card = {
         "Interface\\Icons\\Spell_Holy_Renew",
     },
     optionSchema = {
-        { key = "triggerPercent", type = "number", label = "触发血量", unit = "%", default = 99, minimum = 1, maximum = 99 },
+        { key = "triggerPercent", type = "number", label = "触发血量", unit = "%", default = 99, minimum = 1, maximum = 100 },
         { key = "minimumRank", type = "number", label = "最小等级", default = 1, minimum = 1, maximum = 10 },
         { key = "maximumRank", type = "number", label = "最大等级", default = 10, minimum = 1, maximum = 10 },
     },
@@ -91,7 +91,7 @@ function card.Health(unit, member, context, triggerPercent, minimumRank, maximum
     end
 
     local percentHealth = health / maxHealth * 100
-    if percentHealth >= triggerPercent then
+    if percentHealth > triggerPercent then
         return false
     end
 

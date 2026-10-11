@@ -13,6 +13,16 @@ local ShowTextInput = ui.ShowTextInput
 local CloseAllDialogs = ui.CloseAllDialogs
 local editor = ui.FlowEditor
 
+-- 放下卡片后只向下补足可视空间，并留出下一张卡的落点提示位置。
+function editor.EnsureFlowDropVisible(index)
+    if not editor.flowScroll or not editor.flowSlider then return end
+    local current = editor.flowScroll:GetVerticalScroll()
+    local required = index * 50 + 20 - editor.flowScroll:GetHeight()
+    if required > current then
+        SetScrollPosition(editor.flowScroll, editor.flowSlider, required)
+    end
+end
+
 -- 依据 selectedSteps 重建左侧流程卡片，并刷新数量和滚动范围。
 editor.RedrawFlow = function()
     -- 独立快捷窗可在主编辑器创建前被点击；此时没有左侧列表控件可重绘。
@@ -67,7 +77,8 @@ editor.RedrawFlow = function()
         index = index + 1
     end
 
-    local contentHeight = total * 50 + 4
+    -- 末尾额外留20像素，确保最后一张卡下方的插入提示能进入可视区域。
+    local contentHeight = total * 50 + 20
     if contentHeight < 392 then
         contentHeight = 392
     end
@@ -233,7 +244,7 @@ function editor.CreateFilterTab(parent, filterKey, labelText, offsetX, width)
     table.insert(editor.filterTabs, button)
 end
 
--- 分类栏按可见标签等分；萨满包含“图腾”，其他职业隐藏第四分类。
+-- 分类栏按可见标签等分；盗贼“毒药”和萨满“图腾”使用第四分类，其余职业隐藏。
 function ui.LayoutFilterTabs(classFile)
     local specializationNames = Cat2.ClassSpecializations[classFile]
     local hasFourthGroup = specializationNames and specializationNames[4] ~= nil

@@ -623,6 +623,23 @@ frame:SetScript("OnEvent", OnEvent)
 --frame:SetScript("OnUpdate", OnUpdate)
 
 
+-- 显示服务只读取已有四系计时，不参与施法、事件处理或补图腾判断。
+Cat2.RegisterCardDurationProvider("shaman_totem", function(definition)
+    local startTime, duration, name
+    if definition.slot == "earth" then
+        startTime, duration, name = EarthTotemTimer, EarthTotemDuration, EarthTotemName
+    elseif definition.slot == "fire" then
+        startTime, duration, name = FireTotemTimer, FireTotemDuration, FireTotemName
+    elseif definition.slot == "water" then
+        startTime, duration, name = WaterTotemTimer, WaterTotemDuration, WaterTotemName
+    elseif definition.slot == "air" then
+        startTime, duration, name = AirTotemTimer, AirTotemDuration, AirTotemName
+    end
+    -- 被替换、召回或消失的图腾不能沿用该元素槽的旧计时。
+    if not startTime or startTime <= 0 or name ~= definition.name then return nil end
+    return startTime, duration
+end)
+
 function Cat2.EarthTotem()
     if GetTime()-EarthTotemTimer<EarthTotemDuration then
         return true

@@ -47,22 +47,33 @@ function card.Execute(context, step)
         return false
     end
 
+    if player.targetCombo==5 then
 
-    if player.buff["节能施法"] then
+        if player.buff["节能施法"] then
     
-        if player.power<28 and player.targetCombo==5 then
+            if player.power<15 then
+                Cat2.Cast("凶猛撕咬")
+                return true
+            end
+
+        else
+
+            local energyLimit = context:GetStepOption(step, "energyLimit") or 50
+            if player.power>=35 and player.power<energyLimit then
+                Cat2.Cast("凶猛撕咬")
+                return true
+            end
+
+        end
+        --[[
+        -- 撕扯快结束
+        local rip = Cat2.GetRipDot("target", 4)
+        if not rip then
+            print("rip")
             Cat2.Cast("凶猛撕咬")
             return true
         end
-
-    else
-
-        local energyLimit = context:GetStepOption(step, "energyLimit") or 50
-        if player.power>=35 and player.power<energyLimit and player.targetCombo==5 then
-            Cat2.Cast("凶猛撕咬")
-            return true
-        end
-
+        ]]
     end
 
     return false

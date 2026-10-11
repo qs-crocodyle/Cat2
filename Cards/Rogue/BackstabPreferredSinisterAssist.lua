@@ -34,7 +34,7 @@ function card.Execute(context)
     -- 确认主手武器，必须是匕首
     if not Dagger then
         if player.power >= 40 then
-            Cat2.Cast("邪恶攻击")
+            Cat2.CastWithNampower("邪恶攻击")
             return true
         end
         return false
@@ -42,12 +42,12 @@ function card.Execute(context)
 
     if Cat2.CheckBehindErrorMessage() then
         if player.power >= 60 then
-            Cat2.Cast("背刺")
+            Cat2.CastWithNampower("背刺")
             return true
         end
     else
         if player.power >= 80 then
-            Cat2.Cast("邪恶攻击")
+            Cat2.CastWithNampower("邪恶攻击")
             return true
         end
     end

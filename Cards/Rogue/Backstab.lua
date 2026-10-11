@@ -35,14 +35,14 @@ function card.Execute(context)
     if not Dagger then
 
         if player.power >= 40 then
-            Cat2.Cast("邪恶攻击")
+            Cat2.CastWithNampower("邪恶攻击")
             return true
         end
 
     else
 
         if player.behind and player.power >= 60 then
-            Cat2.Cast("背刺")
+            Cat2.CastWithNampower("背刺")
             return true
         end
 

@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放地缚图腾。",
     sort = 50,
     exclusiveGroup = "shaman_earth_totem",
+    duration = { type = "shaman_totem", slot = "earth", name = "地缚图腾", cacheKey = "shaman_totem:earth:地缚图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

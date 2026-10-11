@@ -125,6 +125,10 @@ function card.Execute(context, step)
             Cat2.Cast("重整")
 		    return true
         end
+		if Restore>=4 and player.power<15 and player.targetCombo==5 then
+			Cat2.Cast("重整")
+		    return true
+		end
 		if Restore>=4 and player.power<10 then
 			Cat2.Cast("重整")
 		    return true

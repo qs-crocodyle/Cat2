@@ -53,7 +53,8 @@ local function BuildActiveFlowCardLookup()
         return activeCardLookup
     end
 
-    local profile = repository.profiles[repository.activeProfileId]
+    local executionContext = Cat2.CurrentExecutionContext
+    local profile = repository.profiles[(executionContext and executionContext.profileId) or repository.activeProfileId]
     if type(profile) ~= "table" or type(profile.steps) ~= "table" then
         return activeCardLookup
     end

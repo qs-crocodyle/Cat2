@@ -13,6 +13,10 @@ local ShowTextInput = ui.ShowTextInput
 local CloseAllDialogs = ui.CloseAllDialogs
 local editor = ui.FlowEditor
 
+local function IsFlowHoverSuppressed(block)
+    return block.fromFlow and editor.dragGhost and editor.dragGhost:IsVisible()
+end
+
 -- 逻辑类型由 behavior 标记，与卡片所在的 logic 分类独立；按原顺序调用 Execute。
 local function ApplyLogicAppearance(block, disabled, hovered)
     if disabled then
@@ -74,8 +78,19 @@ local function UpdateDropIndicator()
     end
 
     local index = GetFlowInsertIndex()
+    local offsetY = -1
+    if index > 1 then
+        -- 卡片高44、间距6；提示线居中放在两张卡片之间的6像素空隙。
+        offsetY = 2 - (index - 1) * 50
+    end
+    local indicatorTop = editor.flowContent:GetTop() + offsetY
+    -- 提示线独立于滚动内容层，显式防止它画到可视区域外。
+    if indicatorTop > editor.flowScroll:GetTop() or indicatorTop - 3 < editor.flowScroll:GetBottom() then
+        editor.dropIndicator:Hide()
+        return
+    end
     editor.dropIndicator:ClearAllPoints()
-    editor.dropIndicator:SetPoint("TOPLEFT", editor.flowContent, "TOPLEFT", 24, -1 - (index - 1) * 50)
+    editor.dropIndicator:SetPoint("TOPLEFT", editor.flowContent, "TOPLEFT", 24, offsetY)
     editor.dropIndicator:Show()
 end
 
@@ -112,12 +127,18 @@ function editor.CreateDragGhost()
 
     local name = editor.dragGhost:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     name:SetPoint("TOPLEFT", icon, "TOPRIGHT", 8, 0)
+    name:SetPoint("TOPRIGHT", editor.dragGhost, "TOPRIGHT", -8, -7)
+    name:SetHeight(16)
+    name:SetJustifyH("LEFT")
     name:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
     name:SetTextColor(1, 0.82, 0.2)
     editor.dragGhost.name = name
 
     local description = editor.dragGhost:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     description:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 8, 0)
+    description:SetPoint("BOTTOMRIGHT", editor.dragGhost, "BOTTOMRIGHT", -8, 7)
+    description:SetHeight(12)
+    description:SetJustifyH("LEFT")
     description:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
     description:SetTextColor(0.82, 0.82, 0.82)
     editor.dragGhost.description = description
@@ -377,6 +398,7 @@ function editor.CreateStepBlock(parent, step, index, fromFlow)
             RefreshOptionAppearance()
 
             optionButton:SetScript("OnEnter", function()
+                if IsFlowHoverSuppressed(block) then return end
                 if optionTotal == 0 then
                     RefreshOptionAppearance()
                     GameTooltip:SetOwner(optionButton, "ANCHOR_RIGHT")
@@ -470,6 +492,7 @@ function editor.CreateStepBlock(parent, step, index, fromFlow)
         hiddenStatusText:Hide()
 
         visibilityButton:SetScript("OnEnter", function()
+            if IsFlowHoverSuppressed(block) then return end
             visibilityButton:SetBackdropColor(0.12, 0.3, 0.42, 1)
             GameTooltip:SetOwner(visibilityButton, "ANCHOR_RIGHT")
             if block.step.minimizedVisible == 0 then
@@ -546,6 +569,7 @@ function editor.CreateStepBlock(parent, step, index, fromFlow)
             editor.RedrawFlow()
         end)
         pauseButton:SetScript("OnEnter", function()
+            if IsFlowHoverSuppressed(block) then return end
             pauseButton:SetBackdropColor(0.14, 0.28, 0.42, 1)
             GameTooltip:SetOwner(pauseButton, "ANCHOR_RIGHT")
             if block.step.enabled == 0 then
@@ -572,6 +596,7 @@ function editor.CreateStepBlock(parent, step, index, fromFlow)
         deleteText:SetText("X")
 
         deleteButton:SetScript("OnEnter", function()
+            if IsFlowHoverSuppressed(block) then return end
             deleteButton:SetBackdropColor(0.58, 0.1, 0.1, 1)
             GameTooltip:SetOwner(deleteButton, "ANCHOR_RIGHT")
             GameTooltip:SetText(Cat2.L("从当前流程删除此卡片"))
@@ -768,6 +793,16 @@ function editor.CreateStepBlock(parent, step, index, fromFlow)
     block:SetScript("OnDragStart", function()
         RestoreCardTooltipFont()
         GameTooltip:Hide()
+        -- 起拖时清掉左侧已有的悬停底色和序号高亮；不改变选中与暂停状态。
+        local flowIndex = 1
+        while flowIndex <= table.getn(editor.leftBlocks) do
+            local flowBlock = editor.leftBlocks[flowIndex]
+            if flowBlock.RefreshState then flowBlock.RefreshState() end
+            if flowBlock.SetOrderTextAppearance then
+                flowBlock.SetOrderTextAppearance(0.44, 0.54, 0.65, 0.38)
+            end
+            flowIndex = flowIndex + 1
+        end
         block:SetAlpha(0.25)
         if block.step.behavior == "logic" then
             ApplyLogicAppearance(editor.dragGhost, false, false)
@@ -838,8 +873,11 @@ function editor.CreateStepBlock(parent, step, index, fromFlow)
             Cat2.SetFlowStepEnabled(editor.selectedSteps, newStep, 1)
         end
         editor.RedrawFlow()
+        editor.EnsureFlowDropVisible(insertIndex)
     end)
     block:SetScript("OnEnter", function()
+        if IsFlowHoverSuppressed(block) then return end
+        if block.fromFlow and block.step.enabled == 0 then return end
         if block.step.isMissing then
             -- 缺失卡片悬停时只提高暗红色亮度，不切回普通卡片的蓝灰色。
             block:SetBackdropColor(0.3, 0.1, 0.11, 0.9)
@@ -924,6 +962,14 @@ function editor.CreateStepBlock(parent, step, index, fromFlow)
         GameTooltip:Hide()
         if block.SetOrderTextAppearance then
             block.SetOrderTextAppearance(0.44, 0.54, 0.65, 0.38)
+        end
+        if block.fromFlow and block.RefreshState then
+            -- 按实例状态恢复，不能把暂停的普通/被动卡误恢复成启用底色。
+            -- 左侧拖动源离开时仍须保持拖动透明度。
+            local alpha = block:GetAlpha()
+            block.RefreshState()
+            block:SetAlpha(alpha)
+            return
         end
         if block.step.isMissing then
             block:SetBackdropColor(0.22, 0.07, 0.08, 0.82)

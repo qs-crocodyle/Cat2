@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放风墙图腾。",
     sort = 190,
     exclusiveGroup = "shaman_air_totem",
+    duration = { type = "shaman_totem", slot = "air", name = "风墙图腾", cacheKey = "shaman_totem:air:风墙图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

@@ -35,8 +35,16 @@ function card.Execute(context)
         return false
     end
 
-    Cat2.Cast("精灵之火")
-    return true
+    if player.buff["节能施法"] then
+        return false
+    end
+
+    if player.power < 30 then
+        Cat2.CastWithNampower("精灵之火")
+        return true
+    end
+
+    return false
 end
 
 Cat2.RegisterCard(card)

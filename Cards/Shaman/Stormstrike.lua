@@ -28,11 +28,9 @@ function card.Execute(context)
     end
 
     local desiredTotem = context and context.parameters and context.parameters.shamanStormstrikeTotem
+
     if Cat2.SpellReadyOffset("风暴打击", 1.5) then
         Cat2.TryEquipShamanTotem(context, desiredTotem)
-    end
-
-    if Cat2.SpellReady("风暴打击") then
         Cat2.Cast("风暴打击")
         return true
     end

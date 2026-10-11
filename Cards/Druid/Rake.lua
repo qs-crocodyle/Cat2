@@ -75,7 +75,7 @@ function card.Execute(context)
     end
 
     if (player.power>=rakePower or player.buff["节能施法"]) and not rake then
-        Cat2.Cast("扫击")
+        Cat2.CastWithNampower("扫击")
         return true
     end
 

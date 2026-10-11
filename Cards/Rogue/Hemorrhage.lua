@@ -47,7 +47,7 @@ function card.Execute(context)
     end
 
     if player.power >= hemorrhagePower then
-        Cat2.Cast("出血")
+        Cat2.CastWithNampower("出血")
         return true
     end
 

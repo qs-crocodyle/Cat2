@@ -310,6 +310,13 @@ function ui.ApplyImportedConfiguration(importedProfile, overwriteProfileId)
     editor.selectedSteps = editor.runtimeConfigurations.profiles[profileId].steps
     editor.selectedFlowIndex = nil
 
+    if Cat2.BindImportedConfigurationCalls then
+        local messages = Cat2.BindImportedConfigurationCalls(editor.runtimeConfigurations.profiles[profileId])
+        for _, message in ipairs(messages) do
+            DEFAULT_CHAT_FRAME:AddMessage("|cffffcc33Cat2：" .. message .. "|r")
+        end
+    end
+
     -- 第三版配置文本携带快捷窗排列方式；旧版文本没有这些字段时保留本地设置。
     if importedProfile.direction and importedProfile.iconLimit and Cat2.GetProfileShortcutWindowSettings and Cat2.SaveProfileShortcutWindowSettings then
         local visible, _, _, left, top, scale = Cat2.GetProfileShortcutWindowSettings(profileId)

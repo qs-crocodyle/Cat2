@@ -169,7 +169,13 @@ local function SerializeProfile(profile, classFile)
         table.insert(output, packedIdLength)
         table.insert(output, step.id)
         table.insert(output, string.char(flags))
-        local packedOptions, optionError = SerializeOptionValues(step.optionValues)
+        local optionValues = step.optionValues
+        if Cat2.ExportCallConfigurationOptions then
+            local conversionError
+            optionValues, conversionError = Cat2.ExportCallConfigurationOptions(step)
+            if not optionValues then return nil, conversionError end
+        end
+        local packedOptions, optionError = SerializeOptionValues(optionValues)
         if not packedOptions then
             return nil, optionError
         end
@@ -539,6 +545,9 @@ local function DeserializeProfile(data)
                 end
                 optionIndex = optionIndex + 1
             end
+        end
+        if Cat2.ImportCallConfigurationOptions then
+            optionValues = Cat2.ImportCallConfigurationOptions(cardId, optionValues)
         end
         table.insert(steps, {
             id = cardId,

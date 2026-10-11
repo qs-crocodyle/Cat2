@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放清毒图腾。",
     sort = 140,
     exclusiveGroup = "shaman_water_totem",
+    duration = { type = "shaman_totem", slot = "water", name = "清毒图腾", cacheKey = "shaman_totem:water:清毒图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,

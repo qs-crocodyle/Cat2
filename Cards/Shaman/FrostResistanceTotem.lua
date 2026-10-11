@@ -6,6 +6,7 @@ local card = {
     details = "保持并施放抗寒图腾。",
     sort = 90,
     exclusiveGroup = "shaman_fire_totem",
+    duration = { type = "shaman_totem", slot = "fire", name = "抗寒图腾", cacheKey = "shaman_totem:fire:抗寒图腾" },
     category = "class",
     classes = {
         SHAMAN = 4,
